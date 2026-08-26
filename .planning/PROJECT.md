@@ -12,22 +12,22 @@ Arabic search users can find a useful, relevant article on Google and continue d
 
 ### Validated
 
-(None yet — ship to validate)
+- ✓ Let the owner create and edit locally previewable Markdown/MDX articles without a CMS, authentication system, or database — Phase 1
+- ✓ Give every published article an explicit, stable, clean Arabic URL identity that does not change with its title — Phase 1
+- ✓ Let future primary sections reuse the central registry and content contract without an application or article-model rewrite — Phase 1
 
 ### Active
 
 - [ ] Present the entire public website in Arabic with a correct right-to-left reading experience and no English-facing interface.
 - [ ] Provide three primary sections: الردود والشبهات, القضايا العامة, and القسم العلمي.
 - [ ] Use القسم العلمي for structured Islamic scholarship and religious lessons, not natural-science content.
-- [ ] Let the owner publish articles and lessons as Markdown/MDX files without a CMS, authentication system, or database.
 - [ ] Give every article a corresponding YouTube embed and a prominent direct link to the video or channel.
-- [ ] Provide crawlable, clean URLs and page-specific SEO metadata so public pages can be indexed correctly by Google.
+- [ ] Provide page-specific SEO metadata and crawlable discovery links so public pages can be indexed correctly by Google.
 - [ ] Ship a production-ready homepage, section indexes, and reusable article page layout.
 - [ ] Keep the visual design extremely simple, responsive, readable, and lightweight.
 - [ ] Include search-engine discovery foundations such as canonical URLs, sitemap output, and robots directives.
 - [ ] Include privacy-conscious analytics suitable for measuring organic discovery and outbound YouTube engagement.
 - [ ] Launch with at least one real article in each of the three primary sections.
-- [ ] Keep the content and layout architecture simple to extend with more sections or features in future milestones.
 
 ### Out of Scope
 
@@ -70,6 +70,9 @@ Arabic search users can find a useful, relevant article on Google and continue d
 | Define القسم العلمي as Islamic scholarship and structured religious lessons | Removes ambiguity with natural-science content | — Pending |
 | Write for the general Arabic-speaking public | Aligns content with broad search intent and minimal assumed knowledge | — Pending |
 | Launch production-ready with one real article per primary section | Validates the structure and publishing flow without blocking on full catalog migration | — Pending |
+| Use explicit, title-independent Arabic section and article slugs | Keeps public identities stable and makes collisions and unsafe Unicode fail at the shared boundary | ✓ Good |
+| Reuse final article routes for development draft preview while production exposes only public records | Avoids a second preview route or visibility option that could leak drafts | ✓ Good |
+| Restrict MDX before compilation through one approved component allowlist and render map | Preserves useful authoring without opening arbitrary executable or iframe surface | ✓ Good |
 
 ## Evolution
 
@@ -89,4 +92,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-26 after initialization*
+*Last updated: 2026-08-26 after Phase 1*
