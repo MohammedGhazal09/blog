@@ -1,8 +1,10 @@
 # Phase 2 — UI Review
 
-**Audited:** 2026-08-26  
-**Baseline:** `02-UI-SPEC.md` (Phase 2 design contract; file status remains `draft` / checker approval pending)  
-**Screenshots:** No new screenshots captured because no dev server was running on ports 3000, 5173, 8080, or 4321. Existing ignored Phase 2 captures were personally inspected: the Markdown 320/768/1440 state contact sheets and the native Chrome 200% zoom capture.
+**Audited:** 2026-08-26 (post-fix re-audit at commit `32463e9`)
+
+**Baseline:** `02-UI-SPEC.md` (Phase 2 design contract; file status remains `draft` / checker approval pending)
+
+**Screenshots:** Fresh ignored Hercules captures inspected personally: Markdown and MDX viewport/full-page states at 390×844 and 768×1024. Earlier Phase 2 responsive/state and native Chrome 200% zoom evidence remains applicable.
 
 ---
 
@@ -10,37 +12,40 @@
 
 | Pillar | Score | Key Finding |
 |--------|-------|-------------|
-| 1. Copywriting | 3/4 | **WARNING:** Public proof prose exposes unisolated Latin `JavaScript` and `Markdown` tokens inside Arabic paragraphs, drifting from the Arabic-only and bidi-copy contract. |
+| 1. Copywriting | 4/4 | **PASS:** Public prose now uses `ماركداون` and `جافاسكربت`; a rendered-text guard rejects future unisolated Latin prose while permitting intentional `code`/`bdi` values. |
 | 2. Visuals | 4/4 | **PASS:** Inspected responsive/state captures preserve the specified calm single-column hierarchy, stable 16:9 media surface, and persistent primary CTA without excluded decoration. |
 | 3. Color | 4/4 | **PASS:** The implementation uses only the seven declared palette values and restricts green accent to links, controls, hover, and focus. |
 | 4. Typography | 4/4 | **PASS:** Source and computed-style assertions enforce exactly four sizes, two weights, the system Arabic stack, 1.9 body leading, and a 70ch measure. |
 | 5. Spacing | 4/4 | **PASS:** All layout values match the declared 4px scale or the explicit 44px target/border/focus exceptions at the specified breakpoint. |
 | 6. Experience Design | 4/4 | **PASS:** Static, no-JS, blocked-host, construction-error, keyboard, repeat-activation, zoom, and conditional-content states are implemented and evidenced. |
 
-**Overall: 23/24**
+**Overall: 24/24**
 
 ---
 
-## Top 3 Priority Fixes
+## Top 3 Priority Fixes — Resolved
 
-1. **Remove the raw `JavaScript` token from both public fixtures** — It is reader-facing Latin copy inside otherwise Arabic prose and lacks an explicit bidi boundary — use the Arabic `جافاسكربت`, or wrap the technical token in `<bdi dir="ltr">` if preserving Latin spelling is editorially required.
-2. **Replace raw `Markdown` in the Markdown fixture** — It creates the same avoidable language/direction drift — use `ماركداون`, matching the existing Arabic treatment of MDX as `إم دي إكس`, or isolate the Latin token explicitly.
-3. **Lock the Arabic/bidi copy rule with one focused browser assertion** — The current bidi tests cover code values but allow plain Latin product terms to regress in prose — assert that reader paragraphs contain no unapproved Latin token outside `code`/`bdi[dir="ltr"]`.
+1. **Raw `JavaScript` prose — RESOLVED** — Both public fixtures now use `جافاسكربت` (`src/content/articles/contract-markdown.md:39`, `src/content/articles/contract-mdx.mdx:43`).
+2. **Raw `Markdown` prose — RESOLVED** — The Markdown fixture now uses `ماركداون` (`src/content/articles/contract-markdown.md:21`), matching the existing Arabic treatment of MDX.
+3. **Missing rendered-copy regression — RESOLVED** — The bidi browser case walks rendered article text and rejects Latin prose outside `bdi`, `code`, `script`, or `style` boundaries (`tests/article-journey.spec.ts:613-635`).
+
+**Remaining in-scope priority fixes: none.** The favicon 404 recorded by the fresh run is explicitly outside Phase 2; an approved brand asset belongs to the later metadata/discovery phase.
 
 ---
 
 ## Detailed Findings
 
-### Pillar 1: Copywriting (3/4)
+### Pillar 1: Copywriting (4/4)
 
-- **WARNING — Arabic-only copy and bidi isolation drift:** `src/content/articles/contract-markdown.md:21` renders `Markdown` directly in an Arabic paragraph; `src/content/articles/contract-markdown.md:39` and `src/content/articles/contract-mdx.mdx:43` render `JavaScript` directly. The UI contract requires an Arabic-only reader surface and requires explicitly Latin fragments to use an LTR isolation boundary. These terms are neither Arabicized nor wrapped in `bdi`; unlike the intentional URL and video-ID examples, they are ordinary prose rather than isolated `code`.
+- **PASS — original warning closed:** `src/content/articles/contract-markdown.md:21` now renders `ماركداون`; `src/content/articles/contract-markdown.md:39` and `src/content/articles/contract-mdx.mdx:43` now render `جافاسكربت`. Necessary Latin URL/video-ID examples remain isolated as code.
+- The rendered bidi test now traverses article text nodes and rejects any Latin text outside `bdi`, `code`, `script`, or `style` (`tests/article-journey.spec.ts:613-635`). This directly prevents recurrence of the audited defect.
 - All locked interface microcopy otherwise matches exactly: facts at `src/pages/[section]/[slug].astro:49-70`, summary/references at `:78-89`, and the media heading, privacy note, activation, error, and primary action at `src/components/YouTubePlayer.astro:13-28`.
 - Conditional copy is correct: the MDX fixture has no update date or references, and the route omits the complete units rather than rendering empty labels (`src/pages/[section]/[slug].astro:64-75`, `:82-95`).
 
 ### Pillar 2: Visuals (4/4)
 
 - **PASS — verified hierarchy:** The route renders one `h1`, quiet fact list, bounded summary, authored prose, conditional references, then media (`src/pages/[section]/[slug].astro:44-100`), matching the fixed visual/document order.
-- Personally inspected 320, 768, and 1440 Markdown contact sheets show a single centered column, clear descending title/section hierarchy, stable reserved media box, and a visible CTA outside the replaceable player region. The inspected 200% Chrome capture shows readable reflow, intact Arabic joining, and no clipping or overlap.
+- Personally inspected the fresh Markdown and MDX full-page captures at 390px and 768px. Both show a single centered column, clean Arabic joining and wrapping after the copy change, clear descending hierarchy, stable reserved media box, and a visible CTA outside the replaceable player region. Earlier inspected 320/768/1440 state sheets and the native 200% Chrome capture continue to show readable reflow without clipping or overlap.
 - The source excludes the prohibited hero art, icons, cards, gradients, shadows, thumbnails, animation, navigation, sidebar, and footer; the visual surface is native text/CSS only.
 - The broken-frame glyph visible in the activated contact-sheet state is not scored as a product defect: the evidence runner intentionally aborted the external embed host to test the blocked-player state, while the permanent CTA remained visible.
 
@@ -67,7 +72,7 @@
 - **PASS — resilient state coverage:** The native activation button begins hidden, is revealed only after listener registration, creates one iframe once, hardcodes the no-cookie host with `hl=ar`, transfers focus, and exposes the static Arabic error on construction failure (`src/components/YouTubePlayer.astro:17-66`).
 - The permanent same-tab YouTube action is static HTML outside the replaceable region (`src/components/YouTubePlayer.astro:17-29`), preserving the primary journey with JavaScript disabled, blocked embeds, cookie restrictions, and local construction failure.
 - Focus/targets match the contract: links and active player boundary have a 3px green outline with 3px offset, and standalone controls have 44px minimum dimensions (`src/pages/[section]/[slug].astro:238-240`, `:291-330`).
-- The final ignored evidence report records 320/390/768/1024/1440, native 200% zoom, initial/focus/activated/repeated/no-JS/blocked/error/cookie-blocked states, cross-origin focus escape, 68/68 Node checks, zero Astro diagnostics, and 26/26 Chromium cases. This audit personally inspected representative captures but does not independently claim live-browser execution because no server was running.
+- The fresh ignored fix report records 4/4 route/viewport capture combinations, equal document/client scroll widths, no eager YouTube-family request, 68/68 Node checks, zero Astro diagnostics, exactly two routes, and 26/26 Chromium cases. Earlier Phase 2 evidence still covers 320/390/768/1024/1440, native 200% zoom, initial/focus/activated/repeated/no-JS/blocked/error/cookie-blocked states, and cross-origin focus escape.
 
 ---
 
@@ -83,6 +88,8 @@
 - `src/content/articles/contract-mdx.mdx`
 - `tests/article-journey.spec.ts`
 - `.artifacts/hercules-visual-qa/phase-02-plan-04-final/20260826-211123-phase-02-plan-04-final-127.0.0.1-4321/report.md`
-- Existing ignored screenshots: Markdown 320/768/1440 state contact sheets and native Chrome 200% zoom capture
+- `.artifacts/hercules-visual-qa/phase-02-ui-review-fix/20260826-213803-phase-02-ui-review-fix-127.0.0.1-4321/report.md`
+- `.artifacts/hercules-visual-qa/phase-02-ui-review-fix/20260826-213803-phase-02-ui-review-fix-127.0.0.1-4321/coverage-ledger.md`
+- Fresh ignored screenshots: Markdown and MDX viewport/full-page captures at 390×844 and 768×1024
 
 Registry audit skipped: `components.json` is absent, shadcn is not initialized, and the UI spec declares zero third-party registry blocks.
