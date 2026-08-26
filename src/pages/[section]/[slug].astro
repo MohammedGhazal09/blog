@@ -1,7 +1,9 @@
 ---
 import { render } from "astro:content";
 
+import YouTubePlayer from "../../components/YouTubePlayer.astro";
 import { mdxComponents } from "../../components/mdx-components.ts";
+import { authorRegistry, sectionRegistry } from "../../config/registries.ts";
 import { getPreviewArticles, getPublicArticles } from "../../lib/articles.ts";
 import { pathParamsFor } from "../../lib/content-contract.ts";
 
@@ -18,6 +20,18 @@ export async function getStaticPaths() {
 
 const { article } = Astro.props;
 const { Content } = await render(article);
+const section = sectionRegistry[
+  article.data.section as keyof typeof sectionRegistry
+];
+const author = authorRegistry[
+  article.data.author as keyof typeof authorRegistry
+];
+const dateFormatter = new Intl.DateTimeFormat("ar", {
+  dateStyle: "long",
+  timeZone: "UTC",
+});
+const formatDate = (date: string) =>
+  dateFormatter.format(new Date(`${date}T00:00:00.000Z`));
 ---
 
 <!doctype html>
@@ -30,9 +44,234 @@ const { Content } = await render(article);
     <main>
       <article>
         <h1>{article.data.title}</h1>
-        <p>{article.data.summary}</p>
+        <dl class="article-facts">
+          <div>
+            <dt>القسم:</dt>
+            <dd>{section.label}</dd>
+          </div>
+          <div>
+            <dt>الكاتب:</dt>
+            <dd>{author.name}</dd>
+          </div>
+          <div>
+            <dt>نُشر في:</dt>
+            <dd>
+              <time datetime={article.data.publishedAt}
+                ><bdi dir="auto">{formatDate(article.data.publishedAt)}</bdi></time
+              >
+            </dd>
+          </div>
+          {
+            article.data.updatedAt && (
+              <div>
+                <dt>حُدّثت المادة في:</dt>
+                <dd>
+                  <time datetime={article.data.updatedAt}>
+                    <bdi dir="auto">{formatDate(article.data.updatedAt)}</bdi>
+                  </time>
+                </dd>
+              </div>
+            )
+          }
+        </dl>
+        <section class="article-summary">
+          <h2>الخلاصة</h2>
+          <p>{article.data.summary}</p>
+        </section>
         <Content components={mdxComponents} />
+        <YouTubePlayer
+          youtubeId={article.data.youtubeId}
+          title={article.data.title}
+        />
       </article>
     </main>
   </body>
 </html>
+
+<style>
+  :global(*) {
+    box-sizing: border-box;
+  }
+
+  :global(html) {
+    background: #fffdf8;
+  }
+
+  :global(body) {
+    margin: 0;
+    background: #fffdf8;
+    color: #1c1917;
+    font-family:
+      system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Arial,
+      sans-serif;
+    font-size: 1.125rem;
+    font-synthesis: none;
+    font-weight: 400;
+    letter-spacing: normal;
+    line-height: 1.9;
+    text-align: start;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  main {
+    padding-block: 32px;
+    padding-inline: 16px;
+  }
+
+  article {
+    max-inline-size: 70ch;
+    min-inline-size: 0;
+    margin-inline: auto;
+  }
+
+  article > :global(*) {
+    min-inline-size: 0;
+  }
+
+  h1,
+  article :global(h2),
+  article :global(h3) {
+    color: #1c1917;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+
+  h1 {
+    margin-block: 0 32px;
+    font-size: 2rem;
+    line-height: 1.3;
+  }
+
+  article :global(h2) {
+    margin-block: 32px 16px;
+    font-size: 1.5rem;
+    line-height: 1.4;
+  }
+
+  article :global(h3) {
+    margin-block: 24px 8px;
+    font-size: 1.125rem;
+    line-height: 1.9;
+  }
+
+  article :global(p),
+  article :global(ul),
+  article :global(ol),
+  article :global(blockquote) {
+    margin-block: 0 16px;
+  }
+
+  article :global(ul),
+  article :global(ol) {
+    padding-inline-start: 24px;
+  }
+
+  article :global(blockquote) {
+    margin-inline: 0;
+    border-inline-start: 1px solid #78716c;
+    padding-inline-start: 16px;
+    color: #57534e;
+  }
+
+  .article-facts {
+    display: grid;
+    gap: 8px;
+    margin-block: 0 32px;
+    color: #57534e;
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.6;
+  }
+
+  .article-facts > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+  }
+
+  .article-facts dd {
+    margin: 0;
+  }
+
+  .article-summary {
+    margin-block-end: 32px;
+    border-inline-start: 1px solid #78716c;
+    background: #f5f1e8;
+    padding: 16px;
+  }
+
+  .article-summary h2 {
+    margin-block: 0 8px;
+  }
+
+  .article-summary p {
+    margin: 0;
+  }
+
+  article :global(a) {
+    color: #166534;
+    text-decoration-line: underline;
+    text-decoration-skip-ink: auto;
+    text-decoration-thickness: from-font;
+    text-underline-position: from-font;
+  }
+
+  article :global(a:hover) {
+    text-decoration-thickness: 3px;
+  }
+
+  article :global(a:focus-visible) {
+    outline: 3px solid #166534;
+    outline-offset: 3px;
+  }
+
+  article :global(a),
+  article :global(code),
+  article :global(bdi) {
+    overflow-wrap: anywhere;
+  }
+
+  article :global(code) {
+    direction: ltr;
+    font-family: inherit;
+    unicode-bidi: isolate;
+  }
+
+  article :global(.media-continuation) {
+    margin-block-start: 48px;
+  }
+
+  article :global(.media-continuation h2) {
+    margin-block-start: 0;
+  }
+
+  article :global(.youtube-cta) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-block-size: 44px;
+    min-inline-size: 44px;
+    margin-block-start: 16px;
+    background: #166534;
+    color: #fffdf8;
+    padding-block: 8px;
+    padding-inline: 16px;
+    text-align: center;
+  }
+
+  article :global(.youtube-cta:hover) {
+    background: #14532d;
+  }
+
+  @media (min-width: 48rem) {
+    main {
+      padding-block: 64px;
+      padding-inline: 24px;
+    }
+
+    .article-summary {
+      padding: 24px;
+    }
+  }
+</style>

@@ -1,9 +1,12 @@
 import { expect, test } from "@playwright/test";
+import { existsSync, readFileSync } from "node:fs";
 
 const markdownPath =
   "/القضايا-العامة/اختبار-عقد-المحتوى/";
 
-test("complete Markdown reader", async ({ page }) => {
+test("complete Markdown reader", async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
   await page.goto(markdownPath);
 
   await expect(page.locator("html")).toHaveAttribute("lang", "ar");
@@ -54,4 +57,80 @@ test("complete Markdown reader", async ({ page }) => {
     "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
   );
   await expect(directLink).not.toHaveAttribute("target", /.+/);
+
+  const bodyStyle = await page.locator("body").evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      backgroundColor: style.backgroundColor,
+      color: style.color,
+      fontSize: style.fontSize,
+      fontWeight: style.fontWeight,
+      lineHeight: style.lineHeight,
+    };
+  });
+  expect(bodyStyle).toEqual({
+    backgroundColor: "rgb(255, 253, 248)",
+    color: "rgb(28, 25, 23)",
+    fontSize: "18px",
+    fontWeight: "400",
+    lineHeight: "34.2px",
+  });
+
+  await directLink.focus();
+  const directLinkStyle = await directLink.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      backgroundColor: style.backgroundColor,
+      minBlockSize: style.minBlockSize,
+      outlineColor: style.outlineColor,
+      outlineWidth: style.outlineWidth,
+    };
+  });
+  expect(directLinkStyle).toEqual({
+    backgroundColor: "rgb(22, 101, 52)",
+    minBlockSize: "44px",
+    outlineColor: "rgb(22, 101, 52)",
+    outlineWidth: "3px",
+  });
+
+  for (const width of [320, 390, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(
+      await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth <=
+          document.documentElement.clientWidth,
+      ),
+    ).toBe(true);
+  }
+
+  const routeSource = readFileSync(
+    "src/pages/[section]/[slug].astro",
+    "utf8",
+  );
+  const playerSource = readFileSync(
+    "src/components/YouTubePlayer.astro",
+    "utf8",
+  );
+  expect(routeSource.match(/<h1\b/giu)).toHaveLength(1);
+  expect(`${routeSource}\n${playerSource}`).not.toMatch(
+    /<iframe\b|<link[^>]+rel=["']preconnect|<script[^>]+src=|poster=|target=/giu,
+  );
+  expect(
+    existsSync(
+      "dist/القضايا-العامة/مسودة-اختبار-العقد/index.html",
+    ),
+  ).toBe(false);
+  expect(
+    existsSync(
+      "dist/القضايا-العامة/اختبار-عقد-المحتوى/index.html",
+    ),
+  ).toBe(true);
+  expect(
+    existsSync(
+      "dist/القسم-العلمي/اختبار-مكون-ام-دي-اكس/index.html",
+    ),
+  ).toBe(true);
+
+  await context.close();
 });

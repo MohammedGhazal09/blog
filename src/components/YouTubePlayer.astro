@@ -1,0 +1,14 @@
+---
+interface Props {
+  youtubeId: string;
+  title: string;
+}
+
+const { youtubeId } = Astro.props;
+const watchUrl = `https://www.youtube.com/watch?v=${encodeURIComponent(youtubeId)}`;
+---
+
+<section class="media-continuation">
+  <h2>الفيديو المرتبط بالمقال</h2>
+  <a class="youtube-cta" href={watchUrl}>مشاهدة الفيديو على يوتيوب</a>
+</section>
