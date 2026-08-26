@@ -198,7 +198,10 @@ for (const fixture of articles) {
         await expectBefore(conclusion, media);
       }
 
-      await expect(page.locator("button")).toHaveCount(0);
+      await expect(
+        page.getByRole("button", { name: "تشغيل الفيديو هنا" }),
+      ).toHaveCount(0);
+      await expect(page.getByRole("status")).toHaveCount(0);
       await expect(page.locator("iframe")).toHaveCount(0);
       await expect(
         page.getByRole("link", { name: "مشاهدة الفيديو على يوتيوب" }),
@@ -306,6 +309,184 @@ for (const fixture of articles) {
           await directLink.elementHandle(),
         ),
       ).toBe(true);
+    });
+
+    test("degraded player preserves the complete Arabic fallback", async ({
+      browser,
+    }) => {
+      const noScriptContext = await browser.newContext({
+        javaScriptEnabled: false,
+      });
+      const noScriptPage = await noScriptContext.newPage();
+      await openArticle(noScriptPage, fixture);
+      await expect(
+        noScriptPage.getByText(fixture.introduction, { exact: true }),
+      ).toBeVisible();
+      await expect(
+        noScriptPage.getByText(fixture.conclusion, { exact: true }),
+      ).toBeVisible();
+      await expect(
+        noScriptPage.getByRole("button", { name: "تشغيل الفيديو هنا" }),
+      ).toHaveCount(0);
+      await expect(noScriptPage.getByRole("status")).toHaveCount(0);
+      await expect(noScriptPage.locator("iframe")).toHaveCount(0);
+      await expect(
+        noScriptPage.getByRole("link", {
+          name: "مشاهدة الفيديو على يوتيوب",
+        }),
+      ).toHaveAttribute("href", "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+      await noScriptContext.close();
+
+      const blockedContext = await browser.newContext();
+      const blockedPage = await blockedContext.newPage();
+      await blockedPage.route("https://www.youtube-nocookie.com/**", (route) =>
+        route.abort(),
+      );
+      await openArticle(blockedPage, fixture);
+      await blockedPage
+        .getByRole("button", { name: "تشغيل الفيديو هنا" })
+        .click();
+      await expect(
+        blockedPage.locator("[data-video-region] iframe"),
+      ).toHaveCount(1);
+      await expect(
+        blockedPage.getByText(fixture.conclusion, { exact: true }),
+      ).toBeVisible();
+      await expect(
+        blockedPage.getByRole("link", {
+          name: "مشاهدة الفيديو على يوتيوب",
+        }),
+      ).toHaveAttribute("href", "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+      await blockedContext.close();
+
+      const failedContext = await browser.newContext();
+      await failedContext.addInitScript(() => {
+        const createElement = document.createElement.bind(document);
+        document.createElement = ((
+          tagName: string,
+          options?: ElementCreationOptions,
+        ) => {
+          if (tagName.toLowerCase() === "iframe") {
+            throw new Error("Controlled iframe construction failure");
+          }
+          return createElement(tagName, options);
+        }) as typeof document.createElement;
+      });
+      const failedPage = await failedContext.newPage();
+      await failedPage.setViewportSize({ width: 320, height: 900 });
+      await openArticle(failedPage, fixture);
+
+      const failedRegion = failedPage.locator("[data-video-region]");
+      const failedTrigger = failedRegion.getByRole("button", {
+        name: "تشغيل الفيديو هنا",
+      });
+      await failedTrigger.click();
+
+      const status = failedPage.getByRole("status");
+      await expect(status).toHaveText(
+        "تعذّر تشغيل الفيديو هنا. يمكنك مشاهدة الفيديو مباشرةً على يوتيوب.",
+      );
+      await expect(status).toBeVisible();
+      await expect(failedTrigger).toBeHidden();
+      await expect(failedPage.locator("iframe")).toHaveCount(0);
+      await expect(
+        failedPage.getByRole("link", {
+          name: "مشاهدة الفيديو على يوتيوب",
+        }),
+      ).toHaveAttribute("href", "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+
+      const regionBox = await failedRegion.boundingBox();
+      const statusBox = await status.boundingBox();
+      expect(regionBox).not.toBeNull();
+      expect(statusBox).not.toBeNull();
+      expect(statusBox!.x).toBeGreaterThanOrEqual(regionBox!.x);
+      expect(statusBox!.x + statusBox!.width).toBeLessThanOrEqual(
+        regionBox!.x + regionBox!.width,
+      );
+      expect(
+        Math.abs(
+          statusBox!.y +
+            statusBox!.height / 2 -
+            (regionBox!.y + regionBox!.height / 2),
+        ),
+      ).toBeLessThanOrEqual(1);
+      await failedContext.close();
+    });
+
+    test("keyboard uses native activation and local focus traversal", async ({
+      browser,
+    }) => {
+      for (const key of ["Enter", "Space"] as const) {
+        const context = await browser.newContext();
+        const page = await context.newPage();
+        await page.route("https://www.youtube-nocookie.com/**", (route) =>
+          route.abort(),
+        );
+        await openArticle(page, fixture);
+
+        const region = page.locator("[data-video-region]");
+        const trigger = region.getByRole("button", {
+          name: "تشغيل الفيديو هنا",
+        });
+        const directLink = page.getByRole("link", {
+          name: "مشاهدة الفيديو على يوتيوب",
+        });
+        expect(await page.locator("[tabindex]").count()).toBe(0);
+        expect(await trigger.evaluate((node) => node.tagName)).toBe("BUTTON");
+        await expect(trigger).toHaveAttribute("type", "button");
+        expect(await trigger.evaluate((node) => node.tabIndex)).toBe(0);
+
+        await trigger.focus();
+        const triggerBox = await trigger.boundingBox();
+        expect(triggerBox).not.toBeNull();
+        expect(triggerBox!.width).toBeGreaterThanOrEqual(44);
+        expect(triggerBox!.height).toBeGreaterThanOrEqual(44);
+        expect(
+          await trigger.evaluate((node) => {
+            const style = getComputedStyle(node);
+            return {
+              color: style.outlineColor,
+              style: style.outlineStyle,
+              width: style.outlineWidth,
+              offset: style.outlineOffset,
+            };
+          }),
+        ).toEqual({
+          color: "rgb(22, 101, 52)",
+          style: "solid",
+          width: "3px",
+          offset: "3px",
+        });
+
+        await page.keyboard.press(key);
+        const iframe = region.locator("iframe");
+        await expect(iframe).toBeFocused();
+        await page.keyboard.press("Tab");
+        await expect(directLink).toBeFocused();
+        const linkBox = await directLink.boundingBox();
+        expect(linkBox).not.toBeNull();
+        expect(linkBox!.width).toBeGreaterThanOrEqual(44);
+        expect(linkBox!.height).toBeGreaterThanOrEqual(44);
+        expect(
+          await directLink.evaluate((node) => {
+            const style = getComputedStyle(node);
+            return {
+              color: style.outlineColor,
+              style: style.outlineStyle,
+              width: style.outlineWidth,
+              offset: style.outlineOffset,
+            };
+          }),
+        ).toEqual({
+          color: "rgb(22, 101, 52)",
+          style: "solid",
+          width: "3px",
+          offset: "3px",
+        });
+        await page.keyboard.press("Shift+Tab");
+        await expect(iframe).toBeFocused();
+        await context.close();
+      }
     });
 
     test("provenance is registry-backed and optional as one semantic unit", async ({
