@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-08-26T16:05:32.934Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-08-26T16:43:01.059Z"
 last_activity: 2026-08-26
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 7
-  completed_plans: 4
-  percent: 57
+  completed_plans: 5
+  percent: 71
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-08-26)
 ## Current Position
 
 Phase: 02 (Complete Arabic Article Journey) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-08-26
 
-Progress: [██████░░░░] 57%
+Progress: [███████░░░] 71%
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Progress: [██████░░░░] 57%
 | Phase 01-content-and-url-contract P02 | 17min | 3 tasks | 7 files |
 | Phase 01-content-and-url-contract P03 | 12min | 2 tasks | 4 files |
 | Phase 02 P01 | 21 min | 2 tasks | 7 files |
+| Phase 02 P02 | 26min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,9 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 01]: Keep the owner authoring workflow Arabic and tied directly to executable package commands and registry keys. — Prevents documentation drift while preserving the one-language publishing workflow.
 - [Phase 02]: Keep the permanent direct-video anchor as the complete static media boundary for this slice; defer the iframe enhancement to its planned later slice. — The static same-tab link fully guarantees the reader journey without JavaScript or third-party media and avoids pulling the intent-gated player ahead of 02-03.
 - [Phase 02]: Keep Astro preview under Playwright lifecycle by disabling Astro agent-background detection and probing the real article route. — Astro 7.2.7 otherwise backgrounds automatically in agent environments, while the intentionally absent homepage returns 404 and cannot serve as a readiness probe.
+- [Phase 02]: Validate reference shape and semantics once at the shared content boundary, then render only validated descriptive same-tab HTTPS links.
+- [Phase 02]: Use Markdown as the present optional-provenance fixture and approved MDX as the absent fixture so one browser matrix proves parity and clean omission.
+- [Phase 02]: Keep real 200% browser zoom manual-only when automation cannot prove a changed zoom state.
 
 ### Pending Todos
 
@@ -92,6 +96,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-26T16:05:32.921Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-08-26T16:43:01.041Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None
