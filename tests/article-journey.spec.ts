@@ -50,6 +50,13 @@ const articles: readonly ArticleFixture[] = [
 const routeSource = readFileSync("src/pages/[section]/[slug].astro", "utf8");
 const playerSource = readFileSync("src/components/YouTubePlayer.astro", "utf8");
 
+function isYouTubeFamilyRequest(url: string): boolean {
+  const hostname = new URL(url).hostname;
+  return ["youtube", "youtu.be", "ytimg", "googlevideo"].some((host) =>
+    hostname.includes(host),
+  );
+}
+
 async function openArticle(page: Page, fixture: ArticleFixture): Promise<void> {
   await page.goto(fixture.path);
   await expect(page.locator("main > article")).toBeVisible();
@@ -197,6 +204,108 @@ for (const fixture of articles) {
         page.getByRole("link", { name: "مشاهدة الفيديو على يوتيوب" }),
       ).toHaveAttribute("href", "https://www.youtube.com/watch?v=dQw4w9WgXcQ");
       await context.close();
+    });
+
+    test("intent-gated player creates one focused privacy-enhanced iframe", async ({
+      page,
+      request,
+    }) => {
+      const rawResponse = await request.get(fixture.path);
+      const rawHtml = await rawResponse.text();
+      expect(rawHtml).toMatch(/<button[^>]+hidden[^>]+data-video-activate/iu);
+      expect(rawHtml).not.toMatch(/<iframe\b/iu);
+
+      const youtubeRequests: string[] = [];
+      page.on("request", (pendingRequest) => {
+        if (isYouTubeFamilyRequest(pendingRequest.url())) {
+          youtubeRequests.push(pendingRequest.url());
+        }
+      });
+      await page.route("https://www.youtube-nocookie.com/**", (route) =>
+        route.abort(),
+      );
+
+      await openArticle(page, fixture);
+
+      const region = page.locator("[data-video-region]");
+      const trigger = region.getByRole("button", {
+        name: "تشغيل الفيديو هنا",
+      });
+      await expect(
+        page.getByText("لن يُحمَّل مشغّل يوتيوب إلا بعد اختيارك التشغيل.", {
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(trigger).toBeVisible();
+      await expect(page.locator("iframe")).toHaveCount(0);
+      expect(youtubeRequests).toEqual([]);
+
+      const before = await region.boundingBox();
+      const detachedTrigger = await trigger.elementHandle();
+      expect(before).not.toBeNull();
+      expect(before!.width).toBeGreaterThan(0);
+      expect(before!.height).toBeGreaterThan(0);
+      expect(before!.width / before!.height).toBeCloseTo(16 / 9, 1);
+
+      await trigger.click();
+
+      const iframe = region.locator("iframe");
+      await expect(iframe).toHaveCount(1);
+      await expect(iframe).toHaveAttribute(
+        "title",
+        `فيديو المقال: ${fixture.title}`,
+      );
+      const iframeUrl = new URL((await iframe.getAttribute("src"))!);
+      expect(iframeUrl.hostname).toBe("www.youtube-nocookie.com");
+      expect(iframeUrl.pathname).toBe("/embed/dQw4w9WgXcQ");
+      expect(iframeUrl.searchParams.get("autoplay")).not.toBe("1");
+      await expect(iframe).toBeFocused();
+
+      const after = await region.boundingBox();
+      expect(after).not.toBeNull();
+      expect(Math.abs(after!.width - before!.width)).toBeLessThanOrEqual(1);
+      expect(Math.abs(after!.height - before!.height)).toBeLessThanOrEqual(1);
+
+      await detachedTrigger!.evaluate((button) =>
+        (button as HTMLButtonElement).click(),
+      );
+      await expect(iframe).toHaveCount(1);
+      expect(
+        youtubeRequests.filter((url) =>
+          url.startsWith("https://www.youtube-nocookie.com/embed/"),
+        ),
+      ).toHaveLength(1);
+    });
+
+    test("direct YouTube link remains a static same-tab sibling", async ({
+      page,
+    }) => {
+      await openArticle(page, fixture);
+
+      const region = page.locator("[data-video-region]");
+      const directLink = page.getByRole("link", {
+        name: "مشاهدة الفيديو على يوتيوب",
+      });
+      await expect(directLink).toHaveAttribute(
+        "href",
+        "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      );
+      await expect(directLink).not.toHaveAttribute("target", /.+/u);
+      expect(
+        await region.evaluate(
+          (node, link) => {
+            if (!(link instanceof HTMLAnchorElement)) return false;
+            return (
+              !node.contains(link) &&
+              Boolean(
+                node.compareDocumentPosition(link) &
+                Node.DOCUMENT_POSITION_FOLLOWING,
+              )
+            );
+          },
+          await directLink.elementHandle(),
+        ),
+      ).toBe(true);
     });
 
     test("provenance is registry-backed and optional as one semantic unit", async ({
