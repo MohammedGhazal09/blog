@@ -706,11 +706,11 @@ Do not set overflow-x hidden to make this assertion pass; locate and fix the for
 |---|-------|---------|---------------|
 | — | None. Stack/package claims were checked against the codebase, official documentation, npm registry, and slopcheck; implementation choices are locked by CONTEXT/SPEC/UI-SPEC. | — | — |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-None block planning. Use the public Markdown proof record to exercise updatedAt plus references, and use the public approved-MDX record to exercise clean omission of both optional facts; keep both explicitly labelled as contract fixtures because Phase 3 owns real launch articles/videos/references. [VERIFIED: 02-CONTEXT.md] [VERIFIED: .planning/ROADMAP.md]
+- **RESOLVED — Proof ownership:** Use the public Markdown proof record to exercise updatedAt plus references, and use the public approved-MDX record to exercise clean omission of both optional facts; keep both explicitly labelled as contract fixtures because Phase 3 owns real launch articles/videos/references. [VERIFIED: 02-CONTEXT.md] [VERIFIED: .planning/ROADMAP.md]
 
-The caller explicitly identifies 02-UI-SPEC.md as the approved visual/interaction contract, which resolves its stale draft/pending frontmatter and checker footer for this research run. [VERIFIED: caller scope]
+- **RESOLVED — UI contract status:** The caller explicitly identifies 02-UI-SPEC.md as the approved visual/interaction contract, which resolves its stale draft/pending frontmatter and checker footer for this research run. [VERIFIED: caller scope]
 
 ### What Might Have Been Missed Review
 
