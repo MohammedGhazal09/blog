@@ -42,7 +42,7 @@ const articles: readonly ArticleFixture[] = [
     firstHeading: "لماذا يوجد سجل إم دي إكس؟",
     nestedHeading: "ما الذي يثبته؟",
     conclusion:
-      "يكتمل اختبار إم دي إكس عندما يقرأ القارئ المادة كاملة ثم يصل إلى رابط الفيديو المطابق من دون اعتماد على المكوّن المعتمد أو JavaScript.",
+      "يكتمل اختبار إم دي إكس عندما يقرأ القارئ المادة كاملة ثم يصل إلى رابط الفيديو المطابق من دون اعتماد على المكوّن المعتمد أو جافاسكربت.",
     hasOptionalProvenance: false,
   },
 ];
@@ -609,6 +609,30 @@ for (const fixture of articles) {
       await expect(page.locator("article")).toContainText("العِلْمُ نُورٌ");
       await expect(page.locator("article")).toContainText("١٢٣");
       await expect(page.locator("article")).toContainText("123");
+
+      expect(
+        await page.locator("article").evaluate((article) => {
+          const walker = document.createTreeWalker(
+            article,
+            NodeFilter.SHOW_TEXT,
+          );
+          const unisolatedLatinText: string[] = [];
+
+          while (walker.nextNode()) {
+            const text = walker.currentNode.textContent?.trim() ?? "";
+            const parent = walker.currentNode.parentElement;
+
+            if (
+              /[A-Za-z]/u.test(text) &&
+              !parent?.closest("bdi, code, script, style")
+            ) {
+              unisolatedLatinText.push(text);
+            }
+          }
+
+          return unisolatedLatinText;
+        }),
+      ).toEqual([]);
     });
 
     test("reflow preserves one readable column at every locked width", async ({
