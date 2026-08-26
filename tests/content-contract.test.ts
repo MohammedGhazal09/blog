@@ -193,6 +193,12 @@ const semanticFailures = [
     "cannot be scheduled",
   ],
   [
+    "future public update",
+    { updatedAt: "2026-08-27" },
+    "updatedAt",
+    "cannot claim a future update",
+  ],
+  [
     "malformed YouTube ID",
     { youtubeId: "invalid/id" },
     "youtubeId",
@@ -323,8 +329,12 @@ for (const [name, url] of [
   });
 }
 
-test("future publication is allowed only while the record remains a draft", () => {
-  const futureDraft = article({ publishedAt: "2026-08-27", draft: true });
+test("future publication and update are allowed while the record remains a draft", () => {
+  const futureDraft = article({
+    publishedAt: "2026-08-27",
+    updatedAt: "2026-08-28",
+    draft: true,
+  });
   assert.doesNotThrow(() =>
     validateArticleData(futureDraft.data, futureDraft.id, {
       today: fixedToday,

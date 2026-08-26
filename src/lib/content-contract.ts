@@ -192,15 +192,21 @@ export function validateArticleData(
   assertCanonicalArabicSlug(data.slug, `${source}.slug`);
   assertDateOnly(data.publishedAt, source, "publishedAt");
   assertDateOnly(today, source, "today");
+  if (typeof data.draft !== "boolean")
+    fail(`${source}.draft`, "must be an explicit boolean");
 
   if (data.updatedAt !== undefined) {
     assertDateOnly(data.updatedAt, source, "updatedAt");
     if (data.updatedAt < data.publishedAt) {
       fail(`${source}.updatedAt`, "must not be earlier than publishedAt");
     }
+    if (!data.draft && data.updatedAt > today) {
+      fail(
+        `${source}.updatedAt`,
+        "public articles cannot claim a future update",
+      );
+    }
   }
-  if (typeof data.draft !== "boolean")
-    fail(`${source}.draft`, "must be an explicit boolean");
   if (!data.draft && data.publishedAt > today) {
     fail(
       `${source}.publishedAt`,
