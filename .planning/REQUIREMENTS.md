@@ -114,17 +114,50 @@ Explicit exclusions prevent scope creep during v1.
 
 ## Traceability
 
-Roadmap mapping is populated after the roadmap phases are approved.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (Pending roadmap creation) | — | — |
+| SITE-01 | Phase 2 | Pending |
+| SITE-02 | Phase 2 | Pending |
+| SITE-03 | Phase 3 | Pending |
+| SITE-04 | Phase 3 | Pending |
+| SITE-05 | Phase 3 | Pending |
+| SITE-06 | Phase 4 | Pending |
+| ART-01 | Phase 2 | Pending |
+| ART-02 | Phase 2 | Pending |
+| ART-03 | Phase 2 | Pending |
+| ART-04 | Phase 2 | Pending |
+| ART-05 | Phase 2 | Pending |
+| ART-06 | Phase 2 | Pending |
+| ART-07 | Phase 2 | Pending |
+| SEO-01 | Phase 1 | Pending |
+| SEO-02 | Phase 4 | Pending |
+| SEO-03 | Phase 4 | Pending |
+| SEO-04 | Phase 4 | Pending |
+| SEO-05 | Phase 4 | Pending |
+| SEO-06 | Phase 5 | Pending |
+| PUB-01 | Phase 1 | Pending |
+| PUB-02 | Phase 1 | Pending |
+| PUB-03 | Phase 1 | Pending |
+| PUB-04 | Phase 1 | Pending |
+| PUB-05 | Phase 1 | Pending |
+| PUB-06 | Phase 1 | Pending |
+| CONT-01 | Phase 3 | Pending |
+| CONT-02 | Phase 3 | Pending |
+| CONT-03 | Phase 3 | Pending |
+| MEAS-01 | Phase 5 | Pending |
+| MEAS-02 | Phase 5 | Pending |
+| QUAL-01 | Phase 2 | Pending |
+| QUAL-02 | Phase 2 | Pending |
+| QUAL-03 | Phase 2 | Pending |
+| QUAL-04 | Phase 2 | Pending |
+| QUAL-05 | Phase 6 | Pending |
+| QUAL-06 | Phase 6 | Pending |
 
 **Coverage:**
 - v1 requirements: 36 total
-- Mapped to phases: 0
-- Unmapped: 36 ⚠️
+- Mapped to phases: 36
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-08-26*
-*Last updated: 2026-08-26 after initial definition*
+*Last updated: 2026-08-26 after roadmap creation*
