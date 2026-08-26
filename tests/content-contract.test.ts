@@ -286,7 +286,6 @@ test("approved MDX uses ContractNote without article imports", () => {
     assertAllowedMdxSource(
       "# عنوان الاختبار\n\n<ContractNote>محتوى معتمد</ContractNote>",
       "approved-contract-note.mdx",
-      approvedMdxComponentNames,
     ),
   );
 });
@@ -295,22 +294,43 @@ const rejectedMdxSources = [
   [
     "article-import.mdx",
     'import Thing from "thing"\n\n# عنوان',
-    "top-level ESM import",
+    "top-level MDX ESM",
   ],
   [
     "article-export.mdx",
     "export const metadata = {}\n\n# عنوان",
-    "top-level ESM export",
+    "top-level MDX ESM",
   ],
   [
     "article-script.mdx",
     '<ScRiPt   type="module">alert("x")</ScRiPt>',
-    "script tag",
+    "script",
   ],
   [
     "article-iframe.mdx",
     '<IFRAME   title="اختبار" src="https://example.com"></IFRAME>',
-    "iframe tag",
+    "iframe",
+  ],
+  [
+    "article-event-handler.mdx",
+    '<img src="missing" onerror="alert(document.domain)" />',
+    "intrinsic/raw HTML element img",
+  ],
+  ["article-expression.mdx", "{1 + 1}", "forbidden MDX expression"],
+  [
+    "article-component-expression.mdx",
+    "<ContractNote>{globalThis}</ContractNote>",
+    "forbidden MDX expression",
+  ],
+  [
+    "article-component-attribute.mdx",
+    '<ContractNote class="note">غير معتمد</ContractNote>',
+    "does not accept attributes",
+  ],
+  [
+    "article-unsafe-link.mdx",
+    "[رابط](javascript:alert(document.domain))",
+    "forbidden URL protocol javascript:",
   ],
   [
     "article-unknown-component.mdx",
@@ -322,7 +342,7 @@ const rejectedMdxSources = [
 for (const [sourceId, source, rule] of rejectedMdxSources) {
   test(`rejects ${sourceId} with its source and failed MDX rule`, () => {
     assertDiagnostic(
-      () => assertAllowedMdxSource(source, sourceId, approvedMdxComponentNames),
+      () => assertAllowedMdxSource(source, sourceId),
       [sourceId.replace(".", "\\."), rule],
     );
   });
@@ -350,7 +370,6 @@ export const example = true
     assertAllowedMdxSource(
       source,
       "code-examples.mdx",
-      approvedMdxComponentNames,
     ),
   );
 });
