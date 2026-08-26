@@ -1,5 +1,8 @@
+// @ts-ignore Node built-in types are intentionally not a project dependency.
 import { readdirSync, readFileSync } from "node:fs";
+// @ts-ignore Node built-in types are intentionally not a project dependency.
 import { relative, resolve } from "node:path";
+// @ts-ignore Node built-in types are intentionally not a project dependency.
 import { fileURLToPath } from "node:url";
 import { createProcessor } from "@mdx-js/mdx";
 
