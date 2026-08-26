@@ -9,8 +9,8 @@ Requirements for the first production release. Each requirement will map to exac
 
 ### Public Site Structure
 
-- [ ] **SITE-01**: A visitor sees only Arabic reader-facing navigation, labels, controls, messages, and error states across the public website.
-- [ ] **SITE-02**: A browser and assistive technology receive Arabic language and right-to-left document semantics on every public page.
+- [x] **SITE-01**: A visitor sees only Arabic reader-facing navigation, labels, controls, messages, and error states across the public website.
+- [x] **SITE-02**: A browser and assistive technology receive Arabic language and right-to-left document semantics on every public page.
 - [ ] **SITE-03**: A visitor can navigate from the homepage to الردود والشبهات, القضايا العامة, and القسم العلمي through ordinary crawlable links.
 - [ ] **SITE-04**: A visitor can open a crawlable index for each primary section and see a useful Arabic summary and link for every published article in that section.
 - [ ] **SITE-05**: A visitor can open an Arabic About/author page and follow every article byline to truthful information about Ahmed El-Mangawy.
@@ -18,13 +18,13 @@ Requirements for the first production release. Each requirement will map to exac
 
 ### Article Experience
 
-- [ ] **ART-01**: A reader can consume a published article with a clear title, introduction, ordered headings, body, section context, and conclusion without depending on video or client-side JavaScript.
-- [ ] **ART-02**: A reader can comfortably read long-form Arabic articles on supported mobile and desktop widths without clipped text or horizontal page overflow.
-- [ ] **ART-03**: A reader sees URLs, numbers, punctuation, Arabic diacritics, and other mixed-direction fragments in the correct order within RTL content.
+- [x] **ART-01**: A reader can consume a published article with a clear title, introduction, ordered headings, body, section context, and conclusion without depending on video or client-side JavaScript.
+- [x] **ART-02**: A reader can comfortably read long-form Arabic articles on supported mobile and desktop widths without clipped text or horizontal page overflow.
+- [x] **ART-03**: A reader sees URLs, numbers, punctuation, Arabic diacritics, and other mixed-direction fragments in the correct order within RTL content.
 - [ ] **ART-04**: Every article presents a responsive, dimension-reserved, privacy-enhanced YouTube player that loads the real player only after reader intent.
-- [ ] **ART-05**: Every article presents a prominent Arabic direct link to its matching YouTube video or channel that remains usable when the embedded player is unavailable.
-- [ ] **ART-06**: Every article visibly presents its author, truthful publication or material-update date, and references wherever its claims depend on external or religious sources.
-- [ ] **ART-07**: Every article begins with a maintained Arabic الخلاصة that gives the reader a useful intent-focused summary.
+- [x] **ART-05**: Every article presents a prominent Arabic direct link to its matching YouTube video or channel that remains usable when the embedded player is unavailable.
+- [x] **ART-06**: Every article visibly presents its author, truthful publication or material-update date, and references wherever its claims depend on external or religious sources.
+- [x] **ART-07**: Every article begins with a maintained Arabic الخلاصة that gives the reader a useful intent-focused summary.
 
 ### SEO and Discovery
 
@@ -57,10 +57,10 @@ Requirements for the first production release. Each requirement will map to exac
 
 ### Accessibility and Production Quality
 
-- [ ] **QUAL-01**: A reader receives semantic landmarks and headings, descriptive links, meaningful image alternatives, and an accessible Arabic label for the video player and YouTube action.
-- [ ] **QUAL-02**: A keyboard user can reach and operate every interactive public control with a visible focus indicator and no keyboard trap.
-- [ ] **QUAL-03**: Text, controls, zoom, and responsive reflow meet applicable WCAG 2.2 AA contrast and layout requirements on representative pages.
-- [ ] **QUAL-04**: A reader can access the complete article and direct YouTube link when JavaScript, third-party cookies, or the YouTube player is blocked.
+- [x] **QUAL-01**: A reader receives semantic landmarks and headings, descriptive links, meaningful image alternatives, and an accessible Arabic label for the video player and YouTube action.
+- [x] **QUAL-02**: A keyboard user can reach and operate every interactive public control with a visible focus indicator and no keyboard trap.
+- [x] **QUAL-03**: Text, controls, zoom, and responsive reflow meet applicable WCAG 2.2 AA contrast and layout requirements on representative pages.
+- [x] **QUAL-04**: A reader can access the complete article and direct YouTube link when JavaScript, third-party cookies, or the YouTube player is blocked.
 - [ ] **QUAL-05**: Representative production pages preserve good Core Web Vitals behavior and do not load or shift the real YouTube iframe before reader activation.
 - [ ] **QUAL-06**: A production crawl confirms successful public routes, matching canonicals, unique Arabic metadata, working internal links, correct sitemap/robots output, and no accidental English reader-facing text.
 
@@ -116,19 +116,19 @@ Explicit exclusions prevent scope creep during v1.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SITE-01 | Phase 2 | Pending |
-| SITE-02 | Phase 2 | Pending |
+| SITE-01 | Phase 2 | Complete |
+| SITE-02 | Phase 2 | Complete |
 | SITE-03 | Phase 3 | Pending |
 | SITE-04 | Phase 3 | Pending |
 | SITE-05 | Phase 3 | Pending |
 | SITE-06 | Phase 4 | Pending |
-| ART-01 | Phase 2 | Pending |
-| ART-02 | Phase 2 | Pending |
-| ART-03 | Phase 2 | Pending |
+| ART-01 | Phase 2 | Complete |
+| ART-02 | Phase 2 | Complete |
+| ART-03 | Phase 2 | Complete |
 | ART-04 | Phase 2 | Pending |
-| ART-05 | Phase 2 | Pending |
-| ART-06 | Phase 2 | Pending |
-| ART-07 | Phase 2 | Pending |
+| ART-05 | Phase 2 | Complete |
+| ART-06 | Phase 2 | Complete |
+| ART-07 | Phase 2 | Complete |
 | SEO-01 | Phase 1 | Complete |
 | SEO-02 | Phase 4 | Pending |
 | SEO-03 | Phase 4 | Pending |
@@ -146,10 +146,10 @@ Explicit exclusions prevent scope creep during v1.
 | CONT-03 | Phase 3 | Pending |
 | MEAS-01 | Phase 5 | Pending |
 | MEAS-02 | Phase 5 | Pending |
-| QUAL-01 | Phase 2 | Pending |
-| QUAL-02 | Phase 2 | Pending |
-| QUAL-03 | Phase 2 | Pending |
-| QUAL-04 | Phase 2 | Pending |
+| QUAL-01 | Phase 2 | Complete |
+| QUAL-02 | Phase 2 | Complete |
+| QUAL-03 | Phase 2 | Complete |
+| QUAL-04 | Phase 2 | Complete |
 | QUAL-05 | Phase 6 | Pending |
 | QUAL-06 | Phase 6 | Pending |
 

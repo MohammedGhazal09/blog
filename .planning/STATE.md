@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to specify and discuss
-stopped_at: Phase 2 UI-SPEC approved; ready for planning
-last_updated: "2026-08-26T15:37:11.651Z"
-last_activity: 2026-08-26 -- Phase 02 planning complete
+status: executing
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-08-26T16:05:32.934Z"
+last_activity: 2026-08-26
 progress:
   total_phases: 6
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
-  percent: 17
+  total_plans: 7
+  completed_plans: 4
+  percent: 57
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-26)
 
 **Core value:** Arabic search users can find a useful, relevant article on Google and continue directly to the matching content on Ahmed El-Mangawy's YouTube channel.
-**Current focus:** Phase 2 — Complete Arabic Article Journey
+**Current focus:** Phase 02 — Complete Arabic Article Journey
 
 ## Current Position
 
-Phase: 2 (Complete Arabic Article Journey)
-Plan: Not started
-Status: Ready to specify and discuss
-Last activity: 2026-08-26 -- Phase 02 planning complete
+Phase: 02 (Complete Arabic Article Journey) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-08-26
 
-Progress: [██░░░░░░░░] 17%
+Progress: [██████░░░░] 57%
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Progress: [██░░░░░░░░] 17%
 | Phase 01-content-and-url-contract P01 | 14min | 3 tasks | 14 files |
 | Phase 01-content-and-url-contract P02 | 17min | 3 tasks | 7 files |
 | Phase 01-content-and-url-contract P03 | 12min | 2 tasks | 4 files |
+| Phase 02 P01 | 21 min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 01]: Use one readonly approved MDX component list to constrain both source policy and the render map. — Keeps approved authoring and rendering capabilities synchronized.
 - [Phase 01]: Route development preview through a pure selector guarded by explicit development mode. — Makes complete preview inclusion native-testable without a route guard or second query schema.
 - [Phase 01]: Keep the owner authoring workflow Arabic and tied directly to executable package commands and registry keys. — Prevents documentation drift while preserving the one-language publishing workflow.
+- [Phase 02]: Keep the permanent direct-video anchor as the complete static media boundary for this slice; defer the iframe enhancement to its planned later slice. — The static same-tab link fully guarantees the reader journey without JavaScript or third-party media and avoids pulling the intent-gated player ahead of 02-03.
+- [Phase 02]: Keep Astro preview under Playwright lifecycle by disabling Astro agent-background detection and probing the real article route. — Astro 7.2.7 otherwise backgrounds automatically in agent environments, while the intentionally absent homepage returns 404 and cannot serve as a readiness probe.
 
 ### Pending Todos
 
@@ -89,6 +92,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-26T14:43:03.546Z
-Stopped at: Phase 2 UI-SPEC approved; ready for planning
-Resume file: .planning/phases/02-complete-arabic-article-journey/02-UI-SPEC.md
+Last session: 2026-08-26T16:05:32.921Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None
