@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-08-26T11:46:23.406Z"
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-08-26T12:28:52.134Z"
 last_activity: 2026-08-26
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
-  percent: 33
+  completed_plans: 2
+  percent: 67
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-08-26)
 ## Current Position
 
 Phase: 1 (Content and URL Contract) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-08-26
 
-Progress: [███░░░░░░░] 33%
+Progress: [███████░░░] 67%
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Progress: [███░░░░░░░] 33%
 - Trend: —
 
 | Phase 01-content-and-url-contract P01 | 14min | 3 tasks | 14 files |
+| Phase 01-content-and-url-contract P02 | 17min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 01]: Keep article identity explicit and title-independent through validated Arabic section and article slugs.
 - [Phase 01]: Use the identical final route family for development draft preview while excluding drafts from every production query.
 - [Phase 01]: Declare UTF-8 directly in the proof route so Arabic renders correctly before the shared metadata system arrives in Phase 4.
+- [Phase 01]: Use one readonly approved MDX component list to constrain both source policy and the render map. — Keeps approved authoring and rendering capabilities synchronized.
 
 ### Pending Todos
 
@@ -84,6 +86,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-26T11:46:23.361Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-08-26T12:28:52.121Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None

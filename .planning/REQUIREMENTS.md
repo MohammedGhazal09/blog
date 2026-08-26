@@ -41,7 +41,7 @@ Requirements for the first production release. Each requirement will map to exac
 - [x] **PUB-02**: The production build rejects articles with missing or invalid title, description, section, slug, author, date, draft state, or YouTube identifier fields.
 - [x] **PUB-03**: The production build rejects duplicate public routes, non-normalized slugs, and unsafe control or bidirectional characters in URL identifiers.
 - [x] **PUB-04**: An article marked as a draft cannot appear in production routes, indexes, metadata, or the sitemap.
-- [ ] **PUB-05**: MDX content can use only the small approved component set and cannot introduce arbitrary scripts or unreviewed iframe sources.
+- [x] **PUB-05**: MDX content can use only the small approved component set and cannot introduce arbitrary scripts or unreviewed iframe sources.
 - [x] **PUB-06**: A future primary section can be added through the central section/content configuration without creating a separate application or rewriting existing article layouts.
 
 ### Content and Editorial Trust
@@ -139,7 +139,7 @@ Explicit exclusions prevent scope creep during v1.
 | PUB-02 | Phase 1 | Complete |
 | PUB-03 | Phase 1 | Complete |
 | PUB-04 | Phase 1 | Complete |
-| PUB-05 | Phase 1 | Pending |
+| PUB-05 | Phase 1 | Complete |
 | PUB-06 | Phase 1 | Complete |
 | CONT-01 | Phase 3 | Pending |
 | CONT-02 | Phase 3 | Pending |

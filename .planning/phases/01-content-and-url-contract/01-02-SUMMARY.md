@@ -127,6 +127,7 @@ Each task was committed atomically:
 - Browser QA initially reached a stale Astro process and returned a 404. The stale process was stopped and the current checkout was served before evidence was accepted.
 - A Chrome profile created inside ignored `.artifacts` caused Vite file watching to hit a locked cookie file. Evidence remained in `.artifacts`, while the disposable browser profile was moved outside the watched repository for the final run.
 - The browser requested `/favicon.ico` and received 404; favicon work remains outside this content-contract plan.
+- `roadmap.update-plan-progress` reported `2/3` and `In Progress` but left the file at `1/3`; the two Phase 1 counters were updated directly without marking the phase complete.
 
 ## Known Stubs
 
