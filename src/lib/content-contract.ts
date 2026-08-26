@@ -179,9 +179,9 @@ export function validateArticleData(
   assertNonEmpty(data.section, source, "section");
   assertNonEmpty(data.author, source, "author");
   assertNonEmpty(data.slug, source, "slug");
-  if (!(data.section in sections))
+  if (!Object.hasOwn(sections, data.section))
     fail(`${source}.section`, `unknown registry key: ${data.section}`);
-  if (!(data.author in authors))
+  if (!Object.hasOwn(authors, data.author))
     fail(`${source}.author`, `unknown registry key: ${data.author}`);
   assertCanonicalArabicSlug(data.slug, `${source}.slug`);
   assertDateOnly(data.publishedAt, source, "publishedAt");

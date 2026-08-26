@@ -151,6 +151,18 @@ const semanticFailures = [
     "unknown registry key",
   ],
   [
+    "inherited section key",
+    { section: "toString" },
+    "section",
+    "unknown registry key",
+  ],
+  [
+    "inherited author key",
+    { author: "constructor" },
+    "author",
+    "unknown registry key",
+  ],
+  [
     "date syntax",
     { publishedAt: "2026-8-01" },
     "publishedAt",
