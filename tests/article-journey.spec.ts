@@ -629,18 +629,24 @@ for (const fixture of articles) {
           return {
             maxInlineSize: getComputedStyle(article).maxInlineSize,
             columnCount: getComputedStyle(article).columnCount,
-            children: [...article.children].map((child) => {
-              const box = child.getBoundingClientRect();
-              const style = getComputedStyle(child);
-              return {
-                minInlineSize: style.minInlineSize,
-                display: style.display,
-                visibility: style.visibility,
-                withinColumn:
-                  box.left >= articleBox.left - 1 &&
-                  box.right <= articleBox.right + 1,
-              };
-            }),
+            children: [...article.children]
+              .filter(
+                (child) =>
+                  !(child instanceof HTMLScriptElement) &&
+                  !(child instanceof HTMLStyleElement),
+              )
+              .map((child) => {
+                const box = child.getBoundingClientRect();
+                const style = getComputedStyle(child);
+                return {
+                  minInlineSize: style.minInlineSize,
+                  display: style.display,
+                  visibility: style.visibility,
+                  withinColumn:
+                    box.left >= articleBox.left - 1 &&
+                    box.right <= articleBox.right + 1,
+                };
+              }),
           };
         });
         expect(layout.columnCount).toBe("auto");
@@ -658,7 +664,7 @@ for (const fixture of articles) {
         ).toBe(true);
 
         const readableNodes = page.locator(
-          "article h1, article h2, article h3, article p, article li, article blockquote, article a",
+          "article h1:not([hidden]), article h2:not([hidden]), article h3:not([hidden]), article p:not([hidden]), article li:not([hidden]), article blockquote:not([hidden]), article a:not([hidden])",
         );
         for (const node of await readableNodes.all()) {
           await expect(node).toBeVisible();

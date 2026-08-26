@@ -288,7 +288,7 @@ const formatDate = (date: string) =>
     border: 0;
   }
 
-  article :global([data-video-activate]) {
+  article :global([data-video-activate]:not([hidden])) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -301,6 +301,12 @@ const formatDate = (date: string) =>
     padding-block: 8px;
     padding-inline: 16px;
     font: inherit;
+    text-align: center;
+  }
+
+  article :global([data-video-error]:not([hidden])) {
+    max-inline-size: calc(100% - 32px);
+    margin: 0;
     text-align: center;
   }
 
