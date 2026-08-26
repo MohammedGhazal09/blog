@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-08-26T16:43:01.059Z"
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-08-26T17:35:22.860Z"
 last_activity: 2026-08-26
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 7
-  completed_plans: 5
-  percent: 71
+  completed_plans: 6
+  percent: 86
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-08-26)
 ## Current Position
 
 Phase: 02 (Complete Arabic Article Journey) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-08-26
 
-Progress: [███████░░░] 71%
+Progress: [█████████░] 86%
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Progress: [███████░░░] 71%
 | Phase 01-content-and-url-contract P03 | 12min | 2 tasks | 4 files |
 | Phase 02 P01 | 21 min | 2 tasks | 7 files |
 | Phase 02 P02 | 26min | 2 tasks | 8 files |
+| Phase 02 P03 | 36min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,10 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 02]: Validate reference shape and semantics once at the shared content boundary, then render only validated descriptive same-tab HTTPS links.
 - [Phase 02]: Use Markdown as the present optional-provenance fixture and approved MDX as the absent fixture so one browser matrix proves parity and clean omission.
 - [Phase 02]: Keep real 200% browser zoom manual-only when automation cannot prove a changed zoom state.
+- [Phase 02]: Create the inline player only after explicit reader intent from the validated YouTube ID, using a hardcoded no-cookie origin and DOM properties.
+- [Phase 02]: Keep the permanent same-tab YouTube action outside the replaceable player region so every local failure preserves the complete journey.
+- [Phase 02]: Preserve native button, keyboard, focus, and hidden semantics instead of adding custom interaction or ARIA layers.
+- [Phase 02]: Retain real 200% zoom and live cross-origin playback/focus escape for Plan 02-04 human verification when automation cannot prove those browser states.
 
 ### Pending Todos
 
@@ -96,6 +101,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-26T16:43:01.041Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-08-26T17:35:22.847Z
+Stopped at: Completed 02-03-PLAN.md
 Resume file: None

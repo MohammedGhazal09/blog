@@ -21,7 +21,7 @@ Requirements for the first production release. Each requirement will map to exac
 - [x] **ART-01**: A reader can consume a published article with a clear title, introduction, ordered headings, body, section context, and conclusion without depending on video or client-side JavaScript.
 - [x] **ART-02**: A reader can comfortably read long-form Arabic articles on supported mobile and desktop widths without clipped text or horizontal page overflow.
 - [x] **ART-03**: A reader sees URLs, numbers, punctuation, Arabic diacritics, and other mixed-direction fragments in the correct order within RTL content.
-- [ ] **ART-04**: Every article presents a responsive, dimension-reserved, privacy-enhanced YouTube player that loads the real player only after reader intent.
+- [x] **ART-04**: Every article presents a responsive, dimension-reserved, privacy-enhanced YouTube player that loads the real player only after reader intent.
 - [x] **ART-05**: Every article presents a prominent Arabic direct link to its matching YouTube video or channel that remains usable when the embedded player is unavailable.
 - [x] **ART-06**: Every article visibly presents its author, truthful publication or material-update date, and references wherever its claims depend on external or religious sources.
 - [x] **ART-07**: Every article begins with a maintained Arabic الخلاصة that gives the reader a useful intent-focused summary.
@@ -125,7 +125,7 @@ Explicit exclusions prevent scope creep during v1.
 | ART-01 | Phase 2 | Complete |
 | ART-02 | Phase 2 | Complete |
 | ART-03 | Phase 2 | Complete |
-| ART-04 | Phase 2 | Pending |
+| ART-04 | Phase 2 | Complete |
 | ART-05 | Phase 2 | Complete |
 | ART-06 | Phase 2 | Complete |
 | ART-07 | Phase 2 | Complete |

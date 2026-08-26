@@ -45,7 +45,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
   4. A keyboard or assistive-technology user can navigate semantic landmarks and headings, understand descriptive labels and alternatives, operate every control with visible focus, and encounter no keyboard trap.
   5. The responsive, dimension-reserved, privacy-enhanced YouTube player loads only after reader intent, while a prominent Arabic direct link remains usable when the player, JavaScript, or third-party cookies are unavailable.
 
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 **UI hint:** yes
 
 ### Phase 3: Real Content and Section Discovery
@@ -117,7 +117,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Content and URL Contract | 3/3 | Complete    | 2026-08-26 |
-| 2. Complete Arabic Article Journey | 2/4 | In Progress|  |
+| 2. Complete Arabic Article Journey | 3/4 | In Progress|  |
 | 3. Real Content and Section Discovery | 0/TBD | Not started | - |
 | 4. Search Discovery Integrity | 0/TBD | Not started | - |
 | 5. Deployment and Measurement | 0/TBD | Not started | - |
