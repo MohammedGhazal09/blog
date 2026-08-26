@@ -33,7 +33,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 
 ### Phase 2: Complete Arabic Article Journey
 
-**Goal:** A reader can complete the core Arabic search-result-to-article-to-YouTube journey through one accessible, lightweight article experience.
+**Goal:** As an Arabic reader, I want to read a complete accessible article and reach its matching YouTube video, so that I can learn even when media or JavaScript is unavailable.
 **Mode:** mvp
 **Depends on:** Phase 1
 **Requirements:** SITE-01, SITE-02, ART-01, ART-02, ART-03, ART-04, ART-05, ART-06, ART-07, QUAL-01, QUAL-02, QUAL-03, QUAL-04
