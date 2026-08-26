@@ -17,7 +17,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 
 ### Phase 1: Content and URL Contract
 
-**Goal:** The owner can maintain safe, previewable article records whose stable identities drive every later public surface.
+**Goal:** As a site owner, I want to maintain safe previewable Arabic articles, so that public surfaces use stable identities.
 **Mode:** mvp
 **Depends on:** Nothing (first phase)
 **Requirements:** SEO-01, PUB-01, PUB-02, PUB-03, PUB-04, PUB-05, PUB-06
