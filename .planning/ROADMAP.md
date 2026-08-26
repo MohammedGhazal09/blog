@@ -7,7 +7,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 ## Phases
 
 - [x] **Phase 1: Content and URL Contract** - The owner can maintain validated Markdown/MDX content with stable public identities. (completed 2026-08-26)
-- [ ] **Phase 2: Complete Arabic Article Journey** - A reader can consume one accessible RTL article and continue to its matching YouTube content.
+- [x] **Phase 2: Complete Arabic Article Journey** - A reader can consume one accessible RTL article and continue to its matching YouTube content. (completed 2026-08-26)
 - [ ] **Phase 3: Real Content and Section Discovery** - Visitors can discover truthful launch content across the homepage and all three primary sections.
 - [ ] **Phase 4: Search Discovery Integrity** - Every public route presents one consistent, crawlable identity to readers and search engines.
 - [ ] **Phase 5: Deployment and Measurement** - The live site can be monitored for search discovery and outbound YouTube activation without profiling readers.
@@ -45,7 +45,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
   4. A keyboard or assistive-technology user can navigate semantic landmarks and headings, understand descriptive labels and alternatives, operate every control with visible focus, and encounter no keyboard trap.
   5. The responsive, dimension-reserved, privacy-enhanced YouTube player loads only after reader intent, while a prominent Arabic direct link remains usable when the player, JavaScript, or third-party cookies are unavailable.
 
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 **UI hint:** yes
 
 ### Phase 3: Real Content and Section Discovery
@@ -117,7 +117,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Content and URL Contract | 3/3 | Complete    | 2026-08-26 |
-| 2. Complete Arabic Article Journey | 3/4 | In Progress|  |
+| 2. Complete Arabic Article Journey | 4/4 | Complete   | 2026-08-26 |
 | 3. Real Content and Section Discovery | 0/TBD | Not started | - |
 | 4. Search Discovery Integrity | 0/TBD | Not started | - |
 | 5. Deployment and Measurement | 0/TBD | Not started | - |
