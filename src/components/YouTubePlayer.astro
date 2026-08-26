@@ -4,11 +4,66 @@ interface Props {
   title: string;
 }
 
-const { youtubeId } = Astro.props;
+const { youtubeId, title } = Astro.props;
 const watchUrl = `https://www.youtube.com/watch?v=${encodeURIComponent(youtubeId)}`;
+const iframeTitle = `فيديو المقال: ${title}`;
 ---
 
 <section class="media-continuation">
   <h2>الفيديو المرتبط بالمقال</h2>
+  <p class="video-privacy-note">
+    لن يُحمَّل مشغّل يوتيوب إلا بعد اختيارك التشغيل.
+  </p>
+  <div
+    class="video-region"
+    data-video-region
+    data-youtube-id={youtubeId}
+    data-iframe-title={iframeTitle}
+  >
+    <button type="button" hidden data-video-activate>تشغيل الفيديو هنا</button>
+    <p role="status" hidden data-video-error>
+      تعذّر تشغيل الفيديو هنا. يمكنك مشاهدة الفيديو مباشرةً على يوتيوب.
+    </p>
+  </div>
   <a class="youtube-cta" href={watchUrl}>مشاهدة الفيديو على يوتيوب</a>
 </section>
+
+<script>
+  for (const region of document.querySelectorAll("[data-video-region]")) {
+    const button = region.querySelector("[data-video-activate]");
+    const error = region.querySelector("[data-video-error]");
+    if (
+      !(button instanceof HTMLButtonElement) ||
+      !(error instanceof HTMLParagraphElement)
+    ) {
+      continue;
+    }
+
+    button.addEventListener(
+      "click",
+      () => {
+        if (region.querySelector("iframe")) return;
+
+        try {
+          const id = region.getAttribute("data-youtube-id");
+          const title = region.getAttribute("data-iframe-title");
+          if (!id || !title) throw new Error("Missing validated player data");
+
+          const iframe = document.createElement("iframe");
+          iframe.title = title;
+          iframe.src =
+            "https://www.youtube-nocookie.com/embed/" +
+            encodeURIComponent(id);
+          iframe.allowFullscreen = true;
+          button.replaceWith(iframe);
+          iframe.focus();
+        } catch {
+          button.hidden = true;
+          error.hidden = false;
+        }
+      },
+      { once: true },
+    );
+    button.hidden = false;
+  }
+</script>

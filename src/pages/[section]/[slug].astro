@@ -268,6 +268,48 @@ const formatDate = (date: string) =>
     margin-block-start: 0;
   }
 
+  article :global(.video-privacy-note) {
+    margin-block-end: 16px;
+  }
+
+  article :global(.video-region) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 100%;
+    min-inline-size: 0;
+    aspect-ratio: 16 / 9;
+    background: #f5f1e8;
+  }
+
+  article :global(.video-region iframe) {
+    inline-size: 100%;
+    block-size: 100%;
+    border: 0;
+  }
+
+  article :global([data-video-activate]) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-block-size: 44px;
+    min-inline-size: 44px;
+    max-inline-size: calc(100% - 32px);
+    border: 2px solid #166534;
+    background: transparent;
+    color: #166534;
+    padding-block: 8px;
+    padding-inline: 16px;
+    font: inherit;
+    text-align: center;
+  }
+
+  article :global([data-video-activate]:focus-visible),
+  article :global(.video-region iframe:focus-visible) {
+    outline: 3px solid #166534;
+    outline-offset: 3px;
+  }
+
   article :global(.youtube-cta) {
     display: inline-flex;
     align-items: center;
