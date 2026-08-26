@@ -1,8 +1,8 @@
 ---
 phase: 1
 slug: content-and-url-contract
-status: draft
-nyquist_compliant: false
+status: planned
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-08-26
 ---
@@ -27,7 +27,7 @@ created: 2026-08-26
 
 ## Sampling Rate
 
-- **After every task commit:** Run `npm test`
+- **After every task commit:** Run `npm test`; the two explicit RED tasks use an inverted exit assertion until their following implementation task turns the suite green
 - **After every plan wave:** Run `npm run verify`
 - **Before `$gsd-verify-work`:** Full suite must be green
 - **Max feedback latency:** 60 seconds
@@ -38,11 +38,14 @@ created: 2026-08-26
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 01-01-01 | 01 | 1 | SEO-01, PUB-03 | T-01, T-02 | Arabic identifiers are canonical and complete paths cannot collide | table-driven unit | `npm test` | ❌ W0 | ⬜ pending |
-| 01-01-02 | 01 | 1 | PUB-02, PUB-06 | T-05 | Article facts, registry membership, and date/video relationships fail closed | table-driven unit + diagnostics | `npm test` | ❌ W0 | ⬜ pending |
-| 01-02-01 | 02 | 2 | PUB-05 | T-03, T-04 | MDX source cannot import/export code or bypass the approved component surface | policy unit + build integration | `npm test && npm run build` | ❌ W0 | ⬜ pending |
-| 01-02-02 | 02 | 2 | PUB-04 | T-06 | Drafts are filtered before production path enumeration | unit + build integration | `npm test && npm run build` | ❌ W0 | ⬜ pending |
-| 01-02-03 | 02 | 2 | PUB-01 | — | Valid Markdown and approved MDX render through the same collection and final route family | Astro diagnostics + build | `npm run check && npm run build` | ❌ W0 | ⬜ pending |
+| 01-01-01 | 01 | 1 | SEO-01, PUB-01, PUB-04 | T-01, T-06, T-01-SC | Exact runtime/package gate exists and the Markdown identity/visibility journey is specified RED | native contract RED gate | exact versions, then inverted `npm test` exit | ❌ W0 | ⬜ pending |
+| 01-01-02 | 01 | 1 | SEO-01, PUB-02, PUB-03, PUB-06 | T-01, T-02, T-05 | Article facts, registries, canonical Arabic identity, collisions, and draft policy become GREEN at one boundary | table-driven unit + diagnostics | `npm test` | ❌ W0 | ⬜ pending |
+| 01-01-03 | 01 | 1 | PUB-01, PUB-04 | T-02, T-06 | Public and draft Markdown use the final route; production emits only public output | unit + Astro integration | `npm test && npm run check && npm run build` | ❌ W0 | ⬜ pending |
+| 01-02-01 | 02 | 2 | PUB-05 | T-03, T-04 | Approved/forbidden MDX policy behaviors are specified RED | native policy RED gate | inverted `npm test` exit | ❌ W0 | ⬜ pending |
+| 01-02-02 | 02 | 2 | PUB-05 | T-03, T-04, T-05 | Raw source is preflighted before compilation against one allowlist/map | policy unit + Astro diagnostics | `npm test && npm run check` | ❌ W0 | ⬜ pending |
+| 01-02-03 | 02 | 2 | PUB-01, PUB-05 | T-03, T-04 | Approved MDX renders through the same collection and final route family | Astro diagnostics + build | `npm test && npm run check && npm run build` | ❌ W0 | ⬜ pending |
+| 01-03-01 | 03 | 3 | SEO-01, PUB-02, PUB-03, PUB-04, PUB-05, PUB-06 | T-01–T-06 | Every locked validation and security branch has native regression coverage | full native matrix + build integration | `npm test && npm run verify` | ❌ W0 | ⬜ pending |
+| 01-03-02 | 03 | 3 | PUB-01 | T-06, T-01-SC | Clean install/full gate and final-route local preview workflow are proven and documented | clean integration + local smoke | exact versions, `npm ci`, `npm run verify`, then documented dev smoke | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -62,17 +65,17 @@ created: 2026-08-26
 
 | Behavior | Requirement | Why Manual | Test Instructions |
 |----------|-------------|------------|-------------------|
-| The documented local preview command starts and serves a proof article through its final Arabic route | PUB-01 | The development server is a long-running process; the production build remains the automated route/render gate | Run `npm run dev -- --host 127.0.0.1`, request one generated Arabic article path, confirm HTTP 200 and the edited article field, then stop the server |
+| The documented local preview command serves public Markdown, approved MDX, and a development-only draft through the final route family and reloads an edited field | PUB-01, PUB-04, PUB-05 | The development server is a long-running process; production build/output inspection remains the automated publication gate | Run `npm run dev -- --host 127.0.0.1`, request the three documented Arabic paths, edit and restore the Markdown summary after confirming reload, stop the server, rebuild, and confirm the draft output path is absent |
 
 ---
 
 ## Validation Sign-Off
 
-- [ ] All tasks have automated verification or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verification
-- [ ] Wave 0 covers all missing references
-- [ ] No watch-mode flags
-- [ ] Feedback latency remains under 60 seconds
-- [ ] `nyquist_compliant: true` set in frontmatter after the plan/task map is finalized
+- [x] All tasks have automated verification or explicit RED-to-GREEN dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verification
+- [x] Wave 0 covers all missing references
+- [x] No watch-mode flags in automated checks
+- [x] Feedback latency remains under 60 seconds for native checks
+- [x] `nyquist_compliant: true` set after the final plan/task map
 
-**Approval:** pending
+**Approval:** planned for execution; Wave 0 remains incomplete until Plan 01 runs
