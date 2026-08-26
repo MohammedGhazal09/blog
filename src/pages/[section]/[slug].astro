@@ -1,6 +1,7 @@
 ---
 import { render } from "astro:content";
 
+import { mdxComponents } from "../../components/mdx-components.ts";
 import { getPreviewArticles, getPublicArticles } from "../../lib/articles.ts";
 import { pathParamsFor } from "../../lib/content-contract.ts";
 
@@ -30,7 +31,7 @@ const { Content } = await render(article);
       <article>
         <h1>{article.data.title}</h1>
         <p>{article.data.summary}</p>
-        <Content />
+        <Content components={mdxComponents} />
       </article>
     </main>
   </body>
