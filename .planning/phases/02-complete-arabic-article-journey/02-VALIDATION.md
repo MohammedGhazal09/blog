@@ -1,123 +1,108 @@
 ---
 phase: 02
 slug: complete-arabic-article-journey
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: complete
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-08-26
+audited: 2026-08-26
 ---
 
-# Phase 02 — Validation Strategy
+# Phase 02 — Validation Report
 
-> Per-phase validation contract for feedback sampling during execution.
+## Result
 
----
+**GAPS FILLED.** All 13 Phase 2 requirements have executable behavioral coverage or a justified manual-only browser gate with retained evidence. No new test was added: every proposed gap already has a failing-capable check at the correct boundary.
+
+The fresh exact-runtime audit used Node `v24.19.0` / npm `11.17.0` at the current source state. It passed 69/69 native tests, zero Astro errors/warnings/hints, a two-route static build with the draft absent, and 26/26 Chromium cases.
 
 ## Test Infrastructure
 
-| Property | Value |
-|----------|-------|
-| **Unit framework** | Node.js 24.19.0 built-in `node:test` with `node:assert/strict` |
-| **Browser framework** | `@playwright/test@1.62.1` with `@axe-core/playwright@4.13.0` and matching Chromium, installed as exact dev dependencies in Wave 0 |
-| **Config file** | `playwright.config.ts` — Wave 0 creates it; every report, trace, screenshot, video, snapshot, and temporary browser file stays under ignored `.artifacts/` |
-| **Quick run command** | `npm test` |
-| **Focused browser command** | `npx playwright test tests/article-journey.spec.ts --project=chromium` |
-| **Full suite command** | `npm run verify` after Wave 0 extends it to unit tests → Astro diagnostics → production build → browser suite |
-| **Estimated runtime** | Unit feedback under 10 seconds; full browser-inclusive gate target under 120 seconds on the local exact runtime |
+| Layer | Command | Live result |
+|---|---|---|
+| Native contract and policy | `npm test` | 69/69 green |
+| Astro diagnostics | `npm run check` | 0 errors, warnings, or hints |
+| Static production output | `npm run build` | exactly 2 pages; draft absent |
+| Browser behavior | `npm run test:browser` | 26/26 Chromium green |
+| Exact-runtime composite gate | `npm run verify` | fresh pass: 69/69 + 0 diagnostics + 2 routes/draft absent + 26/26 |
 
----
-
-## Sampling Rate
-
-- **After every task commit:** Run `npm test`; for article/player UI tasks also run the smallest matching Playwright `-g` scenario.
-- **After every plan wave:** Run `npm run check && npm run build && npm run test:browser`.
-- **Before `$gsd-verify-work`:** Exact Node 24.19.0/npm 11.17.0 `npm run verify` must be green; both public routes must exist and the production draft route must remain absent.
-- **Max feedback latency:** 120 seconds for the full local gate; use focused browser grep commands during task iteration.
-
----
+Playwright reports, traces, snapshots, screenshots, and temporary output resolve below ignored `.artifacts/`. The live recursive check found zero browser artifacts outside that directory.
 
 ## Per-Requirement Verification Map
 
-| Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
-|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| SITE-01 | — | Reader-facing article chrome and controls remain Arabic-only | browser DOM/a11y | `npx playwright test tests/article-journey.spec.ts -g "Arabic surface"` | ❌ W0 | ⬜ pending |
-| SITE-02 | — | Both public routes expose `lang="ar"` and `dir="rtl"` | browser DOM | `npx playwright test tests/article-journey.spec.ts -g "Arabic document semantics"` | ❌ W0 | ⬜ pending |
-| ART-01 | T2-05, T2-06 | Complete static title → facts → الخلاصة → authored body/conclusion with one h1 and ordered headings | browser + built output | `npx playwright test tests/article-journey.spec.ts -g "complete text-first"` | ❌ W0 | ⬜ pending |
-| ART-02 | — | Reader reflows at all locked widths with body text at least 1rem and no page overflow | browser responsive | `npx playwright test tests/article-journey.spec.ts -g "reflow"` | ❌ W0 | ⬜ pending |
-| ART-03 | — | Mixed-direction values use explicit native isolation and keep their order | DOM + manual visual | `npx playwright test tests/article-journey.spec.ts -g "bidi"` | ❌ W0 | ⬜ pending |
-| ART-04 | T2-02, T2-03, T2-07, T2-08 | Initial load makes zero YouTube requests; one activation creates one encoded no-autoplay nocookie iframe | browser network/DOM | `npx playwright test tests/article-journey.spec.ts -g "intent-gated player"` | ❌ W0 | ⬜ pending |
-| ART-05 | T2-02, T2-04 | Exact same-tab direct-video link remains present with JavaScript disabled and player blocked | browser degraded mode | `npx playwright test tests/article-journey.spec.ts -g "direct YouTube"` | ❌ W0 | ⬜ pending |
-| ART-06 | T2-01, T2-09 | HTTPS references fail closed; registered facts/dates render once; absent optionals produce no container | unit + browser | `npm test; npx playwright test tests/article-journey.spec.ts -g "provenance"` | ⚠ extend unit; browser W0 | ⬜ pending |
-| ART-07 | — | Labelled الخلاصة uses validated summary and precedes authored body | browser DOM | `npx playwright test tests/article-journey.spec.ts -g "summary"` | ❌ W0 | ⬜ pending |
-| QUAL-01 | T2-05, T2-08 | Native semantic structure and Arabic names; zero serious/critical axe violations on both routes | axe + browser DOM | `npx playwright test tests/article-journey.spec.ts -g "accessibility"` | ❌ W0 | ⬜ pending |
-| QUAL-02 | T2-03 | Keyboard activates every control, visible focus persists, and Tab/Shift+Tab do not trap | browser keyboard + manual | `npx playwright test tests/article-journey.spec.ts -g "keyboard"` | ❌ W0 | ⬜ pending |
-| QUAL-03 | — | Locked contrast, type, target sizes, reflow, and responsive behavior hold | axe/browser + manual zoom | `npx playwright test tests/article-journey.spec.ts -g "quality"` | ❌ W0 | ⬜ pending |
-| QUAL-04 | T2-06, T2-07 | Complete article and direct link survive disabled JS, blocked embed, and third-party-cookie failure | browser degraded mode | `npx playwright test tests/article-journey.spec.ts -g "degraded"` | ❌ W0 | ⬜ pending |
+| Requirement | Observable behavior | Automated command / manual evidence | Status |
+|---|---|---|---|
+| SITE-01 | Exact Arabic reader-facing chrome; rendered prose rejects unisolated Latin copy | `npx playwright test tests/article-journey.spec.ts -g "Arabic surface|bidi"` | green |
+| SITE-02 | `lang="ar"`, `dir="rtl"`, main/article semantics, ordered headings | `npx playwright test tests/article-journey.spec.ts -g "Arabic document semantics"` | green |
+| ART-01 | One h1, labelled summary, introduction, ordered body/conclusion, complete no-JS path | `npx playwright test tests/article-journey.spec.ts -g "complete text-first"` | green |
+| ART-02 | Readable single-column reflow at 320/390/768/1024/1440 without overflow | `npx playwright test tests/article-journey.spec.ts -g "reflow"`; native 200% evidence below | green |
+| ART-03 | Native isolation for dates, URLs, IDs, code, and Latin fragments | `npx playwright test tests/article-journey.spec.ts -g "bidi"`; bidi/diacritic evidence below | green |
+| ART-04 | Zero media request before intent; one focused encoded nocookie iframe, `hl=ar`, no autoplay/duplicate/layout shift | `npx playwright test tests/article-journey.spec.ts -g "intent-gated player"` | green |
+| ART-05 | Exact same-tab direct-video link survives no JS, blocked host, and construction failure | `npx playwright test tests/article-journey.spec.ts -g "direct YouTube|degraded player|complete text-first"` | green |
+| ART-06 | Registry facts once; optional units omitted whole; unsafe references/future public updates fail closed | `npm test`; `npx playwright test tests/article-journey.spec.ts -g "provenance"` | green |
+| ART-07 | Labelled `الخلاصة` uses validated summary and precedes authored content | `npx playwright test tests/article-journey.spec.ts -g "summary"` | green |
+| QUAL-01 | Native semantics/Arabic names and zero serious/critical in-scope axe findings | `npx playwright test tests/article-journey.spec.ts -g "accessibility|Arabic document semantics"`; tree evidence below | green |
+| QUAL-02 | Enter/Space activation, 44px controls, visible focus, traversal, no cross-origin trap | `npx playwright test tests/article-journey.spec.ts -g "keyboard|quality"`; focus evidence below | green |
+| QUAL-03 | Locked type, palette, focus, spacing, targets, responsive behavior, native 200% zoom | `npx playwright test tests/article-journey.spec.ts -g "quality|reflow"`; zoom evidence below | green |
+| QUAL-04 | Full article/action survive no JS, blocked host, construction failure, cookie restrictions | `npx playwright test tests/article-journey.spec.ts -g "degraded|complete text-first|intent-gated"`; manual evidence below | green |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠ flaky*
+Every browser behavior runs against both Markdown and approved MDX fixtures (13 × 2 = 26 cases).
 
----
+## Regression and Schema Boundaries
 
-## Required Automated Scenarios
+| Boundary | Failing-capable evidence | Result |
+|---|---|---|
+| Required fields, registries, dates, slugs, paths, collisions, drafts, YouTube IDs | native cases 1–39 and 53–57 | green |
+| Optional references | omitted/empty/valid plus malformed shape, label, protocol, URL, and credentials cases | green |
+| Future public update claims | public rejection plus preserved future-draft behavior | green |
+| Restricted MDX | approved component plus rejected ESM, script/iframe, expressions, attributes, unsafe links, unknown components | green |
+| Public enumeration | production `getPublicArticles()` path; exactly two routes; draft absent | green |
+| Player/DOM trust boundary | validated ID, hardcoded encoded hosts, one-shot activation, property assignment, static error, no HTML sinks | green |
 
-1. Extend `tests/content-contract.test.ts` for absent, empty, malformed, and valid reference data. Reject blank/non-Arabic-facing labels plus relative, HTTP, JavaScript, malformed, credential-bearing, or otherwise non-HTTPS destinations without weakening the existing 55 Phase 1 checks.
-2. Build both public proof routes and assert the production draft output remains absent.
-3. On Markdown and approved MDX routes, assert Arabic document semantics, one h1, ordered headings, visible facts, labelled summary, body/conclusion, Arabic media copy, direct link, and no initial iframe.
-4. Put `updatedAt` and references on one public proof record and omit them on the other; prove the optional units appear once only when declared.
-5. Record requests for YouTube-family hosts; require zero before activation, then exactly one labelled `www.youtube-nocookie.com` iframe with encoded validated ID and no `autoplay=1` after one activation. Repeated activation must not duplicate it.
-6. Run one browser context with `javaScriptEnabled: false` and another with `youtube-nocookie.com` aborted; both retain the full article and exact permanent direct link.
-7. Force iframe construction failure before the page script runs; activation exposes the specified Arabic `role="status"` error while the direct link stays unchanged.
-8. At 320, 390, 768, 1024, and 1440 CSS pixels, assert document `scrollWidth <= clientWidth`, body font size is at least 16px, standalone controls are at least 44px, and no authored content is hidden or truncated.
-9. Run `AxeBuilder` on both local routes before activation and fail on serious/critical violations; the third-party iframe is not counted as proof of local accessibility.
-10. Assert Playwright output paths resolve beneath `.artifacts/` and no browser artifact appears in source or `.planning`.
+## Manual-Only Gates
 
----
+Completed in genuine Chrome under `.artifacts/hercules-visual-qa/phase-02-plan-04-final/20260826-211123-phase-02-plan-04-final-127.0.0.1-4321/`:
 
-## Wave 0 Requirements
+| Gate | Requirements | Evidence | Result |
+|---|---|---|---|
+| Native browser 200% zoom | ART-02, QUAL-03 | `screenshots/markdown-200-percent-browser.png`, report, structured results | pass |
+| Arabic bidi and diacritics | ART-03 | inspected mobile/desktop/zoom screenshots | pass |
+| Accessibility-tree order and Arabic names | QUAL-01 | `logs/chrome-devtools-results.json`, report | pass |
+| Live cross-origin Tab/Shift+Tab escape | QUAL-02 | report records forward/backward escape and visible focus boundary | pass |
+| Third-party cookies and blocked embed | QUAL-04 | `screenshots/third-party-cookies-blocked.png`, resilience matrix | pass |
+| Human pre-intent DOM/network inspection | ART-04, QUAL-04 | report records local document/CSS only and no YouTube-family asset/request | pass |
 
-- [ ] Select the exact Node 24.19.0 runtime and npm 11.17.0 before changing dependencies.
-- [ ] Install exact dev packages `@playwright/test@1.62.1` and `@axe-core/playwright@4.13.0`, then install the matching Chromium browser.
-- [ ] Create `playwright.config.ts` with production-build preview, Chromium, `tests/**/*.spec.ts`, `baseURL: http://127.0.0.1:4321`, and all outputs under `.artifacts/`.
-- [ ] Create `tests/article-journey.spec.ts` with vertical Markdown/MDX, accessibility, network, degraded-mode, keyboard, and reflow scenarios.
-- [ ] Extend `tests/content-contract.test.ts` for structured HTTPS references without weakening the Phase 1 matrix.
-- [ ] Add `preview` and `test:browser` package scripts and extend `verify` only after the production build can feed the browser suite.
-- [x] `.artifacts/` is already ignored; do not create a second browser-output directory.
+The proof video may show an external unavailable state. Production playback is intentionally deferred; the local privacy boundary, shell, and permanent direct link remain verified.
 
----
+## Artifact and Drift Audit
 
-## Manual-Only Verifications
+| Claim | Result |
+|---|---|
+| Final Hercules report exists at the recorded path | green |
+| `.artifacts/` is ignored; Playwright output/report/snapshots resolve there; zero stray artifacts | green |
+| Live build contains exactly two public `index.html` files and no draft output | green |
+| `02-REVIEW.md` is clean after the future-update fix | green |
+| `02-UI-REVIEW.md` is 24/24 with no remaining in-scope fix | green |
+| `02-SECURITY.md` is secured: 11/11 threats closed, 0 open | green |
+| Implementation files modified by this audit | none |
+| Genuine new automated gap | none |
 
-| Behavior | Requirement | Why Manual | Test Instructions |
-|----------|-------------|------------|-------------------|
-| Real 200% browser zoom reflow | ART-02, QUAL-03 | CSS viewport emulation does not reproduce browser zoom and text-resize behavior reliably | At 200% browser zoom, inspect both public routes for no page-level horizontal scroll, clipping, overlap, or unusable controls. |
-| Arabic diacritics and bidi visual order | ART-03 | DOM direction assertions cannot prove glyph order or diacritic clipping | Inspect representative HTTPS URL, YouTube ID, Arabic/ASCII digits, punctuation, date, and diacritics at mobile and desktop widths. |
-| Accessibility-tree reading order and names | QUAL-01 | Automated rules do not prove Arabic screen-reader naming and logical order | Inspect document → main → article → headings → direct link → activation button → inserted iframe in the browser accessibility tree. |
-| Bidirectional keyboard escape around inserted iframe | QUAL-02 | Focus inside a third-party cross-origin iframe needs human keyboard confirmation | Tab and Shift+Tab through the page before and after activation; confirm visible focus and escape in both directions with no trap. |
-| Third-party cookie and embed failure resilience | QUAL-04 | Browser/privacy controls and actual third-party player behavior vary | Block third-party cookies, then block `youtube-nocookie.com`; confirm the text and direct action remain complete and usable. |
-| No eager third-party media | ART-04, QUAL-04 | A human network/HTML inspection catches remote posters, preconnects, and non-obvious eager assets | Before activation inspect built HTML and network for no iframe, YouTube script, preconnect, poster, `ytimg`, or other YouTube-family request. |
+## Runtime Advisory
 
----
+### Non-blocking — bare PATH selects an older host runtime
 
-## Security Gates
+Bare PATH currently resolves to Node `v24.8.0` and npm `11.12.1`; do not use those binaries for the exact project gate. Select Node `v24.19.0` / npm `11.17.0` explicitly. The fresh pinned-runtime `npm run verify` already passed at the current source state, so no runtime-freshness gap remains.
 
-- **T2-01:** Block if reference validation accepts relative, non-HTTPS, credential-bearing, or unparsable destinations.
-- **T2-02/T2-03:** Block if a content-authored full embed URL is accepted, the 11-character video ID rule weakens, the iframe host is not hardcoded, the ID is not encoded, or repeat activation creates duplicates.
-- **T2-05/T2-08:** Block if the MDX preflight/allowlist weakens or player/error rendering uses `innerHTML`/`insertAdjacentHTML`.
-- **T2-06:** Block if the production route bypasses `getPublicArticles()` or the draft path appears in production output.
-- **T2-07:** Block if initial load makes any YouTube-family request, including iframe, script, preconnect, poster, thumbnail, or media asset.
-- Do not pull CSP, hosting headers, analytics consent, production domains, or deployment policy into Phase 2.
+No blocker, skipped requirement, flaky test, implementation bug, or unverified Phase 2 behavior was found.
 
----
+## Sign-Off
 
-## Validation Sign-Off
+- [x] All 13 requirements map to behavioral automation and, where necessary, retained manual evidence.
+- [x] Every automated test was executed in this audit.
+- [x] Native tests, diagnostics, build, and browser suite are green.
+- [x] Exactly two public routes build and the draft is absent.
+- [x] Manual-only Chrome gates are evidenced rather than simulated.
+- [x] Browser artifacts stay exclusively under ignored `.artifacts/`.
+- [x] No implementation file was modified and no new test was warranted.
 
-- [ ] Every implementation task has an automated verify command or an explicit Wave 0 dependency.
-- [ ] Sampling continuity: no three consecutive tasks lack automated verification.
-- [ ] Wave 0 creates every missing config, browser test, and test dependency listed above.
-- [ ] No watch-mode flag appears in any verification command.
-- [ ] Browser artifacts remain exclusively under ignored `.artifacts/`.
-- [ ] Full local feedback latency stays below 120 seconds or focused commands are used per task.
-- [ ] All manual-only gates are recorded before phase verification.
-- [ ] `wave_0_complete: true` and `nyquist_compliant: true` are set after the planned infrastructure and task coverage are proven.
-
-**Approval:** pending implementation and phase verification
+**Approval:** Phase 2 Nyquist validation complete. The exact-runtime composite gate is fresh and green; the bare-PATH selection note is advisory only.
