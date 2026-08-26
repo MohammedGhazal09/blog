@@ -311,7 +311,7 @@ const formatDate = (date: string) =>
   }
 
   article :global([data-video-activate]:focus-visible),
-  article :global(.video-region iframe:focus-visible) {
+  article :global(.video-region:has(iframe):focus-within) {
     outline: 3px solid #166534;
     outline-offset: 3px;
   }

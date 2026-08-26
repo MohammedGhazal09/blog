@@ -51,9 +51,7 @@ const iframeTitle = `فيديو المقال: ${title}`;
 
           const iframe = document.createElement("iframe");
           iframe.title = title;
-          iframe.src =
-            "https://www.youtube-nocookie.com/embed/" +
-            encodeURIComponent(id);
+          iframe.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?hl=ar`;
           iframe.allowFullscreen = true;
           button.replaceWith(iframe);
           iframe.focus();

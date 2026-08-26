@@ -261,6 +261,7 @@ for (const fixture of articles) {
       const iframeUrl = new URL((await iframe.getAttribute("src"))!);
       expect(iframeUrl.hostname).toBe("www.youtube-nocookie.com");
       expect(iframeUrl.pathname).toBe("/embed/dQw4w9WgXcQ");
+      expect(iframeUrl.searchParams.get("hl")).toBe("ar");
       expect(iframeUrl.searchParams.get("autoplay")).not.toBe("1");
       await expect(iframe).toBeFocused();
 
@@ -461,6 +462,22 @@ for (const fixture of articles) {
         await page.keyboard.press(key);
         const iframe = region.locator("iframe");
         await expect(iframe).toBeFocused();
+        expect(
+          await region.evaluate((node) => {
+            const style = getComputedStyle(node);
+            return {
+              color: style.outlineColor,
+              style: style.outlineStyle,
+              width: style.outlineWidth,
+              offset: style.outlineOffset,
+            };
+          }),
+        ).toEqual({
+          color: "rgb(22, 101, 52)",
+          style: "solid",
+          width: "3px",
+          offset: "3px",
+        });
         await page.keyboard.press("Tab");
         await expect(directLink).toBeFocused();
         const linkBox = await directLink.boundingBox();
