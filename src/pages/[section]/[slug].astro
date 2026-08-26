@@ -1,0 +1,36 @@
+---
+import { render } from "astro:content";
+
+import { getPreviewArticles, getPublicArticles } from "../../lib/articles.ts";
+import { pathParamsFor } from "../../lib/content-contract.ts";
+
+export async function getStaticPaths() {
+  const articles = import.meta.env.DEV
+    ? await getPreviewArticles()
+    : await getPublicArticles();
+
+  return articles.map((article) => ({
+    params: pathParamsFor(article),
+    props: { article },
+  }));
+}
+
+const { article } = Astro.props;
+const { Content } = await render(article);
+---
+
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <main>
+      <article>
+        <h1>{article.data.title}</h1>
+        <p>{article.data.summary}</p>
+        <Content />
+      </article>
+    </main>
+  </body>
+</html>
