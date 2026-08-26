@@ -28,7 +28,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
   3. Draft records are excluded from public content queries, and MDX cannot use components, scripts, or iframe sources outside the small approved set.
   4. The owner can add a future primary section through the central section and content configuration without creating a separate application or rewriting the article model.
 
-**Plans:** 0/3 plans executed
+**Plans:** 1/3 plans executed
 **UI hint:** yes
 
 ### Phase 2: Complete Arabic Article Journey
@@ -116,7 +116,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Content and URL Contract | 0/3 | Planned    |  |
+| 1. Content and URL Contract | 1/3 | In Progress|  |
 | 2. Complete Arabic Article Journey | 0/TBD | Not started | - |
 | 3. Real Content and Section Discovery | 0/TBD | Not started | - |
 | 4. Search Discovery Integrity | 0/TBD | Not started | - |

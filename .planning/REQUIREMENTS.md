@@ -28,7 +28,7 @@ Requirements for the first production release. Each requirement will map to exac
 
 ### SEO and Discovery
 
-- [ ] **SEO-01**: Every published article has an explicit, stable, clean Arabic URL slug that is not silently regenerated when its title changes.
+- [x] **SEO-01**: Every published article has an explicit, stable, clean Arabic URL slug that is not silently regenerated when its title changes.
 - [ ] **SEO-02**: Every indexable page has a unique descriptive Arabic page title, meta description, and single clear primary heading.
 - [ ] **SEO-03**: Every indexable page emits a self-consistent canonical URL and accurate social-sharing metadata derived from the configured production origin.
 - [ ] **SEO-04**: Search crawlers can reach every published article through ordinary HTML links, while drafts and non-public content remain absent from public routes and discovery output.
@@ -37,12 +37,12 @@ Requirements for the first production release. Each requirement will map to exac
 
 ### File-Based Publishing
 
-- [ ] **PUB-01**: The owner can create or edit an article as Markdown/MDX and preview the same content model locally before publication.
-- [ ] **PUB-02**: The production build rejects articles with missing or invalid title, description, section, slug, author, date, draft state, or YouTube identifier fields.
-- [ ] **PUB-03**: The production build rejects duplicate public routes, non-normalized slugs, and unsafe control or bidirectional characters in URL identifiers.
-- [ ] **PUB-04**: An article marked as a draft cannot appear in production routes, indexes, metadata, or the sitemap.
+- [x] **PUB-01**: The owner can create or edit an article as Markdown/MDX and preview the same content model locally before publication.
+- [x] **PUB-02**: The production build rejects articles with missing or invalid title, description, section, slug, author, date, draft state, or YouTube identifier fields.
+- [x] **PUB-03**: The production build rejects duplicate public routes, non-normalized slugs, and unsafe control or bidirectional characters in URL identifiers.
+- [x] **PUB-04**: An article marked as a draft cannot appear in production routes, indexes, metadata, or the sitemap.
 - [ ] **PUB-05**: MDX content can use only the small approved component set and cannot introduce arbitrary scripts or unreviewed iframe sources.
-- [ ] **PUB-06**: A future primary section can be added through the central section/content configuration without creating a separate application or rewriting existing article layouts.
+- [x] **PUB-06**: A future primary section can be added through the central section/content configuration without creating a separate application or rewriting existing article layouts.
 
 ### Content and Editorial Trust
 
@@ -129,18 +129,18 @@ Explicit exclusions prevent scope creep during v1.
 | ART-05 | Phase 2 | Pending |
 | ART-06 | Phase 2 | Pending |
 | ART-07 | Phase 2 | Pending |
-| SEO-01 | Phase 1 | Pending |
+| SEO-01 | Phase 1 | Complete |
 | SEO-02 | Phase 4 | Pending |
 | SEO-03 | Phase 4 | Pending |
 | SEO-04 | Phase 4 | Pending |
 | SEO-05 | Phase 4 | Pending |
 | SEO-06 | Phase 5 | Pending |
-| PUB-01 | Phase 1 | Pending |
-| PUB-02 | Phase 1 | Pending |
-| PUB-03 | Phase 1 | Pending |
-| PUB-04 | Phase 1 | Pending |
+| PUB-01 | Phase 1 | Complete |
+| PUB-02 | Phase 1 | Complete |
+| PUB-03 | Phase 1 | Complete |
+| PUB-04 | Phase 1 | Complete |
 | PUB-05 | Phase 1 | Pending |
-| PUB-06 | Phase 1 | Pending |
+| PUB-06 | Phase 1 | Complete |
 | CONT-01 | Phase 3 | Pending |
 | CONT-02 | Phase 3 | Pending |
 | CONT-03 | Phase 3 | Pending |
