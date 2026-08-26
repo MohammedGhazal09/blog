@@ -6,7 +6,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 
 ## Phases
 
-- [ ] **Phase 1: Content and URL Contract** - The owner can maintain validated Markdown/MDX content with stable public identities.
+- [ ] **Phase 1: Content and URL Contract** - The owner can maintain validated Markdown/MDX content with stable public identities. (implementation 3/3; awaiting review and verification)
 - [ ] **Phase 2: Complete Arabic Article Journey** - A reader can consume one accessible RTL article and continue to its matching YouTube content.
 - [ ] **Phase 3: Real Content and Section Discovery** - Visitors can discover truthful launch content across the homepage and all three primary sections.
 - [ ] **Phase 4: Search Discovery Integrity** - Every public route presents one consistent, crawlable identity to readers and search engines.
@@ -28,7 +28,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
   3. Draft records are excluded from public content queries, and MDX cannot use components, scripts, or iframe sources outside the small approved set.
   4. The owner can add a future primary section through the central section and content configuration without creating a separate application or rewriting the article model.
 
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans implemented; awaiting review and verification
 **UI hint:** yes
 
 ### Phase 2: Complete Arabic Article Journey
@@ -116,7 +116,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Content and URL Contract | 2/3 | In Progress |  |
+| 1. Content and URL Contract | 3/3 | Awaiting review/verification | - |
 | 2. Complete Arabic Article Journey | 0/TBD | Not started | - |
 | 3. Real Content and Section Discovery | 0/TBD | Not started | - |
 | 4. Search Discovery Integrity | 0/TBD | Not started | - |
