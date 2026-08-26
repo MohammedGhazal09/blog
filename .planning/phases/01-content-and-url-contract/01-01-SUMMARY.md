@@ -33,6 +33,7 @@ key-decisions:
   - "Keep article identity explicit and title-independent through validated Arabic section and article slugs."
   - "Use the identical final route family for development draft preview while excluding drafts from every production query."
   - "Declare UTF-8 directly in the proof route so Arabic renders correctly before the shared metadata system arrives in Phase 4."
+  - "Declare the native responsive viewport in the proof route so mobile browsers use device width before Phase 2 styling arrives."
 
 patterns-established:
   - "Content boundary: one mixed Markdown/MDX collection delegates semantic policy to pure production validators."
@@ -64,6 +65,7 @@ completed: 2026-08-26
 - Established one typed registry and pure validation contract for Arabic slugs, metadata, dates, YouTube IDs, unique paths, and draft visibility.
 - Rendered public Markdown through the final Arabic static route while keeping the valid draft available only on that same route in development.
 - Verified the generated public HTML contains correct Arabic content and no production scripts, while the draft route is absent from `dist`.
+- Corrected the proof route's mobile layout viewport after rendered QA exposed a 980px desktop-width fallback at 390px device width.
 
 ## Task Commits
 
@@ -109,14 +111,24 @@ Each task was committed atomically:
 - **Verification:** Browser checks reported `document.characterSet === "UTF-8"` and intact Arabic text at desktop, tablet, and mobile test sizes; the production HTML assertion also passed.
 - **Committed in:** `96abb96` (part of Task 3 commit)
 
+**2. [Rule 1 - Bug] Declared the responsive mobile viewport after rendered QA**
+
+- **Found during:** Post-execution Hercules visual QA
+- **Issue:** At a 390x844 emulated mobile viewport, the browser used a 980px layout viewport because the proof route omitted the viewport meta declaration.
+- **Fix:** Added `<meta name="viewport" content="width=device-width, initial-scale=1" />` beside the existing UTF-8 declaration.
+- **Files modified:** `src/pages/[section]/[slug].astro`
+- **Verification:** Chrome DevTools reported matching `innerWidth` and `scrollWidth` at 390, 768, 1366, and 1920 pixels; screenshots were visually reviewed. Exact Node 24.19.0/npm 11.17.0 `npm run verify` passed with 2 tests, zero Astro diagnostics, and one static page. The built route contains the viewport tag and no client script; the draft route remains absent.
+- **Evidence:** Ignored report at `.artifacts/hercules-visual-qa/20260826-145010-phase1-wave1-127.0.0.1-4321/qa-report.md`
+
 ---
 
-**Total deviations:** 1 auto-fixed (1 missing critical functionality)
-**Impact on plan:** The fix is required for correct Arabic rendering and does not expand the intended reader UI or SEO scope.
+**Total deviations:** 2 auto-fixed (1 missing critical functionality, 1 responsive-layout bug)
+**Impact on plan:** Both native document declarations are required for correct Arabic rendering and device-width behavior; neither expands the deferred reader UI or SEO scope.
 
 ## Issues Encountered
 
 - Browser verification initially exposed mojibake, resolved by the UTF-8 declaration above.
+- Rendered mobile verification exposed a 980px fallback layout viewport, resolved by the native viewport declaration above.
 - The development server requests `/favicon.ico` and receives 404; favicon work is outside this content-contract plan and does not affect production route correctness.
 
 ## Known Stubs
