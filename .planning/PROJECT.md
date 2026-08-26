@@ -15,6 +15,7 @@ Arabic search users can find a useful, relevant article on Google and continue d
 - ✓ Let the owner create and edit locally previewable Markdown/MDX articles without a CMS, authentication system, or database — Phase 1
 - ✓ Give every published article an explicit, stable, clean Arabic URL identity that does not change with its title — Phase 1
 - ✓ Let future primary sections reuse the central registry and content contract without an application or article-model rewrite — Phase 1
+- ✓ Deliver a complete accessible Arabic RTL article journey that remains readable and actionable without JavaScript or embedded media, with an intent-gated privacy-enhanced player and a permanent direct YouTube action — Phase 2
 
 ### Active
 
@@ -65,14 +66,18 @@ Arabic search users can find a useful, relevant article on Google and continue d
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Name the site مدونة أحمد المنجاوي | User-provided public identity | — Pending |
-| Publish through Markdown/MDX | Simplest lightweight workflow; avoids CMS, authentication, and database scope | — Pending |
-| Include an embedded player and a direct YouTube button on every article | Supports onsite viewing while preserving a clear path to the channel | — Pending |
+| Publish through Markdown/MDX | Simplest lightweight workflow; avoids CMS, authentication, and database scope | ✓ Good |
+| Include an embedded player and a direct YouTube button on every article | Supports onsite viewing while preserving a clear path to the channel | ✓ Good |
 | Define القسم العلمي as Islamic scholarship and structured religious lessons | Removes ambiguity with natural-science content | — Pending |
 | Write for the general Arabic-speaking public | Aligns content with broad search intent and minimal assumed knowledge | — Pending |
 | Launch production-ready with one real article per primary section | Validates the structure and publishing flow without blocking on full catalog migration | — Pending |
 | Use explicit, title-independent Arabic section and article slugs | Keeps public identities stable and makes collisions and unsafe Unicode fail at the shared boundary | ✓ Good |
 | Reuse final article routes for development draft preview while production exposes only public records | Avoids a second preview route or visibility option that could leak drafts | ✓ Good |
 | Restrict MDX before compilation through one approved component allowlist and render map | Preserves useful authoring without opening arbitrary executable or iframe surface | ✓ Good |
+| Keep the permanent same-tab YouTube action outside the replaceable player region | Preserves the complete article-to-video journey when JavaScript, cookies, iframe construction, or the embed host fails | ✓ Good |
+| Validate structured references once at the shared content boundary | Keeps public provenance descriptive, Arabic-facing, absolute-HTTPS, credential-free, and fail-closed without route-side repair | ✓ Good |
+| Create the YouTube iframe only after explicit reader intent from a validated ID | Avoids eager third-party requests and autoplay while keeping the host hardcoded to the privacy-enhanced origin | ✓ Good |
+| Keep visible focus on the local player boundary while focus is inside the cross-origin iframe | Preserves a clear keyboard focus indicator without a custom focus trap or extra ARIA layer | ✓ Good |
 
 ## Evolution
 
@@ -92,4 +97,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-26 after Phase 1*
+*Last updated: 2026-08-26 after Phase 2*

@@ -117,7 +117,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Content and URL Contract | 3/3 | Complete    | 2026-08-26 |
-| 2. Complete Arabic Article Journey | 4/4 | Complete   | 2026-08-26 |
+| 2. Complete Arabic Article Journey | 4/4 | Complete    | 2026-08-26 |
 | 3. Real Content and Section Discovery | 0/TBD | Not started | - |
 | 4. Search Discovery Integrity | 0/TBD | Not started | - |
 | 5. Deployment and Measurement | 0/TBD | Not started | - |
