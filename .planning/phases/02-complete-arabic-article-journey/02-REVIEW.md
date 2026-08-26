@@ -1,6 +1,6 @@
 ---
 phase: 02-complete-arabic-article-journey
-reviewed: 2026-08-26T18:52:05Z
+reviewed: 2026-08-26T19:07:16Z
 depth: standard
 files_reviewed: 11
 files_reviewed_list:
@@ -16,63 +16,42 @@ files_reviewed_list:
   - tests/article-journey.spec.ts
   - tests/content-contract.test.ts
 findings:
-  critical: 1
-  warning: 1
+  critical: 0
+  warning: 0
   info: 0
-  total: 2
-status: issues_found
+  total: 0
+status: clean
 ---
 
 # Phase 2: Code Review Report
 
-**Reviewed:** 2026-08-26T18:52:05Z
+**Reviewed:** 2026-08-26T19:07:16Z
 **Depth:** standard
 **Files Reviewed:** 11
-**Status:** issues_found
+**Status:** clean
 
 ## Summary
 
-The eleven scoped files were reviewed statically, with the shared content-validation path traced through `src/content.config.ts`, `src/lib/articles.ts`, and the final article route. One blocker allows a public article to render a future update date as a truthful provenance fact. The browser suite also omits the phase's explicit 200% zoom gate, leaving a required reflow mode unverified.
+The eleven scoped files were re-reviewed at standard depth after commit `97991bd`. The shared validation path was retraced through `src/content.config.ts`, `src/lib/articles.ts`, and the final article route. The prior blocker is fixed with focused regression coverage, and the prior zoom warning is dismissed by genuine native Chrome 200% evidence. No correctness, security, or maintainability findings remain in the reviewed scope.
+
+All reviewed files meet quality standards. No issues found.
 
 ## Narrative Findings (AI reviewer)
 
-## Critical Issues
+No active findings.
 
-### CR-01: [BLOCKER] Public articles can claim a future update date
+## Review History
 
-**File:** `W:\Mangawy\src\lib\content-contract.ts:196-204`
+### CR-01: Resolved — future public update dates
 
-**Affected sink:** `W:\Mangawy\src\pages\[section]\[slug].astro:65-70`
+Commit `97991bd` validates `draft` before date-state rules and rejects `updatedAt > today` only for public records. `tests/content-contract.test.ts` now proves both the rejected public case and the preserved future publication/update behavior for drafts. The post-fix exact-runtime gate passed 69/69 Node tests, zero Astro diagnostics, exactly two public production routes with the draft absent, and 26/26 Chromium cases.
 
-**Issue:** `validateArticleData()` rejects a future `publishedAt` for public records, but only checks that `updatedAt` is a real date and is not earlier than publication. A record with `draft: false`, `publishedAt: "2026-08-01"`, and `updatedAt: "2026-08-27"` passes when `today` is `2026-08-26`. The content schema calls this validator for every collection entry, and the route then renders the future value under `حُدّثت المادة في`. This violates the locked requirement that visible publication/update facts be truthful.
+### WR-01: Dismissed — native 200% zoom evidence already existed
 
-**Fix:** Validate `draft` before the date-state rules, then reject a future update on public records and add the missing regression case to `tests/content-contract.test.ts`.
-
-```typescript
-if (typeof data.draft !== "boolean")
-  fail(`${source}.draft`, "must be an explicit boolean");
-
-if (data.updatedAt !== undefined) {
-  assertDateOnly(data.updatedAt, source, "updatedAt");
-  if (data.updatedAt < data.publishedAt)
-    fail(`${source}.updatedAt`, "must not be earlier than publishedAt");
-  if (!data.draft && data.updatedAt > today)
-    fail(`${source}.updatedAt`, "public articles cannot claim a future update");
-}
-```
-
-## Warnings
-
-### WR-01: [WARNING] The required 200% zoom reflow mode is never exercised
-
-**File:** `W:\Mangawy\tests\article-journey.spec.ts:638-714`
-
-**Issue:** The reflow test iterates the five locked CSS viewport widths, but it never applies or verifies 200% browser zoom. Phase 2 explicitly requires both the width matrix and a 200% zoom pass. A regression that only appears when text and controls are magnified can therefore ship while `npm run verify` remains green; the current assertions prove ordinary viewport resizing only.
-
-**Fix:** Add one dedicated 200% zoom scenario for both Markdown and MDX routes using the project's Chromium/DevTools test backend. At that zoom level, repeat the existing no-horizontal-overflow assertion and verify that every readable node and standalone control remains visible, contained, and keyboard reachable. Keep any screenshots/traces under `.artifacts/playwright/` through the existing Playwright configuration.
+The original warning incorrectly treated absence from the Playwright suite as absence of verification. The final Hercules report records genuine native Chrome 200% zoom for the public article routes, with inspected screenshot evidence and no clipping, overflow, overlap, Arabic-joining, bidi, or diacritic defect. CSS `zoom` or viewport scaling would not be an equivalent substitute, so no source/test change is warranted.
 
 ---
 
-_Reviewed: 2026-08-26T18:52:05Z_
+_Reviewed: 2026-08-26T19:07:16Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
