@@ -50,7 +50,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 
 ### Phase 3: Real Content and Section Discovery
 
-**Goal:** Visitors can discover substantive, human-reviewed launch content through the homepage, three section indexes, and truthful author context.
+**Goal:** As a visitor, I want to discover substantive, human-reviewed launch content through the homepage, three section indexes, and truthful author context, so that I can find relevant material and understand who published it.
 **Mode:** mvp
 **Depends on:** Phase 2
 **Requirements:** SITE-03, SITE-04, SITE-05, CONT-01, CONT-02, CONT-03
