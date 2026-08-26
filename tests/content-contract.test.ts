@@ -211,6 +211,118 @@ for (const [name, data, field, rule] of semanticFailures) {
   });
 }
 
+test("accepts omitted, empty, and valid structured references", () => {
+  const referenceSets = [
+    undefined,
+    [],
+    [
+      {
+        label: "مرجع عربي موثوق",
+        url: "https://example.com/reference",
+      },
+    ],
+  ] as const;
+
+  for (const references of referenceSets) {
+    const data = { ...validData, references } as ArticleData;
+    assert.doesNotThrow(() =>
+      validateArticleData(data, "article:valid-references", {
+        today: fixedToday,
+      }),
+    );
+  }
+});
+
+test("rejects non-array references with source and field diagnostics", () => {
+  const data = {
+    ...validData,
+    references: "مرجع غير منظم",
+  } as unknown as ArticleData;
+
+  assertDiagnostic(
+    () =>
+      validateArticleData(data, "article:non-array-references", {
+        today: fixedToday,
+      }),
+    ["article:non-array-references\\.references", "array"],
+  );
+});
+
+for (const [name, entry] of [
+  ["null", null],
+  ["string", "مرجع"],
+  ["array", []],
+] as const) {
+  test(`rejects ${name} reference entries with source and index diagnostics`, () => {
+    const data = { ...validData, references: [entry] } as unknown as ArticleData;
+    assertDiagnostic(
+      () =>
+        validateArticleData(data, `article:${name}-reference`, {
+          today: fixedToday,
+        }),
+      [`article:${name}-reference\\.references\\.0`, "object"],
+    );
+  });
+}
+
+for (const [name, reference, field, rule] of [
+  [
+    "blank label",
+    { label: "   ", url: "https://example.com/reference" },
+    "label",
+    "non-empty string",
+  ],
+  [
+    "Latin-only label",
+    { label: "Reference", url: "https://example.com/reference" },
+    "label",
+    "Arabic-facing",
+  ],
+  [
+    "missing URL",
+    { label: "مرجع عربي", url: undefined },
+    "url",
+    "non-empty string",
+  ],
+] as const) {
+  test(`rejects ${name} with source, index, field, and rule`, () => {
+    const data = {
+      ...validData,
+      references: [reference],
+    } as unknown as ArticleData;
+    assertDiagnostic(
+      () =>
+        validateArticleData(data, `article:${name}`, { today: fixedToday }),
+      [`article:${name}\\.references\\.0\\.${field}`, rule],
+    );
+  });
+}
+
+for (const [name, url] of [
+  ["malformed", "not a URL"],
+  ["relative", "/reference"],
+  ["HTTP", "http://example.com/reference"],
+  ["JavaScript", "javascript:alert(1)"],
+  ["credentials", "https://user:password@example.com/reference"],
+] as const) {
+  test(`rejects ${name} reference URLs with source, index, field, and rule`, () => {
+    const data = {
+      ...validData,
+      references: [{ label: "مرجع عربي", url }],
+    } as unknown as ArticleData;
+    assertDiagnostic(
+      () =>
+        validateArticleData(data, `article:${name}-reference-url`, {
+          today: fixedToday,
+        }),
+      [
+        `article:${name}-reference-url\\.references\\.0\\.url`,
+        "absolute HTTPS URL without credentials",
+      ],
+    );
+  });
+}
+
 test("future publication is allowed only while the record remains a draft", () => {
   const futureDraft = article({ publishedAt: "2026-08-27", draft: true });
   assert.doesNotThrow(() =>
