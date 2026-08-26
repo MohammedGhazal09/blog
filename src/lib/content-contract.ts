@@ -5,6 +5,11 @@ import {
   type SectionRecord,
 } from "../config/registries.ts";
 
+export type ArticleReference = {
+  label: string;
+  url: string;
+};
+
 export type ArticleData = {
   title: string;
   description: string;
@@ -16,6 +21,7 @@ export type ArticleData = {
   updatedAt?: string;
   draft: boolean;
   youtubeId: string;
+  references?: readonly ArticleReference[];
 };
 
 export type ArticleRecord = {
@@ -203,6 +209,42 @@ export function validateArticleData(
   }
   if (typeof data.youtubeId !== "string" || !YOUTUBE_ID.test(data.youtubeId)) {
     fail(`${source}.youtubeId`, "must be an 11-character YouTube video ID");
+  }
+
+  if (data.references === undefined) return;
+  if (!Array.isArray(data.references)) {
+    fail(`${source}.references`, "must be an array");
+  }
+
+  for (const [index, reference] of data.references.entries()) {
+    const location = `${source}.references.${index}`;
+    if (
+      reference === null ||
+      typeof reference !== "object" ||
+      Array.isArray(reference)
+    ) {
+      fail(location, "must be an object with label and url fields");
+    }
+
+    assertNonEmpty(reference.label, source, `references.${index}.label`);
+    if (![...reference.label].some(isArabicLetter)) {
+      fail(`${location}.label`, "must be Arabic-facing");
+    }
+
+    assertNonEmpty(reference.url, source, `references.${index}.url`);
+    const destination = URL.parse(reference.url);
+    if (
+      !destination ||
+      destination.protocol !== "https:" ||
+      !destination.hostname ||
+      destination.username !== "" ||
+      destination.password !== ""
+    ) {
+      fail(
+        `${location}.url`,
+        "must be an absolute HTTPS URL without credentials",
+      );
+    }
   }
 }
 

@@ -20,6 +20,9 @@ const articles = defineCollection({
       updatedAt: z.string().optional(),
       draft: z.boolean(),
       youtubeId: z.string(),
+      references: z
+        .array(z.object({ label: nonEmpty, url: nonEmpty }).strict())
+        .optional(),
     })
     .superRefine((data, context) => {
       try {

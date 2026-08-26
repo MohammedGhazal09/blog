@@ -79,6 +79,20 @@ const formatDate = (date: string) =>
           <p>{article.data.summary}</p>
         </section>
         <Content components={mdxComponents} />
+        {
+          article.data.references?.length ? (
+            <section class="article-references">
+              <h2>المراجع</h2>
+              <ul>
+                {article.data.references.map((reference) => (
+                  <li>
+                    <a href={reference.url}>{reference.label}</a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null
+        }
         <YouTubePlayer
           youtubeId={article.data.youtubeId}
           title={article.data.title}
@@ -236,6 +250,14 @@ const formatDate = (date: string) =>
     direction: ltr;
     font-family: inherit;
     unicode-bidi: isolate;
+  }
+
+  .article-references {
+    margin-block-start: 48px;
+  }
+
+  .article-references h2 {
+    margin-block-start: 0;
   }
 
   article :global(.media-continuation) {

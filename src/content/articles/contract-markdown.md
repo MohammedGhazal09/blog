@@ -6,8 +6,12 @@ section: "generalIssues"
 author: "ahmedElMangawy"
 slug: "اختبار-عقد-المحتوى"
 publishedAt: "2026-08-01"
+updatedAt: "2026-08-15"
 draft: false
 youtubeId: "dQw4w9WgXcQ"
+references:
+  - label: "مرجع اختبار تقني آمن"
+    url: "https://example.com/reference"
 ---
 
 تبدأ هذه المادة بمقدمة عربية كاملة تشرح غرض سجل الاختبار للقارئ.
