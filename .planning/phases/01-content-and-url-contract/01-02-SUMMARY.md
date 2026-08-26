@@ -117,14 +117,24 @@ Each task was committed atomically:
 - **Committed in:** `04a3d14`
 - **Evidence:** Ignored report at `.artifacts/hercules-visual-qa/20260826-151651-plan-01-02-127.0.0.1-4321/qa-report.md`
 
+**3. [Rule 1 - Bug] Preserved the label/content word boundary in the approved component**
+
+- **Found during:** Independent post-execution Hercules visual QA
+- **Issue:** The component's bold label and slotted sentence rendered without a space (`المحتوى:يُعرض`) because formatting whitespace between Astro elements was collapsed.
+- **Fix:** Added one explicit ordinary space between `<strong>` and `<slot />` in the shared `ContractNote` component.
+- **Files modified:** `src/components/ContractNote.astro`
+- **Verification:** Exact-runtime `npm run verify` passed 11/11 tests, zero Astro diagnostics, and two static routes. Chrome DevTools MCP confirmed the corrected `textContent`/`innerText`, HTTP 200, Arabic RTL semantics, and no overflow at 390px and 768px; both screenshots were visually reviewed.
+- **Evidence:** Ignored report at `.artifacts/hercules-visual-qa/20260826-151651-plan-01-02-127.0.0.1-4321/qa-report.md`
+
 ---
 
-**Total deviations:** 2 auto-fixed (1 blocking integration issue, 1 reader-facing language bug)
-**Impact on plan:** Both fixes preserved the locked dependency and Phase 1 UI boundaries; no scope or runtime surface was added.
+**Total deviations:** 3 auto-fixed (1 blocking integration issue, 2 reader-facing presentation bugs)
+**Impact on plan:** All fixes preserved the locked dependency and Phase 1 UI boundaries; no scope or runtime surface was added.
 
 ## Issues Encountered
 
 - Browser QA initially reached a stale Astro process and returned a 404. The stale process was stopped and the current checkout was served before evidence was accepted.
+- Independent browser review found the approved component's label joined to its content; the shared component boundary now emits an explicit breakable space.
 - A Chrome profile created inside ignored `.artifacts` caused Vite file watching to hit a locked cookie file. Evidence remained in `.artifacts`, while the disposable browser profile was moved outside the watched repository for the final run.
 - The browser requested `/favicon.ico` and received 404; favicon work remains outside this content-contract plan.
 - `roadmap.update-plan-progress` reported `2/3` and `In Progress` but left the file at `1/3`; the two Phase 1 counters were updated directly without marking the phase complete.
@@ -144,6 +154,7 @@ None - no external service configuration required.
 - Generated MDX route contains `ملاحظة اختبار عقد المحتوى` and zero production `<script>` tags.
 - Existing Markdown output remains present, the draft output remains absent, and the responsive viewport declaration is preserved.
 - Browser QA passed the required MDX route at four responsive widths with correct Arabic RTL semantics and no horizontal overflow.
+- Post-fix live DOM and screenshot checks confirmed a readable space between the approved component's label and content at mobile and tablet widths.
 
 ## Next Phase Readiness
 
