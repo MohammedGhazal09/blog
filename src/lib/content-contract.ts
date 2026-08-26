@@ -36,7 +36,8 @@ const ASCII_KEY = /^[A-Za-z][A-Za-z0-9]*$/;
 const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
 const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 const DIGIT = /^[0-9\u0660-\u0669\u06F0-\u06F9]$/u;
-const ARABIC_MARK = /^[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u08D3-\u08FF]$/u;
+const ARABIC_MARK =
+  /^[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u08D3-\u08FF]$/u;
 
 function fail(location: string, rule: string): never {
   throw new Error(`${location}: ${rule}`);
@@ -48,25 +49,41 @@ function isArabicLetter(character: string): boolean {
 
 function isAllowedSegment(segment: string): boolean {
   const characters = [...segment];
-  if (characters.length === 0 || (!isArabicLetter(characters[0]) && !DIGIT.test(characters[0]))) {
+  if (
+    characters.length === 0 ||
+    (!isArabicLetter(characters[0]) && !DIGIT.test(characters[0]))
+  ) {
     return false;
   }
 
   return characters.every(
-    (character) => isArabicLetter(character) || DIGIT.test(character) || ARABIC_MARK.test(character),
+    (character) =>
+      isArabicLetter(character) ||
+      DIGIT.test(character) ||
+      ARABIC_MARK.test(character),
   );
 }
 
-function assertNonEmpty(value: unknown, source: string, field: string): asserts value is string {
+function assertNonEmpty(
+  value: unknown,
+  source: string,
+  field: string,
+): asserts value is string {
   if (typeof value !== "string" || value.trim().length === 0) {
     fail(`${source}.${field}`, "must be a non-empty string");
   }
 }
 
-function assertDateOnly(value: unknown, source: string, field: string): asserts value is string {
-  if (typeof value !== "string") fail(`${source}.${field}`, "must be a YYYY-MM-DD string");
+function assertDateOnly(
+  value: unknown,
+  source: string,
+  field: string,
+): asserts value is string {
+  if (typeof value !== "string")
+    fail(`${source}.${field}`, "must be a YYYY-MM-DD string");
   const match = DATE_ONLY.exec(value);
-  if (!match) fail(`${source}.${field}`, "must use exact YYYY-MM-DD date-only syntax");
+  if (!match)
+    fail(`${source}.${field}`, "must use exact YYYY-MM-DD date-only syntax");
 
   const year = Number(match[1]);
   const month = Number(match[2]);
@@ -81,16 +98,26 @@ function assertDateOnly(value: unknown, source: string, field: string): asserts 
   }
 }
 
-export function assertCanonicalArabicSlug(value: string, location: string): void {
-  if (typeof value !== "string" || value.length === 0) fail(location, "slug must not be empty");
-  if (value.normalize("NFC") !== value) fail(location, "slug must already be Unicode NFC");
-  if (/\p{Cc}|\p{Cf}/u.test(value)) fail(location, "slug contains a control or format character");
-  if (/[\\/.%]/u.test(value)) fail(location, "slug contains an unsafe separator, dot, or escape form");
+export function assertCanonicalArabicSlug(
+  value: string,
+  location: string,
+): void {
+  if (typeof value !== "string" || value.length === 0)
+    fail(location, "slug must not be empty");
+  if (value.normalize("NFC") !== value)
+    fail(location, "slug must already be Unicode NFC");
+  if (/\p{Cc}|\p{Cf}/u.test(value))
+    fail(location, "slug contains a control or format character");
+  if (/[\\/.%]/u.test(value))
+    fail(location, "slug contains an unsafe separator, dot, or escape form");
   if (value.includes("--") || value.startsWith("-") || value.endsWith("-")) {
     fail(location, "slug must use single internal hyphen separators");
   }
   if (!value.split("-").every(isAllowedSegment)) {
-    fail(location, "slug must contain only Arabic letters/marks or Arabic/ASCII digits");
+    fail(
+      location,
+      "slug must contain only Arabic letters/marks or Arabic/ASCII digits",
+    );
   }
 }
 
@@ -102,25 +129,36 @@ export function assertRegistries(
   const slugs = new Map<string, string>();
 
   for (const [key, section] of Object.entries(sections)) {
-    if (!ASCII_KEY.test(key)) fail(`sections.${key}`, "registry key must be stable ASCII camel-case");
+    if (!ASCII_KEY.test(key))
+      fail(`sections.${key}`, "registry key must be stable ASCII camel-case");
     assertNonEmpty(section.label, `sections.${key}`, "label");
     assertNonEmpty(section.description, `sections.${key}`, "description");
     assertCanonicalArabicSlug(section.slug, `sections.${key}.slug`);
     if (!Number.isInteger(section.order) || section.order < 1) {
-      fail(`sections.${key}.order`, "navigation order must be a positive integer");
+      fail(
+        `sections.${key}.order`,
+        "navigation order must be a positive integer",
+      );
     }
     if (orders.has(section.order)) {
-      fail(`sections.${key}.order`, `navigation order collides with ${orders.get(section.order)}`);
+      fail(
+        `sections.${key}.order`,
+        `navigation order collides with ${orders.get(section.order)}`,
+      );
     }
     if (slugs.has(section.slug)) {
-      fail(`sections.${key}.slug`, `public slug collides with ${slugs.get(section.slug)}`);
+      fail(
+        `sections.${key}.slug`,
+        `public slug collides with ${slugs.get(section.slug)}`,
+      );
     }
     orders.set(section.order, key);
     slugs.set(section.slug, key);
   }
 
   for (const [key, author] of Object.entries(authors)) {
-    if (!ASCII_KEY.test(key)) fail(`authors.${key}`, "registry key must be stable ASCII camel-case");
+    if (!ASCII_KEY.test(key))
+      fail(`authors.${key}`, "registry key must be stable ASCII camel-case");
     assertNonEmpty(author.name, `authors.${key}`, "name");
   }
 }
@@ -141,8 +179,10 @@ export function validateArticleData(
   assertNonEmpty(data.section, source, "section");
   assertNonEmpty(data.author, source, "author");
   assertNonEmpty(data.slug, source, "slug");
-  if (!(data.section in sections)) fail(`${source}.section`, `unknown registry key: ${data.section}`);
-  if (!(data.author in authors)) fail(`${source}.author`, `unknown registry key: ${data.author}`);
+  if (!(data.section in sections))
+    fail(`${source}.section`, `unknown registry key: ${data.section}`);
+  if (!(data.author in authors))
+    fail(`${source}.author`, `unknown registry key: ${data.author}`);
   assertCanonicalArabicSlug(data.slug, `${source}.slug`);
   assertDateOnly(data.publishedAt, source, "publishedAt");
   assertDateOnly(today, source, "today");
@@ -153,9 +193,13 @@ export function validateArticleData(
       fail(`${source}.updatedAt`, "must not be earlier than publishedAt");
     }
   }
-  if (typeof data.draft !== "boolean") fail(`${source}.draft`, "must be an explicit boolean");
+  if (typeof data.draft !== "boolean")
+    fail(`${source}.draft`, "must be an explicit boolean");
   if (!data.draft && data.publishedAt > today) {
-    fail(`${source}.publishedAt`, "public articles cannot be scheduled in the future");
+    fail(
+      `${source}.publishedAt`,
+      "public articles cannot be scheduled in the future",
+    );
   }
   if (typeof data.youtubeId !== "string" || !YOUTUBE_ID.test(data.youtubeId)) {
     fail(`${source}.youtubeId`, "must be an 11-character YouTube video ID");
@@ -167,8 +211,15 @@ export function articlePath(
   sections: SectionRegistry = sectionRegistry,
 ): string {
   const section = sections[article.data.section];
-  if (!section) fail(`${article.id}.section`, `unknown registry key: ${article.data.section}`);
-  assertCanonicalArabicSlug(section.slug, `sections.${article.data.section}.slug`);
+  if (!section)
+    fail(
+      `${article.id}.section`,
+      `unknown registry key: ${article.data.section}`,
+    );
+  assertCanonicalArabicSlug(
+    section.slug,
+    `sections.${article.data.section}.slug`,
+  );
   assertCanonicalArabicSlug(article.data.slug, `${article.id}.slug`);
   return `/${section.slug}/${article.data.slug}/`;
 }
@@ -178,8 +229,15 @@ export function pathParamsFor(
   sections: SectionRegistry = sectionRegistry,
 ): { section: string; slug: string } {
   const section = sections[article.data.section];
-  if (!section) fail(`${article.id}.section`, `unknown registry key: ${article.data.section}`);
-  assertCanonicalArabicSlug(section.slug, `sections.${article.data.section}.slug`);
+  if (!section)
+    fail(
+      `${article.id}.section`,
+      `unknown registry key: ${article.data.section}`,
+    );
+  assertCanonicalArabicSlug(
+    section.slug,
+    `sections.${article.data.section}.slug`,
+  );
   assertCanonicalArabicSlug(article.data.slug, `${article.id}.slug`);
   return { section: section.slug, slug: article.data.slug };
 }
@@ -197,10 +255,23 @@ export function assertUniqueArticlePaths(
   }
 }
 
-export function selectPublicArticles<T extends ArticleRecord>(entries: readonly T[]): T[] {
+export function selectPublicArticles<T extends ArticleRecord>(
+  entries: readonly T[],
+): T[] {
   return entries.filter((entry) => entry.data.draft === false);
 }
 
 export function assertPreviewMode(isDevelopment: boolean): void {
-  if (!isDevelopment) throw new Error("preview content is available only in explicit development mode");
+  if (!isDevelopment)
+    throw new Error(
+      "preview content is available only in explicit development mode",
+    );
+}
+
+export function selectPreviewArticles<T extends ArticleRecord>(
+  entries: readonly T[],
+  isDevelopment: boolean,
+): T[] {
+  assertPreviewMode(isDevelopment);
+  return [...entries];
 }

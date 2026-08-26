@@ -1,8 +1,8 @@
 import { getCollection } from "astro:content";
 
 import {
-  assertPreviewMode,
   assertUniqueArticlePaths,
+  selectPreviewArticles,
   selectPublicArticles,
 } from "./content-contract.ts";
 
@@ -17,6 +17,8 @@ export async function getPublicArticles() {
 }
 
 export async function getPreviewArticles() {
-  assertPreviewMode(import.meta.env.DEV);
-  return getValidatedArticles();
+  return selectPreviewArticles(
+    await getValidatedArticles(),
+    import.meta.env.DEV,
+  );
 }
