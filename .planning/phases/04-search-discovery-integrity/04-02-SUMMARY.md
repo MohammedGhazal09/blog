@@ -66,7 +66,7 @@ completed: 2026-08-27
 
 - Centralized unique Arabic title, maintained description, canonical, Open Graph, and Twitter output in the shared layout for the complete eight-route public graph.
 - Added an exact Arabic/RTL 404 with true HTTP 404 behavior, `noindex,follow`, no canonical/social identity, native no-JavaScript recovery, and no sitemap membership.
-- Added a 327-byte local open-page SVG favicon constrained to two approved colors and parsed for inert, allowlisted geometry at 16 px and 32 px.
+- Added a 323-byte local open-page SVG favicon constrained to two approved colors and parsed for inert, allowlisted geometry at 16 px and 32 px.
 - Added a dedicated production-preview contract that independently parses raw frontmatter, rendered HTML, both sitemap XML layers, robots text, HTTP status, and SVG source.
 
 ## Task Commits
