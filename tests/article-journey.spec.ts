@@ -8,6 +8,7 @@ type ArticleFixture = {
   path: string;
   title: string;
   section: string;
+  sectionPath: string;
   summary: string;
   introduction: string;
   firstHeading: string;
@@ -22,6 +23,7 @@ const articles: readonly ArticleFixture[] = [
     path: "/القضايا-العامة/اختبار-عقد-المحتوى/",
     title: "اختبار عقد المحتوى",
     section: "القضايا العامة",
+    sectionPath: "/القضايا-العامة/",
     summary:
       "هذه خلاصة تجريبية تثبت ظهور المحتوى العام في مساره العربي الصريح.",
     introduction:
@@ -37,6 +39,7 @@ const articles: readonly ArticleFixture[] = [
     path: "/القسم-العلمي/اختبار-مكون-ام-دي-اكس/",
     title: "اختبار مكون إم دي إكس",
     section: "القسم العلمي",
+    sectionPath: "/القسم-العلمي/",
     summary: "هذه خلاصة تجريبية تثبت عمل المكون المعتمد عبر عقد المحتوى نفسه.",
     introduction:
       "تبدأ هذه المادة بمقدمة عربية كاملة تشرح غرض سجل إم دي إكس للقارئ.",
@@ -49,6 +52,7 @@ const articles: readonly ArticleFixture[] = [
 ];
 
 const routeSource = readFileSync("src/pages/[section]/[slug].astro", "utf8");
+const layoutSource = readFileSync("src/layouts/SiteLayout.astro", "utf8");
 const playerSource = readFileSync("src/components/YouTubePlayer.astro", "utf8");
 
 function readOutputTree(directory: string): string {
@@ -528,10 +532,16 @@ for (const fixture of articles) {
       await expect(
         facts.getByText(fixture.section, { exact: true }),
       ).toHaveCount(1);
+      await expect(
+        facts.getByRole("link", { name: fixture.section }),
+      ).toHaveAttribute("href", fixture.sectionPath);
       await expect(facts.getByText("الكاتب:", { exact: true })).toHaveCount(1);
       await expect(
         facts.getByText("أحمد المنجاوي", { exact: true }),
       ).toHaveCount(1);
+      await expect(
+        facts.getByRole("link", { name: "أحمد المنجاوي" }),
+      ).toHaveAttribute("href", "/عن-أحمد-المنجاوي/");
       await expect(facts.getByText("نُشر في:", { exact: true })).toHaveCount(1);
       await expect(facts.locator("time bdi[dir='auto']").first()).toBeVisible();
 
@@ -677,11 +687,13 @@ for (const fixture of articles) {
         expect(ctaBox!.height).toBeGreaterThanOrEqual(44);
         expect(ctaBox!.width).toBeGreaterThanOrEqual(44);
 
-        const layout = await page.locator("article").evaluate((article) => {
+        const layout = await page.locator("main").evaluate((main) => {
+          const article = main.querySelector(":scope > article");
+          if (!(article instanceof HTMLElement)) throw new Error("article");
           const articleBox = article.getBoundingClientRect();
           return {
-            maxInlineSize: getComputedStyle(article).maxInlineSize,
-            columnCount: getComputedStyle(article).columnCount,
+            maxInlineSize: getComputedStyle(main).maxInlineSize,
+            columnCount: getComputedStyle(main).columnCount,
             children: [...article.children]
               .filter(
                 (child) =>
@@ -874,8 +886,8 @@ for (const fixture of articles) {
         })),
       ).toEqual({ mainBlock: "64px", mainInline: "24px", summary: "24px" });
 
-      expect(routeSource).toMatch(/max-inline-size:\s*70ch/iu);
-      expect(routeSource).not.toMatch(
+      expect(layoutSource).toMatch(/max-inline-size:\s*70ch/iu);
+      expect(`${layoutSource}\n${routeSource}`).not.toMatch(
         /overflow-x\s*:\s*hidden|@font-face|box-shadow|(?:linear|radial)-gradient|border-radius|grid-template-columns|column-count|<img\b|<svg\b/iu,
       );
       expect(routeSource.match(/<h1\b/giu)).toHaveLength(1);

@@ -1,0 +1,25 @@
+---
+import { authorRegistry } from "../config/registries.ts";
+import SiteLayout from "../layouts/SiteLayout.astro";
+
+const author = authorRegistry.ahmedElMangawy;
+---
+
+<SiteLayout>
+  <h1>عن {author.name}</h1>
+  <p>
+    تنشر المدونة مقالات عربية في الردود والشبهات والقضايا العامة والعلوم
+    الشرعية، وتربط كل مقال بالمحتوى الموافق له على يوتيوب.
+  </p>
+  <a href="/">العودة إلى الصفحة الرئيسية</a>
+</SiteLayout>
+
+<style>
+  h1 {
+    margin-block: 0 2rem;
+  }
+
+  p {
+    margin-block: 0 2rem;
+  }
+</style>

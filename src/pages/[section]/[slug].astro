@@ -4,6 +4,7 @@ import { render } from "astro:content";
 import YouTubePlayer from "../../components/YouTubePlayer.astro";
 import { mdxComponents } from "../../components/mdx-components.ts";
 import { authorRegistry, sectionRegistry } from "../../config/registries.ts";
+import SiteLayout from "../../layouts/SiteLayout.astro";
 import { getPreviewArticles, getPublicArticles } from "../../lib/articles.ts";
 import { pathParamsFor } from "../../lib/content-contract.ts";
 
@@ -34,117 +35,74 @@ const formatDate = (date: string) =>
   dateFormatter.format(new Date(`${date}T00:00:00.000Z`));
 ---
 
-<!doctype html>
-<html lang="ar" dir="rtl">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-  </head>
-  <body>
-    <main>
-      <article>
-        <h1>{article.data.title}</h1>
-        <dl class="article-facts">
+<SiteLayout>
+  <article>
+    <h1>{article.data.title}</h1>
+    <dl class="article-facts">
+      <div>
+        <dt>القسم:</dt>
+        <dd><a href={`/${section.slug}/`}>{section.label}</a></dd>
+      </div>
+      <div>
+        <dt>الكاتب:</dt>
+        <dd><a href="/عن-أحمد-المنجاوي/">{author.name}</a></dd>
+      </div>
+      <div>
+        <dt>نُشر في:</dt>
+        <dd>
+          <time datetime={article.data.publishedAt}
+            ><bdi dir="auto">{formatDate(article.data.publishedAt)}</bdi></time
+          >
+        </dd>
+      </div>
+      {
+        article.data.updatedAt && (
           <div>
-            <dt>القسم:</dt>
-            <dd>{section.label}</dd>
-          </div>
-          <div>
-            <dt>الكاتب:</dt>
-            <dd>{author.name}</dd>
-          </div>
-          <div>
-            <dt>نُشر في:</dt>
+            <dt>حُدّثت المادة في:</dt>
             <dd>
-              <time datetime={article.data.publishedAt}
-                ><bdi dir="auto">{formatDate(article.data.publishedAt)}</bdi></time
-              >
+              <time datetime={article.data.updatedAt}>
+                <bdi dir="auto">{formatDate(article.data.updatedAt)}</bdi>
+              </time>
             </dd>
           </div>
-          {
-            article.data.updatedAt && (
-              <div>
-                <dt>حُدّثت المادة في:</dt>
-                <dd>
-                  <time datetime={article.data.updatedAt}>
-                    <bdi dir="auto">{formatDate(article.data.updatedAt)}</bdi>
-                  </time>
-                </dd>
-              </div>
-            )
-          }
-        </dl>
-        <section class="article-summary">
-          <h2>الخلاصة</h2>
-          <p>{article.data.summary}</p>
+        )
+      }
+    </dl>
+    <section class="article-summary">
+      <h2>الخلاصة</h2>
+      <p>{article.data.summary}</p>
+    </section>
+    <Content components={mdxComponents} />
+    {
+      article.data.references?.length ? (
+        <section class="article-references">
+          <h2>المراجع</h2>
+          <ul>
+            {article.data.references.map((reference) => (
+              <li>
+                <a href={reference.url}>{reference.label}</a>
+              </li>
+            ))}
+          </ul>
         </section>
-        <Content components={mdxComponents} />
-        {
-          article.data.references?.length ? (
-            <section class="article-references">
-              <h2>المراجع</h2>
-              <ul>
-                {article.data.references.map((reference) => (
-                  <li>
-                    <a href={reference.url}>{reference.label}</a>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null
-        }
-        <YouTubePlayer
-          youtubeId={article.data.youtubeId}
-          title={article.data.title}
-        />
-      </article>
-    </main>
-  </body>
-</html>
+      ) : null
+    }
+    <YouTubePlayer
+      youtubeId={article.data.youtubeId}
+      title={article.data.title}
+    />
+  </article>
+</SiteLayout>
 
 <style>
-  :global(*) {
-    box-sizing: border-box;
-  }
-
-  :global(html) {
-    background: #fffdf8;
-  }
-
-  :global(body) {
-    margin: 0;
-    background: #fffdf8;
-    color: #1c1917;
-    font-family:
-      system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Arial,
-      sans-serif;
-    font-size: 1.125rem;
-    font-synthesis: none;
-    font-weight: 400;
-    letter-spacing: normal;
-    line-height: 1.9;
-    text-align: start;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  main {
-    padding-block: 32px;
-    padding-inline: 16px;
-  }
-
   article {
-    max-inline-size: 70ch;
     min-inline-size: 0;
-    margin-inline: auto;
   }
 
   article > :global(*) {
     min-inline-size: 0;
   }
 
-  h1,
-  article :global(h2),
   article :global(h3) {
     color: #1c1917;
     font-weight: 700;
@@ -153,14 +111,10 @@ const formatDate = (date: string) =>
 
   h1 {
     margin-block: 0 32px;
-    font-size: 2rem;
-    line-height: 1.3;
   }
 
   article :global(h2) {
     margin-block: 32px 16px;
-    font-size: 1.5rem;
-    line-height: 1.4;
   }
 
   article :global(h3) {
@@ -221,29 +175,6 @@ const formatDate = (date: string) =>
 
   .article-summary p {
     margin: 0;
-  }
-
-  article :global(a) {
-    color: #166534;
-    text-decoration-line: underline;
-    text-decoration-skip-ink: auto;
-    text-decoration-thickness: from-font;
-    text-underline-position: from-font;
-  }
-
-  article :global(a:hover) {
-    text-decoration-thickness: 3px;
-  }
-
-  article :global(a:focus-visible) {
-    outline: 3px solid #166534;
-    outline-offset: 3px;
-  }
-
-  article :global(a),
-  article :global(code),
-  article :global(bdi) {
-    overflow-wrap: anywhere;
   }
 
   article :global(code) {
@@ -335,11 +266,6 @@ const formatDate = (date: string) =>
   }
 
   @media (min-width: 48rem) {
-    main {
-      padding-block: 64px;
-      padding-inline: 24px;
-    }
-
     .article-summary {
       padding: 24px;
     }
