@@ -479,13 +479,16 @@ test("duplicate articles in one section cannot satisfy another section", () => {
   );
 });
 
-test("launch readiness exits zero when every registered section has public content", () => {
+test("launch readiness exits zero with an explicit safe production origin", () => {
   const npmCli = process.env.npm_execpath;
   assert.ok(npmCli, "npm_execpath must identify the pinned npm CLI");
   const result = spawnSync(
     process.execPath,
     [npmCli, "run", "launch:ready"],
-    { encoding: "utf8" },
+    {
+      encoding: "utf8",
+      env: { ...process.env, SITE_ORIGIN: "https://blog.ahmed-mangawy.org" },
+    },
   );
   const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
 

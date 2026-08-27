@@ -16,7 +16,7 @@
     "test:browser": "npm run build && playwright test",
     "check": "astro check",
     "build": "astro build",
-    "launch:ready": "astro build --mode launch-readiness",
+    "launch:ready": "node scripts/launch-ready.mjs",
     "verify": "npm test && npm run check && npm run test:browser"
   },
   "dependencies": {
