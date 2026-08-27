@@ -11,9 +11,9 @@ Requirements for the first production release. Each requirement will map to exac
 
 - [x] **SITE-01**: A visitor sees only Arabic reader-facing navigation, labels, controls, messages, and error states across the public website.
 - [x] **SITE-02**: A browser and assistive technology receive Arabic language and right-to-left document semantics on every public page.
-- [ ] **SITE-03**: A visitor can navigate from the homepage to الردود والشبهات, القضايا العامة, and القسم العلمي through ordinary crawlable links.
-- [ ] **SITE-04**: A visitor can open a crawlable index for each primary section and see a useful Arabic summary and link for every published article in that section.
-- [ ] **SITE-05**: A visitor can open an Arabic About/author page and follow every article byline to truthful information about Ahmed El-Mangawy.
+- [x] **SITE-03**: A visitor can navigate from the homepage to الردود والشبهات, القضايا العامة, and القسم العلمي through ordinary crawlable links.
+- [x] **SITE-04**: A visitor can open a crawlable index for each primary section and see a useful Arabic summary and link for every published article in that section.
+- [x] **SITE-05**: A visitor can open an Arabic About/author page and follow every article byline to truthful information about Ahmed El-Mangawy.
 - [ ] **SITE-06**: A visitor who opens a missing route receives a useful Arabic 404 page with a clear path back into the site.
 
 ### Article Experience
@@ -48,7 +48,7 @@ Requirements for the first production release. Each requirement will map to exac
 
 - [ ] **CONT-01**: The launch contains at least one substantive Arabic article with a real matching YouTube video in each of the three primary sections.
 - [ ] **CONT-02**: Every launch article receives recorded human editorial and religious-accuracy sign-off before it becomes public.
-- [ ] **CONT-03**: Public bylines, expertise descriptions, dates, references, and review claims reflect real people, sources, and events rather than SEO-only placeholders.
+- [x] **CONT-03**: Public bylines, expertise descriptions, dates, references, and review claims reflect real people, sources, and events rather than SEO-only placeholders.
 
 ### Measurement
 
@@ -118,9 +118,9 @@ Explicit exclusions prevent scope creep during v1.
 |-------------|-------|--------|
 | SITE-01 | Phase 2 | Complete |
 | SITE-02 | Phase 2 | Complete |
-| SITE-03 | Phase 3 | Pending |
-| SITE-04 | Phase 3 | Pending |
-| SITE-05 | Phase 3 | Pending |
+| SITE-03 | Phase 3 | Complete |
+| SITE-04 | Phase 3 | Complete |
+| SITE-05 | Phase 3 | Complete |
 | SITE-06 | Phase 4 | Pending |
 | ART-01 | Phase 2 | Complete |
 | ART-02 | Phase 2 | Complete |
@@ -143,7 +143,7 @@ Explicit exclusions prevent scope creep during v1.
 | PUB-06 | Phase 1 | Complete |
 | CONT-01 | Phase 3 | Pending |
 | CONT-02 | Phase 3 | Pending |
-| CONT-03 | Phase 3 | Pending |
+| CONT-03 | Phase 3 | Complete |
 | MEAS-01 | Phase 5 | Pending |
 | MEAS-02 | Phase 5 | Pending |
 | QUAL-01 | Phase 2 | Complete |
@@ -154,6 +154,7 @@ Explicit exclusions prevent scope creep during v1.
 | QUAL-06 | Phase 6 | Pending |
 
 **Coverage:**
+
 - v1 requirements: 36 total
 - Mapped to phases: 36
 - Unmapped: 0 ✓
