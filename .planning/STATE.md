@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-08-27T05:39:13.005Z"
+stopped_at: Completed 03-03-PLAN.md
+last_updated: "2026-08-27T06:56:05.510Z"
 last_activity: 2026-08-27 -- Completed 03-02-PLAN.md
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 11
-  completed_plans: 9
-  percent: 82
+  completed_plans: 10
+  percent: 33
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-08-26)
 ## Current Position
 
 Phase: 03 (real-content-and-section-discovery) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-08-27 -- Completed 03-02-PLAN.md
 
@@ -61,6 +61,7 @@ Progress: [████████░░] 82%
 | Phase 02 P04 | 34min | 1 tasks | 3 files |
 | Phase 03 P01 | 22 min | 3 tasks | 9 files |
 | Phase 03 P02 | 17min | 2 tasks | 6 files |
+| Phase 03 P03 | 63min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -95,6 +96,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 03-02]: Keep discovery registry-derived and approved-public-only; truthful empty sections remain visible while launch readiness stays red.
 - [Phase 03-02]: Expose no author claim beyond the registered name and locked generic publication purpose.
 - [Phase 03-02]: Move document-wide styles into SiteLayout while article prose, provenance, and media rules remain local.
+- [Phase 03-03]: Keep browser mode identity explicit and derive expected production membership from raw source bytes plus current strict sidecars. — Separate projects and an independent oracle prevent draft-mode and common-selector false greens.
+- [Phase 03-03]: Use visible DevTools for live interaction and native zoom, with Playwright used only to persist W: evidence. — This preserves visible evidence while labelling the actual screenshot backend honestly.
 
 ### Pending Todos
 
@@ -114,6 +117,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-27T05:37:04.575Z
-Stopped at: Completed 03-02-PLAN.md
+Last session: 2026-08-27T06:56:05.503Z
+Stopped at: Completed 03-03-PLAN.md
 Resume file: None
