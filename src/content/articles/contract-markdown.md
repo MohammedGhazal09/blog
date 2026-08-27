@@ -7,7 +7,7 @@ author: "ahmedElMangawy"
 slug: "اختبار-عقد-المحتوى"
 publishedAt: "2026-08-01"
 updatedAt: "2026-08-15"
-draft: false
+draft: true
 youtubeId: "dQw4w9WgXcQ"
 references:
   - label: "مرجع اختبار تقني آمن"

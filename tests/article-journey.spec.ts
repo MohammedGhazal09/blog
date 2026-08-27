@@ -1,6 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 type ArticleFixture = {
   format: "Markdown" | "MDX";
@@ -49,6 +50,17 @@ const articles: readonly ArticleFixture[] = [
 
 const routeSource = readFileSync("src/pages/[section]/[slug].astro", "utf8");
 const playerSource = readFileSync("src/components/YouTubePlayer.astro", "utf8");
+
+function readOutputTree(directory: string): string {
+  return readdirSync(directory, { withFileTypes: true })
+    .map((entry) => {
+      const path = join(directory, entry.name);
+      return entry.isDirectory()
+        ? readOutputTree(path)
+        : readFileSync(path, "utf8");
+    })
+    .join("\n");
+}
 
 function isYouTubeFamilyRequest(url: string): boolean {
   const hostname = new URL(url).hostname;
@@ -123,7 +135,7 @@ for (const fixture of articles) {
       await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
       await expect(page.locator("main")).toHaveCount(1);
       await expect(page.locator("main > article")).toHaveCount(1);
-      await expect(page.locator("h1")).toHaveCount(1);
+      await expect(page.locator("main h1")).toHaveCount(1);
 
       const levels = await page
         .locator(
@@ -878,10 +890,13 @@ for (const fixture of articles) {
       ).toBe(false);
       expect(
         existsSync("dist/القضايا-العامة/اختبار-عقد-المحتوى/index.html"),
-      ).toBe(true);
+      ).toBe(false);
       expect(
         existsSync("dist/القسم-العلمي/اختبار-مكون-ام-دي-اكس/index.html"),
-      ).toBe(true);
+      ).toBe(false);
+      expect(readOutputTree("dist")).not.toMatch(
+        /اختبار عقد المحتوى|اختبار مكون إم دي إكس|example\.com|dQw4w9WgXcQ/iu,
+      );
     });
   });
 }
