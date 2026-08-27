@@ -93,6 +93,17 @@ function assertNonEmpty(
   }
 }
 
+function assertArabicFacing(
+  value: unknown,
+  source: string,
+  field: string,
+): asserts value is string {
+  assertNonEmpty(value, source, field);
+  if (![...value].some(isArabicLetter)) {
+    fail(`${source}.${field}`, "must be Arabic-facing");
+  }
+}
+
 function assertDateOnly(
   value: unknown,
   source: string,
@@ -150,8 +161,8 @@ export function assertRegistries(
   for (const [key, section] of Object.entries(sections)) {
     if (!ASCII_KEY.test(key))
       fail(`sections.${key}`, "registry key must be stable ASCII camel-case");
-    assertNonEmpty(section.label, `sections.${key}`, "label");
-    assertNonEmpty(section.description, `sections.${key}`, "description");
+    assertArabicFacing(section.label, `sections.${key}`, "label");
+    assertArabicFacing(section.description, `sections.${key}`, "description");
     assertCanonicalArabicSlug(section.slug, `sections.${key}.slug`);
     if (!Number.isInteger(section.order) || section.order < 1) {
       fail(
@@ -178,7 +189,7 @@ export function assertRegistries(
   for (const [key, author] of Object.entries(authors)) {
     if (!ASCII_KEY.test(key))
       fail(`authors.${key}`, "registry key must be stable ASCII camel-case");
-    assertNonEmpty(author.name, `authors.${key}`, "name");
+    assertArabicFacing(author.name, `authors.${key}`, "name");
   }
 }
 
@@ -192,9 +203,9 @@ export function validateArticleData(
   const today = options.today ?? publicationDateAt();
 
   assertRegistries(sections, authors);
-  assertNonEmpty(data.title, source, "title");
-  assertNonEmpty(data.description, source, "description");
-  assertNonEmpty(data.summary, source, "summary");
+  assertArabicFacing(data.title, source, "title");
+  assertArabicFacing(data.description, source, "description");
+  assertArabicFacing(data.summary, source, "summary");
   assertNonEmpty(data.section, source, "section");
   assertNonEmpty(data.author, source, "author");
   assertNonEmpty(data.slug, source, "slug");
@@ -245,10 +256,7 @@ export function validateArticleData(
       fail(location, "must be an object with label and url fields");
     }
 
-    assertNonEmpty(reference.label, source, `references.${index}.label`);
-    if (![...reference.label].some(isArabicLetter)) {
-      fail(`${location}.label`, "must be Arabic-facing");
-    }
+    assertArabicFacing(reference.label, source, `references.${index}.label`);
 
     assertNonEmpty(reference.url, source, `references.${index}.url`);
     const destination = URL.parse(reference.url);

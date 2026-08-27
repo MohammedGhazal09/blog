@@ -147,6 +147,49 @@ for (const [field, value, rule] of requiredFieldFailures) {
   });
 }
 
+for (const field of ["title", "description", "summary"] as const) {
+  test(`rejects Latin-only reader-facing article ${field}`, () => {
+    const invalid = article(
+      { [field]: "Latin only metadata" },
+      `article:Latin-${field}`,
+    );
+
+    assertDiagnostic(
+      () => validateArticleData(invalid.data, invalid.id, { today: fixedToday }),
+      [`article:Latin-${field}\\.${field}`, "Arabic-facing"],
+    );
+  });
+}
+
+for (const field of ["label", "description"] as const) {
+  test(`rejects Latin-only reader-facing section ${field}`, () => {
+    const sections = {
+      ...sectionRegistry,
+      generalIssues: {
+        ...sectionRegistry.generalIssues,
+        [field]: "Latin only metadata",
+      },
+    };
+
+    assertDiagnostic(
+      () => assertRegistries(sections, authorRegistry),
+      [`sections\\.generalIssues\\.${field}`, "Arabic-facing"],
+    );
+  });
+}
+
+test("rejects Latin-only reader-facing author names", () => {
+  const authors = {
+    ...authorRegistry,
+    ahmedElMangawy: { name: "Ahmed El-Mangawy" },
+  };
+
+  assertDiagnostic(
+    () => assertRegistries(sectionRegistry, authors),
+    ["authors\\.ahmedElMangawy\\.name", "Arabic-facing"],
+  );
+});
+
 const semanticFailures = [
   [
     "unknown section",
