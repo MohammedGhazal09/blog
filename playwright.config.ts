@@ -24,7 +24,7 @@ export default defineConfig({
     },
     {
       name: "production-discovery",
-      testMatch: "discovery.spec.ts",
+      testMatch: ["discovery.spec.ts", "search-discovery.spec.ts"],
       use: {
         ...devices["Desktop Chrome"],
         baseURL: "http://127.0.0.1:4322",
