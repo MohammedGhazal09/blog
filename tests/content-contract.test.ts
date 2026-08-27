@@ -1,10 +1,26 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { join, relative, resolve } from "node:path";
 import test from "node:test";
 
 import { authorRegistry, sectionRegistry } from "../src/config/registries.ts";
 import {
+  assertPublicArticleApprovals,
+  type ApprovalArticleRecord,
+  type ArticleApprovalSidecar,
+} from "../src/lib/approval-contract.ts";
+import {
   articlePath,
   assertCanonicalArabicSlug,
+  assertLaunchSectionCoverage,
   assertPreviewMode,
   assertRegistries,
   assertUniqueArticlePaths,
@@ -363,6 +379,471 @@ test("preview mode fails closed outside development", () => {
     () => selectPreviewArticles([article()], false),
     ["preview", "development"],
   );
+});
+
+type ApprovalFixture = {
+  article: ApprovalArticleRecord;
+  reviewRoot: string;
+  sidecarPath: string;
+  sourcePath: string;
+  source: string;
+  sidecar: ArticleApprovalSidecar;
+};
+
+function withApprovalFixture(
+  action: (fixture: ApprovalFixture) => void,
+): void {
+  const artifactRoot = resolve(".artifacts/tests");
+  mkdirSync(artifactRoot, { recursive: true });
+  const root = mkdtempSync(join(artifactRoot, "approval-contract-"));
+
+  try {
+    const sourcePath = join(root, "article.md");
+    const reviewRoot = join(root, "reviews");
+    mkdirSync(reviewRoot);
+    writeFileSync(sourcePath, "---\ntitle: اختبار\n---\n\nنص عربي.\n");
+
+    const source = relative(process.cwd(), sourcePath).replaceAll("\\", "/");
+    const articleRecord = {
+      ...article({}, "approval-fixture"),
+      filePath: sourcePath,
+    };
+    const sidecar: ArticleApprovalSidecar = {
+      articleId: articleRecord.id,
+      articleSlug: articleRecord.data.slug,
+      source,
+      sha256: createHash("sha256")
+        .update(readFileSync(sourcePath))
+        .digest("hex"),
+      classification: "launch",
+      editorial: {
+        reviewer: "editorial-fixture-reviewer",
+        approvedAt: "2026-08-25",
+        decision: "pass",
+        substantive: true,
+        videoMatchesArticle: true,
+      },
+      religiousAccuracy: {
+        reviewer: "religious-fixture-reviewer",
+        approvedAt: "2026-08-25",
+        decision: "pass",
+      },
+    };
+
+    action({
+      article: articleRecord,
+      reviewRoot,
+      sidecarPath: join(
+        reviewRoot,
+        `${encodeURIComponent(articleRecord.id)}.json`,
+      ),
+      sourcePath,
+      source,
+      sidecar,
+    });
+  } finally {
+    rmSync(root, { force: true, recursive: true });
+  }
+}
+
+function writeSidecar(path: string, sidecar: unknown): void {
+  writeFileSync(path, JSON.stringify(sidecar));
+}
+
+function assertApprovalDiagnostic(
+  fixture: ApprovalFixture,
+  sidecar: unknown,
+  expectedParts: readonly string[],
+): void {
+  writeSidecar(fixture.sidecarPath, sidecar);
+  assertDiagnostic(
+    () =>
+      assertPublicArticleApprovals([fixture.article], {
+        reviewRoot: fixture.reviewRoot,
+        today: fixedToday,
+      }),
+    [fixture.article.id, ...expectedParts],
+  );
+}
+
+test("accepts exact source bytes with current editorial and religious pass records", () => {
+  withApprovalFixture((fixture) => {
+    writeSidecar(fixture.sidecarPath, fixture.sidecar);
+    assert.doesNotThrow(() =>
+      assertPublicArticleApprovals([fixture.article], {
+        reviewRoot: fixture.reviewRoot,
+        today: fixedToday,
+      }),
+    );
+  });
+});
+
+test("draft records bypass approval lookup and do not require filePath", () => {
+  withApprovalFixture((fixture) => {
+    const draft = article({ draft: true }, "draft-without-sidecar");
+    assert.doesNotThrow(() =>
+      assertPublicArticleApprovals([draft], {
+        reviewRoot: join(fixture.reviewRoot, "does-not-exist"),
+        today: fixedToday,
+      }),
+    );
+  });
+});
+
+test("public records reject a missing sidecar", () => {
+  withApprovalFixture((fixture) => {
+    assertDiagnostic(
+      () =>
+        assertPublicArticleApprovals([fixture.article], {
+          reviewRoot: fixture.reviewRoot,
+          today: fixedToday,
+        }),
+      [fixture.article.id, "sidecar", "missing"],
+    );
+  });
+});
+
+test("public records reject invalid sidecar JSON", () => {
+  withApprovalFixture((fixture) => {
+    writeFileSync(fixture.sidecarPath, "{ invalid json");
+    assertDiagnostic(
+      () =>
+        assertPublicArticleApprovals([fixture.article], {
+          reviewRoot: fixture.reviewRoot,
+          today: fixedToday,
+        }),
+      [fixture.article.id, "JSON"],
+    );
+  });
+});
+
+for (const [name, root] of [
+  ["null", null],
+  ["array", []],
+  ["primitive", "approval"],
+] as const) {
+  test(`rejects ${name} sidecar roots as non-objects`, () => {
+    withApprovalFixture((fixture) => {
+      assertApprovalDiagnostic(fixture, root, ["object"]);
+    });
+  });
+}
+
+for (const field of [
+  "articleId",
+  "articleSlug",
+  "source",
+  "sha256",
+  "classification",
+  "editorial",
+  "religiousAccuracy",
+] as const) {
+  test(`rejects a sidecar missing required ${field}`, () => {
+    withApprovalFixture((fixture) => {
+      const invalid = structuredClone(fixture.sidecar) as Record<
+        string,
+        unknown
+      >;
+      delete invalid[field];
+      assertApprovalDiagnostic(fixture, invalid, [field, "required"]);
+    });
+  });
+}
+
+for (const [review, field] of [
+  ["editorial", "reviewer"],
+  ["editorial", "approvedAt"],
+  ["editorial", "decision"],
+  ["editorial", "substantive"],
+  ["editorial", "videoMatchesArticle"],
+  ["religiousAccuracy", "reviewer"],
+  ["religiousAccuracy", "approvedAt"],
+  ["religiousAccuracy", "decision"],
+] as const) {
+  test(`rejects a sidecar missing required ${review}.${field}`, () => {
+    withApprovalFixture((fixture) => {
+      const invalid = structuredClone(fixture.sidecar) as unknown as Record<
+        string,
+        Record<string, unknown>
+      >;
+      delete invalid[review][field];
+      assertApprovalDiagnostic(fixture, invalid, [review, field, "required"]);
+    });
+  });
+}
+
+for (const [name, mutate, expectedParts] of [
+  [
+    "top-level unknown field",
+    (sidecar: Record<string, unknown>) => {
+      sidecar.extra = true;
+    },
+    ["extra", "unknown"],
+  ],
+  [
+    "editorial unknown field",
+    (sidecar: Record<string, unknown>) => {
+      (sidecar.editorial as Record<string, unknown>).extra = true;
+    },
+    ["editorial", "extra", "unknown"],
+  ],
+  [
+    "religious unknown field",
+    (sidecar: Record<string, unknown>) => {
+      (sidecar.religiousAccuracy as Record<string, unknown>).extra = true;
+    },
+    ["religiousAccuracy", "extra", "unknown"],
+  ],
+] as const) {
+  test(`rejects ${name}`, () => {
+    withApprovalFixture((fixture) => {
+      const invalid = structuredClone(fixture.sidecar) as unknown as Record<
+        string,
+        unknown
+      >;
+      mutate(invalid);
+      assertApprovalDiagnostic(fixture, invalid, expectedParts);
+    });
+  });
+}
+
+for (const [name, digest] of [
+  ["short", "abc"],
+  ["non-hex", "z".repeat(64)],
+  ["uppercase", "A".repeat(64)],
+] as const) {
+  test(`rejects ${name} SHA-256 syntax`, () => {
+    withApprovalFixture((fixture) => {
+      assertApprovalDiagnostic(
+        fixture,
+        { ...fixture.sidecar, sha256: digest },
+        ["sha256", "lowercase", "64"],
+      );
+    });
+  });
+}
+
+test("rejects a public article without a loader-provided filePath", () => {
+  withApprovalFixture((fixture) => {
+    const articleWithoutPath = article({}, fixture.article.id);
+    assertDiagnostic(
+      () =>
+        assertPublicArticleApprovals([articleWithoutPath], {
+          reviewRoot: fixture.reviewRoot,
+          today: fixedToday,
+        }),
+      [fixture.article.id, "filePath"],
+    );
+  });
+});
+
+for (const [name, source] of [
+  ["outside path", "../outside.md"],
+  ["different source", ".artifacts/different-article.md"],
+] as const) {
+  test(`rejects ${name} sidecar source`, () => {
+    withApprovalFixture((fixture) => {
+      assertApprovalDiagnostic(
+        fixture,
+        { ...fixture.sidecar, source },
+        ["source", "match"],
+      );
+    });
+  });
+}
+
+for (const [name, replacement, field] of [
+  ["article ID", "another-entry", "articleId"],
+  ["article slug", "سجل-آخر", "articleSlug"],
+] as const) {
+  test(`rejects a mismatched ${name}`, () => {
+    withApprovalFixture((fixture) => {
+      assertApprovalDiagnostic(
+        fixture,
+        { ...fixture.sidecar, [field]: replacement },
+        [field, "match"],
+      );
+    });
+  });
+}
+
+test("rejects non-launch approval classification", () => {
+  withApprovalFixture((fixture) => {
+    assertApprovalDiagnostic(
+      fixture,
+      { ...fixture.sidecar, classification: "proof" },
+      ["classification", "launch"],
+    );
+  });
+});
+
+for (const review of ["editorial", "religiousAccuracy"] as const) {
+  test(`rejects blank ${review} reviewer`, () => {
+    withApprovalFixture((fixture) => {
+      const invalid = structuredClone(fixture.sidecar);
+      invalid[review].reviewer = "   ";
+      assertApprovalDiagnostic(fixture, invalid, [review, "reviewer", "blank"]);
+    });
+  });
+
+  for (const [name, approvedAt, rule] of [
+    ["invalid", "2026-02-30", "real calendar"],
+    ["malformed", "2026-8-25", "YYYY-MM-DD"],
+    ["future", "2026-08-27", "future"],
+  ] as const) {
+    test(`rejects ${name} ${review} approvedAt`, () => {
+      withApprovalFixture((fixture) => {
+        const invalid = structuredClone(fixture.sidecar);
+        invalid[review].approvedAt = approvedAt;
+        assertApprovalDiagnostic(fixture, invalid, [
+          review,
+          "approvedAt",
+          rule,
+        ]);
+      });
+    });
+  }
+
+  test(`rejects non-pass ${review} decision`, () => {
+    withApprovalFixture((fixture) => {
+      const invalid = structuredClone(fixture.sidecar) as unknown as Record<
+        string,
+        Record<string, unknown>
+      >;
+      invalid[review].decision = "fail";
+      assertApprovalDiagnostic(fixture, invalid, [review, "decision", "pass"]);
+    });
+  });
+}
+
+for (const field of ["substantive", "videoMatchesArticle"] as const) {
+  test(`rejects false editorial ${field}`, () => {
+    withApprovalFixture((fixture) => {
+      const invalid = structuredClone(fixture.sidecar) as unknown as Record<
+        string,
+        Record<string, unknown>
+      >;
+      invalid.editorial[field] = false;
+      assertApprovalDiagnostic(fixture, invalid, [
+        "editorial",
+        field,
+        "true",
+      ]);
+    });
+  });
+}
+
+test("rejects a stale digest after a one-byte source edit", () => {
+  withApprovalFixture((fixture) => {
+    writeSidecar(fixture.sidecarPath, fixture.sidecar);
+    writeFileSync(fixture.sourcePath, `${readFileSync(fixture.sourcePath)}x`);
+    assertDiagnostic(
+      () =>
+        assertPublicArticleApprovals([fixture.article], {
+          reviewRoot: fixture.reviewRoot,
+          today: fixedToday,
+        }),
+      [fixture.article.id, "sha256", "match"],
+    );
+  });
+});
+
+function coverageArticle(section: string, id = section): ArticleRecord {
+  return article({ section, slug: `مقالة-${id}` }, `coverage-${id}`);
+}
+
+test("launch coverage accepts all three registered sections", () => {
+  assert.doesNotThrow(() =>
+    assertLaunchSectionCoverage([
+      coverageArticle("refutations", "١"),
+      coverageArticle("generalIssues", "٢"),
+      coverageArticle("scholarship", "٣"),
+    ]),
+  );
+});
+
+for (const missingKey of Object.keys(sectionRegistry)) {
+  test(`launch coverage rejects the single missing ${missingKey} section`, () => {
+    const entries = Object.keys(sectionRegistry)
+      .filter((key) => key !== missingKey)
+      .map((key, index) => coverageArticle(key, String(index + 1)));
+    assertDiagnostic(() => assertLaunchSectionCoverage(entries), [
+      missingKey,
+      sectionRegistry[missingKey as keyof typeof sectionRegistry].label,
+    ]);
+  });
+}
+
+test("launch coverage aggregates multiple missing sections in registry order", () => {
+  assert.throws(
+    () =>
+      assertLaunchSectionCoverage([coverageArticle("scholarship", "٣")]),
+    (error: unknown) => {
+      assert.ok(error instanceof Error);
+      const first = error.message.indexOf("refutations");
+      const second = error.message.indexOf("generalIssues");
+      assert.ok(first >= 0);
+      assert.ok(second > first);
+      assert.match(error.message, /الردود والشبهات/u);
+      assert.match(error.message, /القضايا العامة/u);
+      return true;
+    },
+  );
+});
+
+test("foreign section keys cannot satisfy registered launch coverage", () => {
+  assertDiagnostic(
+    () => assertLaunchSectionCoverage([coverageArticle("foreignSection")]),
+    ["refutations", "generalIssues", "scholarship"],
+  );
+});
+
+test("duplicate articles in one section cannot satisfy another section", () => {
+  assertDiagnostic(
+    () =>
+      assertLaunchSectionCoverage([
+        coverageArticle("generalIssues", "١"),
+        coverageArticle("generalIssues", "٢"),
+      ]),
+    ["refutations", "scholarship"],
+  );
+});
+
+test("non-launch classification fails before section coverage can run", () => {
+  withApprovalFixture((fixture) => {
+    writeSidecar(fixture.sidecarPath, {
+      ...fixture.sidecar,
+      classification: "proof",
+    });
+    let coverageReached = false;
+    assert.throws(() => {
+      assertPublicArticleApprovals([fixture.article], {
+        reviewRoot: fixture.reviewRoot,
+        today: fixedToday,
+      });
+      coverageReached = true;
+      assertLaunchSectionCoverage([fixture.article]);
+    });
+    assert.equal(coverageReached, false);
+  });
+});
+
+test("launch readiness exits nonzero for every missing registered section", () => {
+  const npmCli = process.env.npm_execpath;
+  assert.ok(npmCli, "npm_execpath must identify the pinned npm CLI");
+  const result = spawnSync(
+    process.execPath,
+    [npmCli, "run", "launch:ready"],
+    { encoding: "utf8" },
+  );
+  const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
+
+  assert.notEqual(result.status, 0);
+  assert.doesNotMatch(output, /Missing script/iu);
+  for (const [key, section] of Object.entries(sectionRegistry)) {
+    assert.match(output, new RegExp(key, "u"));
+    assert.match(output, new RegExp(section.label, "u"));
+  }
 });
 
 test("the authoritative registries validate all three canonical sections", () => {
