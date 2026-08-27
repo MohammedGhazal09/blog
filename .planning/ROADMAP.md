@@ -78,7 +78,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
   4. The deployed sitemap contains only canonical published routes, and robots directives agree with the intended indexing policy.
   5. A visitor who opens a missing route receives a useful Arabic 404 page with a clear link back into the site.
 
-**Plans:** TBD
+**Plans:** 0/3 plans executed
 **UI hint:** yes
 
 ### Phase 5: Deployment and Measurement
@@ -119,6 +119,6 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 | 1. Content and URL Contract | 3/3 | Complete    | 2026-08-26 |
 | 2. Complete Arabic Article Journey | 4/4 | Complete    | 2026-08-26 |
 | 3. Real Content and Section Discovery | 4/4 | Complete   | 2026-08-27 |
-| 4. Search Discovery Integrity | 0/TBD | Not started | - |
+| 4. Search Discovery Integrity | 0/3 | Planned    |  |
 | 5. Deployment and Measurement | 0/TBD | Not started | - |
 | 6. Production Launch Verification | 0/TBD | Not started | - |
