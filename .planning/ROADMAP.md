@@ -61,7 +61,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
   3. A visitor can open an Arabic About/author page from any article byline and find truthful information about Ahmed El-Mangawy.
   4. Each primary section contains at least one substantive Arabic article with a real matching YouTube video, recorded human editorial and religious-accuracy sign-off, and truthful byline, expertise, date, reference, and review facts.
 
-**Plans:** 0/4 plans executed
+**Plans:** 1/4 plans executed
 **UI hint:** yes
 
 ### Phase 4: Search Discovery Integrity
@@ -118,7 +118,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 |-------|----------------|--------|-----------|
 | 1. Content and URL Contract | 3/3 | Complete    | 2026-08-26 |
 | 2. Complete Arabic Article Journey | 4/4 | Complete    | 2026-08-26 |
-| 3. Real Content and Section Discovery | 0/4 | Planned    |  |
+| 3. Real Content and Section Discovery | 1/4 | In Progress|  |
 | 4. Search Discovery Integrity | 0/TBD | Not started | - |
 | 5. Deployment and Measurement | 0/TBD | Not started | - |
 | 6. Production Launch Verification | 0/TBD | Not started | - |
