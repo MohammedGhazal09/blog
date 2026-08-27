@@ -1,6 +1,6 @@
 ---
 phase: 03-real-content-and-section-discovery
-reviewed: 2026-08-27T17:49:54Z
+reviewed: 2026-08-27T18:09:35Z
 depth: standard
 files_reviewed: 17
 files_reviewed_list:
@@ -23,64 +23,53 @@ files_reviewed_list:
   - tests/discovery.spec.ts
 findings:
   critical: 0
-  warning: 4
+  warning: 0
   info: 0
-  total: 4
-status: issues_found
+  total: 0
+status: clean
 ---
 
 # Phase 3: Code Review Report
 
-**Reviewed:** 2026-08-27T17:49:54Z  
-**Depth:** standard  
-**Files Reviewed:** 17  
-**Status:** issues_found
+**Reviewed:** 2026-08-27T18:09:35Z
+**Depth:** standard
+**Files Reviewed:** 17
+**Status:** clean
 
 ## Summary
 
-The public corpus correctly keeps the proof records behind the draft boundary, gives all three launch articles the required Arabic AI-assistance/no-transcript disclosure, and does not recreate the deleted human-review sidecar or imply an approval that did not occur. Four warnings remain: publication-date validation uses the wrong civil-day boundary, the content contract does not enforce Arabic reader-facing metadata, the production browser command can test stale output, and the discovery oracle rejects a route shape that the implementation deliberately permits.
+The exact original 17-file Phase 03 scope was re-reviewed after fix commits `967dd74`, `597b4f8`, `d596ad1`, and `7132d90`. WR-01 through WR-04 are resolved, and no correctness, security, accessibility, RTL/bidi, content-boundary, or test-oracle regressions were found in the fixes.
 
-Phase 4 metadata, canonicals, favicon, and document-title work were not reported because the Phase 3 specification explicitly defers them.
+The public corpus still keeps proof records behind the draft boundary, preserves the visible Arabic AI-assistance/no-transcript disclosure on every launch article, and contains no recreated human-review sidecar or unsupported approval claim. Phase 4 metadata, canonicals, favicon, and document-title work remain intentionally outside this phase.
+
+All reviewed files meet the Phase 03 quality standards. No issues found.
 
 ## Narrative Findings (AI reviewer)
 
-## Warnings
+No BLOCKER or WARNING findings remain.
 
-### WR-01: Publication eligibility changes at UTC midnight instead of the project civil day
+## Prior Finding Resolution
 
-**Classification:** WARNING  
-**File:** `src/lib/content-contract.ts:179`  
-**Issue:** The default `today` value comes from `new Date().toISOString()`, which is always a UTC date. Publication dates are civil date-only values. During the first three hours of a Riyadh calendar day, an article dated that local day is treated as future-dated and the build fails even though its publication date is truthful. The unit tests always inject `today`, so they do not exercise this production default.
+| Finding | Resolution evidence | Result |
+| --- | --- | --- |
+| WR-01 | `publicationDateAt()` derives the civil date in `Asia/Riyadh`; the boundary test proves the Riyadh day advances while UTC is still on the prior date. | Resolved |
+| WR-02 | One `assertArabicFacing()` boundary now covers article title/description/summary, section label/description, author name, and reference label, with negative tests for Latin-only values. | Resolved |
+| WR-03 | `test:browser` now runs `npm run build` immediately before Playwright, and the focused invocation generated all 8 current pages before starting the production preview. | Resolved |
+| WR-04 | The discovery oracle keys uniqueness by the complete section/article route and includes a passing case for the same article slug in two registered sections. | Resolved |
 
-**Fix:** Derive the default date in the explicitly chosen publication timezone (for example `Asia/Riyadh`) or pass the intended build civil date into the schema boundary. Add a test for an instant where the Riyadh date and UTC date differ.
+## Verification
 
-### WR-02: Arabic-only reader-facing metadata is not enforced by the content boundary
+Executed with the pinned runtime:
 
-**Classification:** WARNING  
-**File:** `src/lib/content-contract.ts:140-169,182-186`  
-**Issue:** Section labels/descriptions, author names, and article title/description/summary are checked only for non-empty strings. A Latin-only value therefore passes the same validated collection used by public pages, despite the project and Phase 3 UI contract requiring all public interface copy to be Arabic. Reference labels already receive an Arabic-facing check, so the protection is inconsistent at the same trust boundary.
-
-**Fix:** Reuse one `assertArabicFacing` helper for section labels/descriptions, author names, and article title/description/summary, while leaving stable registry keys, URLs, and YouTube IDs exempt. Add Latin-only rejection cases to `tests/content-contract.test.ts`.
-
-### WR-03: The standalone browser-test command can validate stale production output
-
-**Classification:** WARNING  
-**File:** `package.json:16`  
-**Related:** `playwright.config.ts:45-50`  
-**Issue:** `npm run test:browser` starts `astro preview` but never builds `dist`. On a clean checkout it cannot start; after a source edit it can serve an older `dist` and produce a false green production-discovery result. The full `verify` script happens to build first, but the separately exposed browser command is not self-contained.
-
-**Fix:** Make `test:browser` build immediately before Playwright (for example, `npm run build && playwright test`) and remove the now-redundant ordinary build from `verify`, or change the production web-server command to build before previewing. Keep the generated output under the existing ignored directories.
-
-### WR-04: Discovery oracle imposes global slug uniqueness that routing does not require
-
-**Classification:** WARNING  
-**File:** `tests/discovery.spec.ts:88,127-135`  
-**Issue:** `expectedPublicCorpus()` rejects a repeated article slug even when the articles belong to different sections. The implementation correctly defines identity by the complete `/{section}/{slug}/` path and `assertUniqueArticlePaths()` permits that safe case. This independent oracle will therefore fail a valid future corpus and pressure maintainers to add an undocumented global restriction.
-
-**Fix:** Remove the `articleSlugs` set and its duplicate check; retain the complete-route collision check. Add a small oracle/contract fixture proving that the same article slug in two different registered sections yields two distinct valid routes.
+- Node.js `v24.19.0`
+- npm `11.17.0`
+- `npm test`: 84/84 passed, including the nested launch-readiness build
+- `npm run check`: 0 errors, 0 warnings, 0 hints
+- `npm run test:browser -- --project=production-discovery`: fresh 8-page build followed by 12/12 passing Playwright tests
+- Dependency audit during the clean pinned install: 0 vulnerabilities
 
 ---
 
-_Reviewed: 2026-08-27T17:49:54Z_  
-_Reviewer: the agent (gsd-code-reviewer)_  
+_Reviewed: 2026-08-27T18:09:35Z_
+_Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
