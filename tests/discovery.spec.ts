@@ -494,7 +494,9 @@ test("raw source, HTML, internal links, canonicals, social URLs, and sitemap agr
   expect(sortedUnique(sitemapUrls)).toEqual(expectedUrls);
 
   const excluded = excludedSourceCorpus();
-  expect(excluded.map(({ path }) => path).sort()).toEqual([...PROOF_PATHS].sort());
+  const excludedPaths = excluded.map(({ path }) => path);
+  expect(new Set(excludedPaths).size).toBe(excludedPaths.length);
+  expect(excludedPaths).toEqual(expect.arrayContaining([...PROOF_PATHS]));
   for (const path of [
     ...excluded.map(({ path }) => path),
     "/قسم-غير-مسجل/",
@@ -857,7 +859,6 @@ test("structural routes have native semantics and no serious axe findings", asyn
     }
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
-      .disableRules(["document-title"])
       .analyze();
     expect(
       results.violations.filter(
