@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready
-stopped_at: Phase 3 verified; ready to specify Phase 4
-last_updated: "2026-08-27T19:04:05.3045639Z"
-last_activity: 2026-08-27 -- Phase 3 passed goal verification (8/8 must-haves)
+status: discussing
+stopped_at: Phase 4 specification locked; ready for implementation discussion
+last_updated: "2026-08-27T19:09:36.2953114Z"
+last_activity: 2026-08-27 -- Locked Phase 4 SPEC.md (6 requirements, ambiguity 0.04)
 progress:
   total_phases: 6
   completed_phases: 3
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-08-26)
 
 ## Current Position
 
-Phase: 04 (search-discovery-integrity) — NOT STARTED
+Phase: 04 (search-discovery-integrity) — SPECIFIED
 Plan: 0 of TBD
-Status: Ready for specification and discussion
-Last activity: 2026-08-27 -- Phase 3 passed goal verification (8/8 must-haves)
+Status: Specification complete — ready for discussion
+Last activity: 2026-08-27 -- Locked Phase 4 SPEC.md (6 requirements, ambiguity 0.04)
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -103,6 +103,9 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 03]: Publish the owner-authorized launch corpus with visible AI-assistance and non-transcript disclosure. — Completes the real content journey without misrepresenting how the articles were produced.
 - [Phase 03]: Remove the human-review sidecar gate and make no review claim unless review actually occurs. — Prevents fabricated reviewer identities, dates, consent, or religious approval.
 - [Phase 03]: Accept Phase 3 after 9/9 UAT checks, a clean code re-review, 22/22 security-threat dispositions, a 24/24 UI audit, and 8/8 goal-verification truths passed.
+- [Phase 04]: Keep one validated origin boundary: ordinary verification uses the local preview origin; launch-readiness requires an explicit safe HTTPS production origin.
+- [Phase 04]: Emit accurate text-only social metadata and omit unapproved social imagery and deferred structured data.
+- [Phase 04]: Derive sitemap/robots from generated public routes; drafts remain absent rather than hidden by crawler rules.
 
 ### Pending Todos
 
@@ -121,6 +124,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-27T19:04:05.3045639Z
-Stopped at: Phase 3 verified; ready to specify Phase 4
+Last session: 2026-08-27T19:09:36.2953114Z
+Stopped at: Phase 4 specification locked; ready for implementation discussion
 Resume file: None
