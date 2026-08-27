@@ -559,25 +559,30 @@ Plans 03-01 through 03-03 are safe to execute without real-world content. Plan 0
 
 The one discretionary recommendation—using public-only entries in development indexes while keeping draft proof routes directly previewable—is identified as a recommendation, not a locked factual claim. [RECOMMENDED: smallest interpretation of D-15/D-17]
 
-## Open Questions and Recommendations
+## Open Questions (RESOLVED)
 
 1. **What optional author facts should be shown?**
+   - Resolution status: **RESOLVED** — omit every optional author fact truthfully until the owner supplies and approves it.
    - What is known: only `أحمد المنجاوي` is approved and present. [VERIFIED: registry, D-09]
    - Recommendation: ship the minimal author page with name, locked publication-purpose copy, and home link; add nothing else until supplied.
 
 2. **Which three article/video packages are launch content?**
+   - Resolution status: **RESOLVED / DELEGATED to Plan 03-04 Task 2** — infer no value; its blocking checkpoint requires the owner to supply one complete package per registered section.
    - What is known: none exists in the repository. [VERIFIED: source inventory]
    - Recommendation: owner supplies one package per registered section; do not repurpose proof fixtures.
 
 3. **Who performs each review and on what date?**
+   - Resolution status: **RESOLVED / DELEGATED to Plan 03-04 Task 2** — infer no identity, date, or pass value; its blocking checkpoint remains closed until real reviewers act on the exact final bytes.
    - What is known: no reviewer evidence exists. [VERIFIED: repository inventory]
    - Recommendation: require real identity/date/pass records after final source bytes are ready; never seed them.
 
 4. **Can reviewer identities safely live in this Git repository?**
+   - Resolution status: **RESOLVED / DELEGATED to Plan 03-04 Task 2** — its checkpoint blocks sidecar publication until the owner confirms repository visibility and every reviewer's informed consent.
    - What is known: D-11 requires local sidecars and D-13 forbids public rendering, but repository visibility/consent is not documented. [VERIFIED: CONTEXT; missing local evidence]
    - Recommendation: confirm repository access and reviewer consent before committing identities. This is a privacy/security checkpoint, not a reason to delay structural work.
 
 5. **Should development indexes show drafts?**
+   - Resolution status: **RESOLVED** — indexes remain public-only in every mode; drafts are previewed directly at their final paths through the development boundary.
    - What is known: drafts must be previewable, but production discovery must be public-only. [VERIFIED: D-15/D-17]
    - Recommendation: indexes remain public-only in every mode; direct final-path preview covers drafts with less ambiguity.
 
