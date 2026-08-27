@@ -1,6 +1,5 @@
 import { getCollection } from "astro:content";
 
-import { assertPublicArticleApprovals } from "./approval-contract.ts";
 import {
   assertLaunchSectionCoverage,
   assertUniqueArticlePaths,
@@ -11,7 +10,6 @@ import {
 async function getValidatedArticles() {
   const articles = await getCollection("articles");
   assertUniqueArticlePaths(articles);
-  assertPublicArticleApprovals(articles);
   return articles;
 }
 

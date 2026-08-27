@@ -6,7 +6,7 @@
 <domain>
 ## Phase Boundary
 
-Phase 3 adds the smallest complete static discovery graph around the proven article reader: an Arabic homepage, one generic index for each of the three registered sections, contextual links from article facts, one truthful author destination, and a real reviewed launch article/video pair in every section. It does not claim Phase 4 search identity, Phase 5 deployment/measurement, or Phase 6 production certification.
+Phase 3 adds the smallest complete static discovery graph around the proven article reader: an Arabic homepage, one generic index for each of the three registered sections, contextual links from article facts, one truthful author destination, and a real source-backed launch article/video pair in every section. It does not claim Phase 4 search identity, Phase 5 deployment/measurement, or Phase 6 production certification.
 
 </domain>
 
@@ -23,9 +23,9 @@ Downstream agents MUST read `03-SPEC.md` before planning or implementing. Requir
 - Three registry-driven Arabic section indexes listing every eligible public article.
 - One Arabic author page plus crawlable author links from all public article bylines.
 - At least three real launch article/video pairs, one per primary section, with truthful provenance.
-- A fail-closed editorial and religious-accuracy approval requirement for public launch articles.
+- Transparent source/video provenance and AI-assistance disclosure without invented review evidence.
 - Removal of Phase 2 proof records from public output while preserving Markdown/MDX regression coverage.
-- Automated and human verification of the complete homepage-to-content-to-author journey.
+- Automated browser and source verification of the complete homepage-to-content-to-author journey.
 
 **Out of scope (from SPEC.md):**
 
@@ -33,7 +33,7 @@ Downstream agents MUST read `03-SPEC.md` before planning or implementing. Requir
 - Hosting, production domain configuration, Google Search Console, analytics, or outbound-click measurement — Phase 5 owns deployment and measurement.
 - Production crawl certification and production Core Web Vitals evidence — Phase 6 owns launch verification.
 - Search, filters, tags, related articles, lesson sequencing, or full YouTube-catalog migration — explicitly deferred beyond the three-article launch corpus.
-- AI-authored articles, automated transcript import, or invented biography/review data — excluded by the project trust requirements.
+- Automated transcript import, bulk paraphrasing, or invented biography/review data — excluded; the owner explicitly authorized three AI-assisted source-backed launch drafts on 2026-08-27.
 
 </spec_lock>
 
@@ -59,18 +59,18 @@ Downstream agents MUST read `03-SPEC.md` before planning or implementing. Requir
 - **D-09:** The author page renders only fields present in the authoritative author registry/profile input. The current name is safe to render; biography, expertise, affiliation, credentials, social profiles, and channel claims are omitted until the owner supplies and approves them. Do not show generated filler or a public “coming soon” claim.
 - **D-10:** Structured Person/Article schema and canonical entity identifiers remain outside this phase; Phase 4 owns page identity metadata and the roadmap defers richer structured data.
 
-### Human Approval and Truth Gate
+### Source-Backed Publication Truth Gate
 
-- **D-11:** Store review evidence outside the article source in a small local sidecar record keyed to the article. It contains a SHA-256 digest of the reviewed article source plus separate editorial and religious-accuracy entries with real reviewer identity, approval date, and passing decision. Use Node's built-in crypto/filesystem; add no dependency.
-- **D-12:** A `draft: false` launch record fails validation when its approval sidecar is missing, malformed, incomplete, or its digest no longer matches the article source. Draft records remain previewable without approval so authors can work before review.
-- **D-13:** Reviewer identities and approval details stay internal. The public page shows no reviewer name, badge, or generic “reviewed” claim unless the owner later approves that specific public statement.
-- **D-14:** Record the missing real-world inputs in one non-public Phase 3 content-input checklist: approved author facts plus three article packages with source text, matching YouTube URL/ID, real dates, required references, and both approvals. Keep unknown values blank and never seed examples that could be mistaken for approval.
+- **D-11:** The owner's 2026-08-27 instruction authorizes autonomous filenames, slugs, structure, and AI-assisted Arabic copy for the three launch articles. Each article is derived from verified YouTube page metadata and cited public sources; no transcript is claimed.
+- **D-12:** Public eligibility remains the existing schema, explicit `draft` state, unique-route validation, and registered-section launch coverage. The prior human-review sidecar layer is removed rather than populated with synthetic identities or implied consent.
+- **D-13:** Each AI-assisted article states that fact publicly in Arabic and identifies that it is not a verbatim video transcript. No page claims human editorial or religious review unless such evidence is supplied later.
+- **D-14:** `03-CONTENT-INPUTS.md` records the chosen source paths, slugs, matching YouTube URLs/IDs, video dates, article dates, cited sources, and actual authorship/review status. It stores no reviewer identity or consent fiction.
 
 ### Proof Isolation and Verification
 
 - **D-15:** Change Phase 2 proof articles to draft/test-only content. Exercise their Markdown and restricted-MDX reader paths through the existing development-preview boundary; never leave public proof routes merely hidden from indexes.
-- **D-16:** Keep the normal structural verification runnable while truthful inputs are absent. Add one explicit launch-readiness check for section coverage, real-content classification, profile evidence, matching videos, and current approval sidecars. Phase 3 cannot verify complete, and later production work cannot proceed, until that check passes.
-- **D-17:** Production discovery/browser checks use real approved public content once supplied. Development proof checks may use the draft routes, but the production build must separately assert that every proof route and example reference/video mapping is absent.
+- **D-16:** Keep normal structural verification and a separate launch-readiness check. Launch readiness proves that every registered section has public content; content schema and browser checks prove routes, dates, references, videos, proof isolation, and disclosure behavior.
+- **D-17:** Production discovery/browser checks use the real source-backed public corpus. Development proof checks may use the draft routes, while the production build separately asserts that every proof route and example reference/video mapping is absent.
 
 ### Arabic Visual Continuity
 
@@ -81,7 +81,7 @@ Downstream agents MUST read `03-SPEC.md` before planning or implementing. Requir
 
 - Exact shared layout, style-module, helper, and test filenames, provided the implementation reuses existing boundaries and creates no single-use abstraction that is larger than the duplication it removes.
 - Exact Arabic microcopy for the homepage introduction, contextual links, and empty state, provided it is concise, reader-facing Arabic and contains no unsupported personal or religious claim.
-- Exact JSON field names and approval-sidecar directory, provided the digest binds both approvals to the exact source revision and diagnostics identify the article and failed review rule.
+- Exact article source filenames and Arabic slugs, provided they remain explicit, collision-free, and recorded in the Phase 3 content ledger.
 - Whether the development browser suite runs in one or two Playwright projects, provided production draft exclusion remains independently tested and all artifacts stay under `.artifacts/`.
 
 </decisions>
@@ -104,7 +104,7 @@ Downstream agents MUST read `03-SPEC.md` before planning or implementing. Requir
 - `.planning/phases/02-complete-arabic-article-journey/02-SPEC.md` — Upstream article-journey requirements and boundaries that Phase 3 must preserve.
 - `.planning/phases/02-complete-arabic-article-journey/02-VERIFICATION.md` — Independent evidence for the current article route, proof fixtures, tests, and public/draft behavior.
 - `.planning/phases/01-content-and-url-contract/01-CONTEXT.md` — Registry, collection, route identity, public/preview selector, restricted-MDX, and validation decisions.
-- `.planning/phases/01-content-and-url-contract/01-SPEC.md` — Upstream content/URL/draft guarantees that new discovery routes and approval checks must preserve.
+- `.planning/phases/01-content-and-url-contract/01-SPEC.md` — Upstream content/URL/draft guarantees that new discovery routes and launch checks must preserve.
 
 ### Repository and Source Boundaries
 
@@ -127,7 +127,7 @@ Downstream agents MUST read `03-SPEC.md` before planning or implementing. Requir
 
 - `sectionRegistry` / `authorRegistry`: Already hold stable internal keys and Arabic display facts; homepage, index generation, contextual links, and author rendering should consume them directly.
 - `getPublicArticles()` / `getPreviewArticles()`: Preserve one explicit public/draft boundary for production discovery and development proof journeys.
-- `pathParamsFor()` and the shared content contract: Keep one stable article identity source and extend validation once for approval eligibility rather than checking it independently in routes.
+- `pathParamsFor()` and the shared content contract: Keep one stable article identity source and validate publication eligibility once rather than checking it independently in routes.
 - `[section]/[slug].astro`: Supplies the proven Arabic document shell, reader palette, typography, focus, responsive measure, article facts, and media journey.
 - Native Node tests plus Playwright/axe: Already provide the exact low-dependency verification stack and artifact routing required by the phase.
 
@@ -143,7 +143,7 @@ Downstream agents MUST read `03-SPEC.md` before planning or implementing. Requir
 - Add a shared public shell/style boundary and move only truly global reader rules out of the article route.
 - Add root, section-index, and author routes that consume the existing registries and article selectors.
 - Turn article section/author facts into contextual anchors without disturbing the fixed text/media order.
-- Extend source preflight or the content trust boundary to validate external approval sidecars against exact article digests.
+- Keep public selection at the existing schema/draft/route boundary and make launch coverage explicit without a second publication system.
 - Demote proof content from public output, adapt browser lifecycle for draft proof routes, and add production discovery/launch-readiness checks.
 
 </code_context>
@@ -154,8 +154,8 @@ Downstream agents MUST read `03-SPEC.md` before planning or implementing. Requir
 - The header is deliberately tiny: `مدونة أحمد المنجاوي` links home; page-specific content supplies the rest of the navigation graph.
 - Section indexes read like a clean bibliography, not a marketing card grid.
 - The author path is `/عن-أحمد-المنجاوي/`; no unsupported credential or expertise sentence is generated to fill it.
-- Approval sidecars bind two human decisions to the exact source via SHA-256, avoiding stale checkboxes after an edit.
-- Structural work ends with a precise content-input checklist and a failing launch-readiness result until real facts and approvals are supplied.
+- The content ledger records actual source/video/date/reference facts and explicitly states that no transcript or human-review package exists.
+- Launch readiness is green only when each registered section contains a validated public article; browser QA separately proves the rendered graph and disclosure text.
 
 </specifics>
 
@@ -172,4 +172,4 @@ Downstream agents MUST read `03-SPEC.md` before planning or implementing. Requir
 ---
 
 *Phase: 03-real-content-and-section-discovery*
-*Context gathered: 2026-08-26*
+*Context gathered: 2026-08-26; publication boundary updated: 2026-08-27*

@@ -47,7 +47,7 @@ Requirements for the first production release. Each requirement will map to exac
 ### Content and Editorial Trust
 
 - [ ] **CONT-01**: The launch contains at least one substantive Arabic article with a real matching YouTube video in each of the three primary sections.
-- [ ] **CONT-02**: Every launch article receives recorded human editorial and religious-accuracy sign-off before it becomes public.
+- [ ] **CONT-02**: Every launch article records its matching video and supporting sources, discloses AI assistance when used, and makes no human-review claim unless that review actually occurred.
 - [x] **CONT-03**: Public bylines, expertise descriptions, dates, references, and review claims reflect real people, sources, and events rather than SEO-only placeholders.
 
 ### Measurement
@@ -102,7 +102,7 @@ Explicit exclusions prevent scope creep during v1.
 | Browser CMS or administration dashboard | Markdown/MDX plus local preview and validation is the selected v1 workflow. |
 | Database, authentication, or reader accounts | No v1 capability requires request-time state or identity. |
 | Comments, forums, reactions, or community profiles | They introduce moderation, privacy, and religious-advice risk without supporting the core journey. |
-| AI-written articles, transcript automation, or bulk paraphrasing | Religious accuracy, originality, and human review take priority over catalog volume. |
+| Unattended transcript automation or bulk paraphrasing | The three launch articles are intentionally drafted from verified video metadata and cited sources; no transcript or mass-generation pipeline is used. |
 | Full YouTube catalog migration before launch | Three substantive representative articles are sufficient to validate the model. |
 | Search, filters, tags, or deep taxonomy at launch | Three section indexes are simpler and sufficient for the launch corpus. |
 | Separate watch pages or VideoObject markup for rich-result manipulation | Articles are useful text pages with supporting media, not dedicated video watch pages. |
@@ -161,4 +161,4 @@ Explicit exclusions prevent scope creep during v1.
 
 ---
 *Requirements defined: 2026-08-26*
-*Last updated: 2026-08-26 after Phase 1 verification*
+*Last updated: 2026-08-27 after the owner authorized autonomous source-backed launch content*

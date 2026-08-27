@@ -50,7 +50,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 
 ### Phase 3: Real Content and Section Discovery
 
-**Goal:** As a visitor, I want to discover substantive, human-reviewed launch content through the homepage, three section indexes, and truthful author context, so that I can find relevant material and understand who published it.
+**Goal:** As a visitor, I want to discover substantive, source-backed launch content through the homepage, three section indexes, and truthful author context, so that I can find relevant material and understand who published it.
 **Mode:** mvp
 **Depends on:** Phase 2
 **Requirements:** SITE-03, SITE-04, SITE-05, CONT-01, CONT-02, CONT-03
@@ -59,7 +59,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
   1. A visitor can follow ordinary crawlable homepage links to الردود والشبهات, القضايا العامة, and القسم العلمي, with القسم العلمي clearly presented as structured Islamic scholarship.
   2. Each primary section has a crawlable Arabic index that gives a useful summary and link for every published article in that section.
   3. A visitor can open an Arabic About/author page from any article byline and find truthful information about Ahmed El-Mangawy.
-  4. Each primary section contains at least one substantive Arabic article with a real matching YouTube video, recorded human editorial and religious-accuracy sign-off, and truthful byline, expertise, date, reference, and review facts.
+  4. Each primary section contains at least one substantive Arabic article with a real matching YouTube video, cited supporting sources, truthful author/date facts, transparent AI-assistance disclosure when applicable, and no fabricated review claim.
 
 **Plans:** 3/4 plans executed
 **UI hint:** yes

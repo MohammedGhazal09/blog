@@ -35,7 +35,7 @@ Arabic search users can find a useful, relevant article on Google and continue d
 - English or multilingual pages — the website is intentionally Arabic-only.
 - A browser-based CMS or administration dashboard — Markdown/MDX is the v1 publishing workflow.
 - User accounts, authentication, comments, or community features — they do not support the initial SEO-to-YouTube objective.
-- Automatic article generation or transcript import from YouTube — v1 content is authored and reviewed manually.
+- Unattended transcript import or bulk article generation — v1 uses three deliberately drafted, source-backed articles and no catalog-scale automation.
 - Migrating the owner's complete YouTube catalog before launch — v1 requires representative real content, not a full archive.
 - Natural-science educational content — القسم العلمي refers to Islamic scholarly and educational material.
 
@@ -78,6 +78,7 @@ Arabic search users can find a useful, relevant article on Google and continue d
 | Validate structured references once at the shared content boundary | Keeps public provenance descriptive, Arabic-facing, absolute-HTTPS, credential-free, and fail-closed without route-side repair | ✓ Good |
 | Create the YouTube iframe only after explicit reader intent from a validated ID | Avoids eager third-party requests and autoplay while keeping the host hardcoded to the privacy-enhanced origin | ✓ Good |
 | Keep visible focus on the local player boundary while focus is inside the cross-origin iframe | Preserves a clear keyboard focus indicator without a custom focus trap or extra ARIA layer | ✓ Good |
+| Allow AI-assisted launch drafts from verified video metadata and cited sources at the owner's explicit request | Unblocks representative content without inventing transcripts, reviewer identities, or approval evidence; each public article discloses the assistance | ✓ Good |
 
 ## Evolution
 
@@ -97,4 +98,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-26 after Phase 2*
+*Last updated: 2026-08-27 during Phase 3 autonomous content completion*

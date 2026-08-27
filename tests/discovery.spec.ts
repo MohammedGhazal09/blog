@@ -1,8 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, type Dirent } from "node:fs";
-import { basename, extname, join, relative } from "node:path";
+import { extname, join, relative } from "node:path";
 
 import {
   authorRegistry,
@@ -14,13 +13,11 @@ type PublicCorpusEntry = {
   sectionKey: SectionKey;
   sectionSlug: string;
   articleSlug: string;
+  youtubeId: string;
   path: string;
 };
 
-type JsonObject = Record<string, unknown>;
-
 const ARTICLE_ROOT = "src/content/articles";
-const REVIEW_ROOT = "src/content/reviews";
 const PRODUCTION_ORIGIN = "http://127.0.0.1:4322";
 const AUTHOR_PATH = "/عن-أحمد-المنجاوي/";
 const PROOF_PATHS = [
@@ -39,10 +36,6 @@ const articleSource = readFileSync("src/pages/[section]/[slug].astro", "utf8");
 
 function oracleAssert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
-}
-
-function isJsonObject(value: unknown): value is JsonObject {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 function walkFiles(directory: string, extensions: readonly string[]): string[] {
@@ -91,95 +84,9 @@ function frontmatterScalar(block: string, field: string, path: string): string {
   return literal;
 }
 
-function strictFields(
-  value: JsonObject,
-  expected: readonly string[],
-  location: string,
-): void {
-  oracleAssert(
-    Object.keys(value).sort().join("\n") === [...expected].sort().join("\n"),
-    `${location}: fields must match the approval contract exactly`,
-  );
-}
-
-function exactCurrentDate(value: unknown): boolean {
-  if (typeof value !== "string") return false;
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/u.exec(value);
-  if (!match) return false;
-  const date = new Date(
-    Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])),
-  );
-  return (
-    date.getUTCFullYear() === Number(match[1]) &&
-    date.getUTCMonth() === Number(match[2]) - 1 &&
-    date.getUTCDate() === Number(match[3]) &&
-    value <= new Date().toISOString().slice(0, 10)
-  );
-}
-
-function validateReview(
-  value: unknown,
-  location: string,
-  editorial: boolean,
-): void {
-  oracleAssert(isJsonObject(value), `${location}: review must be an object`);
-  strictFields(
-    value,
-    editorial
-      ? [
-          "reviewer",
-          "approvedAt",
-          "decision",
-          "substantive",
-          "videoMatchesArticle",
-        ]
-      : ["reviewer", "approvedAt", "decision"],
-    location,
-  );
-  oracleAssert(
-    typeof value.reviewer === "string" && value.reviewer.trim().length > 0,
-    `${location}: reviewer must be a non-blank string`,
-  );
-  oracleAssert(
-    exactCurrentDate(value.approvedAt),
-    `${location}: approval date must be a current real YYYY-MM-DD date`,
-  );
-  oracleAssert(
-    value.decision === "pass",
-    `${location}: decision must be literal pass`,
-  );
-  if (editorial) {
-    oracleAssert(
-      value.substantive === true,
-      `${location}: substantive must be literal true`,
-    );
-    oracleAssert(
-      value.videoMatchesArticle === true,
-      `${location}: videoMatchesArticle must be literal true`,
-    );
-  }
-}
-
-function readSidecars(): readonly { path: string; value: unknown }[] {
-  return walkFiles(REVIEW_ROOT, [".json"]).map((path) => {
-    let value: unknown;
-    try {
-      value = JSON.parse(readFileSync(path, "utf8"));
-    } catch {
-      throw new Error(
-        `${sourcePath(path)}: review sidecar must contain valid JSON`,
-      );
-    }
-    return { path, value };
-  });
-}
-
 function expectedPublicCorpus(): readonly PublicCorpusEntry[] {
-  const sidecars = readSidecars();
-  const articleIds = new Set<string>();
   const articleSlugs = new Set<string>();
   const routes = new Set<string>();
-  const usedSidecars = new Set<string>();
   const sources = new Set<string>();
   const corpus: PublicCorpusEntry[] = [];
 
@@ -191,8 +98,7 @@ function expectedPublicCorpus(): readonly PublicCorpusEntry[] {
     );
     sources.add(normalizedSource);
 
-    const rawBytes = readFileSync(path);
-    const metadata = frontmatter(rawBytes.toString("utf8"), normalizedSource);
+    const metadata = frontmatter(readFileSync(path, "utf8"), normalizedSource);
     const draft = frontmatterScalar(metadata, "draft", normalizedSource);
     oracleAssert(
       draft === "true" || draft === "false",
@@ -206,95 +112,18 @@ function expectedPublicCorpus(): readonly PublicCorpusEntry[] {
       normalizedSource,
     ) as SectionKey;
     const articleSlug = frontmatterScalar(metadata, "slug", normalizedSource);
+    const youtubeId = frontmatterScalar(
+      metadata,
+      "youtubeId",
+      normalizedSource,
+    );
     oracleAssert(
       Object.hasOwn(sectionRegistry, sectionKey),
       `${normalizedSource}: section must be registered`,
     );
 
-    const candidates = sidecars.filter(({ value }) => {
-      return (
-        isJsonObject(value) &&
-        value.source === normalizedSource &&
-        value.articleSlug === articleSlug
-      );
-    });
-    oracleAssert(
-      candidates.length === 1,
-      `${normalizedSource}: public source must have exactly one matching sidecar`,
-    );
-    const sidecar = candidates[0];
-    oracleAssert(
-      !usedSidecars.has(sidecar.path),
-      `${normalizedSource}: review sidecar is duplicated`,
-    );
-    usedSidecars.add(sidecar.path);
-    oracleAssert(
-      isJsonObject(sidecar.value),
-      `${normalizedSource}: sidecar must be an object`,
-    );
-    strictFields(
-      sidecar.value,
-      [
-        "articleId",
-        "articleSlug",
-        "source",
-        "sha256",
-        "classification",
-        "editorial",
-        "religiousAccuracy",
-      ],
-      `${normalizedSource}: sidecar`,
-    );
-    oracleAssert(
-      typeof sidecar.value.articleId === "string" &&
-        sidecar.value.articleId.trim().length > 0,
-      `${normalizedSource}: sidecar articleId must be a non-blank string`,
-    );
-    oracleAssert(
-      basename(sidecar.path) ===
-        `${encodeURIComponent(sidecar.value.articleId)}.json`,
-      `${normalizedSource}: sidecar filename must match articleId`,
-    );
-    oracleAssert(
-      sidecar.value.articleSlug === articleSlug,
-      `${normalizedSource}: sidecar articleSlug must match source`,
-    );
-    oracleAssert(
-      sidecar.value.source === normalizedSource,
-      `${normalizedSource}: sidecar source must match raw source path`,
-    );
-    oracleAssert(
-      sidecar.value.classification === "launch",
-      `${normalizedSource}: classification must be literal launch`,
-    );
-    oracleAssert(
-      typeof sidecar.value.sha256 === "string" &&
-        /^[0-9a-f]{64}$/u.test(sidecar.value.sha256),
-      `${normalizedSource}: sha256 must be lowercase 64-character hex`,
-    );
-    oracleAssert(
-      sidecar.value.sha256 ===
-        createHash("sha256").update(rawBytes).digest("hex"),
-      `${normalizedSource}: sha256 must match exact raw source bytes`,
-    );
-    validateReview(
-      sidecar.value.editorial,
-      `${normalizedSource}: editorial`,
-      true,
-    );
-    validateReview(
-      sidecar.value.religiousAccuracy,
-      `${normalizedSource}: religiousAccuracy`,
-      false,
-    );
-
-    const articleId = sidecar.value.articleId as string;
     const section = sectionRegistry[sectionKey];
     const route = `/${section.slug}/${articleSlug}/`;
-    oracleAssert(
-      !articleIds.has(articleId),
-      `${normalizedSource}: duplicate public articleId`,
-    );
     oracleAssert(
       !articleSlugs.has(articleSlug),
       `${normalizedSource}: duplicate public article slug`,
@@ -303,13 +132,13 @@ function expectedPublicCorpus(): readonly PublicCorpusEntry[] {
       !routes.has(route),
       `${normalizedSource}: duplicate public article route`,
     );
-    articleIds.add(articleId);
     articleSlugs.add(articleSlug);
     routes.add(route);
     corpus.push({
       sectionKey,
       sectionSlug: section.slug,
       articleSlug,
+      youtubeId,
       path: route,
     });
   }
@@ -347,26 +176,6 @@ function readOutputTree(directory: string): string {
     .map((path) => readFileSync(path, "utf8"))
     .join("\n");
 }
-
-function internalReviewerValues(): (publicText: string) => boolean {
-  const values = new Set<string>();
-  for (const { value } of readSidecars()) {
-    if (!isJsonObject(value)) continue;
-    for (const review of [value.editorial, value.religiousAccuracy]) {
-      if (
-        isJsonObject(review) &&
-        typeof review.reviewer === "string" &&
-        review.reviewer.trim().length > 0
-      ) {
-        values.add(review.reviewer);
-      }
-    }
-  }
-  return (publicText: string) =>
-    [...values].some((reviewer) => publicText.includes(reviewer));
-}
-
-const containsInternalReviewer = internalReviewerValues();
 
 async function expectArabicDocument(
   page: Page,
@@ -566,7 +375,7 @@ test("author output is truthful and unsupported claims are absent", async ({
   ).toHaveCount(0);
 });
 
-test("public routes contain no proof, review, or reviewer trace", async ({
+test("public routes contain no proof or fabricated review trace", async ({
   page,
 }) => {
   for (const proofPath of PROOF_PATHS) {
@@ -584,11 +393,6 @@ test("public routes contain no proof, review, or reviewer trace", async ({
   expect(builtText).not.toMatch(
     /تمت المراجعة|تمت الموافقة|مقال معتمد|مادة معتمدة/iu,
   );
-  expect(
-    containsInternalReviewer(builtText),
-    "public build must not contain an internal reviewer identity",
-  ).toBe(false);
-
   const corpus = expectedPublicCorpus();
   for (const path of structuralPaths(corpus)) {
     await page.goto(path);
@@ -596,10 +400,6 @@ test("public routes contain no proof, review, or reviewer trace", async ({
     expect(html).not.toMatch(
       /articleId|sha256|classification|editorial|religiousAccuracy|reviewer|approvedAt/iu,
     );
-    expect(
-      containsInternalReviewer(html),
-      "public DOM must not contain an internal reviewer identity",
-    ).toBe(false);
   }
 });
 
@@ -621,6 +421,17 @@ test("every public article links to working section and author facts", async ({
     await expect(authorLink).toHaveAttribute("href", AUTHOR_PATH);
     await expect(sectionLink).not.toHaveAttribute("target", /.+/u);
     await expect(authorLink).not.toHaveAttribute("target", /.+/u);
+    await expect(
+      page.locator("article blockquote").filter({
+        hasText: "أُعدت هذه المادة بمساعدة الذكاء الاصطناعي",
+      }),
+    ).toContainText("وليست تفريغًا حرفيًا للفيديو");
+    await expect(
+      page.getByRole("link", { name: "مشاهدة الفيديو على يوتيوب" }),
+    ).toHaveAttribute(
+      "href",
+      `https://www.youtube.com/watch?v=${encodeURIComponent(article.youtubeId)}`,
+    );
     expect((await request.get(`/${section.slug}/`)).status()).toBe(200);
     expect((await request.get(AUTHOR_PATH)).status()).toBe(200);
   }
