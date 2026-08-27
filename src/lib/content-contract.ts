@@ -309,6 +309,29 @@ export function selectPublicArticles<T extends ArticleRecord>(
   return entries.filter((entry) => entry.data.draft === false);
 }
 
+export function assertLaunchSectionCoverage(
+  entries: readonly ArticleRecord[],
+  sections: SectionRegistry = sectionRegistry,
+): void {
+  const missing = Object.entries(sections)
+    .sort((first, second) => first[1].order - second[1].order)
+    .filter(
+      ([key]) =>
+        !entries.some(
+          (entry) => entry.data.draft === false && entry.data.section === key,
+        ),
+    );
+
+  if (missing.length > 0) {
+    fail(
+      "launch-readiness",
+      `missing approved launch article for: ${missing
+        .map(([key, section]) => `${key} (${section.label})`)
+        .join(", ")}`,
+    );
+  }
+}
+
 export function assertPreviewMode(isDevelopment: boolean): void {
   if (!isDevelopment)
     throw new Error(
