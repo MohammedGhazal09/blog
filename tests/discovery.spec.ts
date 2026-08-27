@@ -10,11 +10,15 @@ import {
 } from "../src/config/registries.ts";
 
 type PublicCorpusEntry = {
+  source: string;
+  title: string;
   sectionKey: SectionKey;
   sectionSlug: string;
   articleSlug: string;
   youtubeId: string;
   path: string;
+  draft: boolean;
+  excludedIdentifiers: readonly string[];
 };
 
 const ARTICLE_ROOT = "src/content/articles";
@@ -83,7 +87,11 @@ function frontmatterScalar(block: string, field: string, path: string): string {
     matches.length === 1,
     `${path}: ${field} must occur exactly once`,
   );
-  const literal = matches[0][1].trim();
+  return unquoteScalar(matches[0][1]);
+}
+
+function unquoteScalar(value: string): string {
+  const literal = value.trim();
   if (
     (literal.startsWith('"') && literal.endsWith('"')) ||
     (literal.startsWith("'") && literal.endsWith("'"))
@@ -93,7 +101,13 @@ function frontmatterScalar(block: string, field: string, path: string): string {
   return literal;
 }
 
-function expectedPublicCorpus(): readonly PublicCorpusEntry[] {
+function frontmatterScalars(block: string, field: string): string[] {
+  return [
+    ...block.matchAll(new RegExp(`^\\s*${field}:\\s*(.+?)\\s*$`, "gmu")),
+  ].map((match) => unquoteScalar(match[1]));
+}
+
+function sourceCorpus(): readonly PublicCorpusEntry[] {
   const routes = new Set<string>();
   const sources = new Set<string>();
   const corpus: PublicCorpusEntry[] = [];
@@ -112,13 +126,12 @@ function expectedPublicCorpus(): readonly PublicCorpusEntry[] {
       draft === "true" || draft === "false",
       `${normalizedSource}: draft must be a literal boolean`,
     );
-    if (draft === "true") continue;
-
     const sectionKey = frontmatterScalar(
       metadata,
       "section",
       normalizedSource,
     ) as SectionKey;
+    const title = frontmatterScalar(metadata, "title", normalizedSource);
     const articleSlug = frontmatterScalar(metadata, "slug", normalizedSource);
     const youtubeId = frontmatterScalar(
       metadata,
@@ -132,17 +145,37 @@ function expectedPublicCorpus(): readonly PublicCorpusEntry[] {
 
     const section = sectionRegistry[sectionKey];
     const route = `/${section.slug}/${articleSlug}/`;
-    registerPublicRoute(routes, route, normalizedSource);
+    const isDraft = draft === "true";
+    if (!isDraft) registerPublicRoute(routes, route, normalizedSource);
     corpus.push({
+      source: normalizedSource,
+      title,
       sectionKey,
       sectionSlug: section.slug,
       articleSlug,
       youtubeId,
       path: route,
+      draft: isDraft,
+      excludedIdentifiers: [
+        title,
+        articleSlug,
+        youtubeId,
+        route,
+        encodeURI(route),
+        ...frontmatterScalars(metadata, "url"),
+      ],
     });
   }
 
   return corpus;
+}
+
+function expectedPublicCorpus(): readonly PublicCorpusEntry[] {
+  return sourceCorpus().filter(({ draft }) => !draft);
+}
+
+function excludedSourceCorpus(): readonly PublicCorpusEntry[] {
+  return sourceCorpus().filter(({ draft }) => draft);
 }
 
 test("discovery oracle permits one slug in two registered sections", () => {
@@ -189,6 +222,35 @@ function readOutputTree(directory: string): string {
   return walkFiles(directory, [".html", ".css", ".js", ".json", ".xml", ".txt"])
     .map((path) => readFileSync(path, "utf8"))
     .join("\n");
+}
+
+function builtHtmlPaths(): string[] {
+  return walkFiles("dist", [".html"])
+    .map((path) => {
+      const outputPath = relative("dist", path).replaceAll("\\", "/");
+      if (outputPath === "index.html") return "/";
+      if (outputPath === "404.html") return "/404/";
+      oracleAssert(
+        outputPath.endsWith("/index.html"),
+        `${outputPath}: unexpected generated HTML shape`,
+      );
+      return `/${outputPath.slice(0, -"index.html".length)}`;
+    })
+    .sort();
+}
+
+function sortedUnique(values: Iterable<string>): string[] {
+  return [...new Set(values)].sort();
+}
+
+async function xmlLocations(page: Page, source: string): Promise<string[]> {
+  return page.evaluate((xml) => {
+    const document = new DOMParser().parseFromString(xml, "application/xml");
+    if (document.querySelector("parsererror")) throw new Error("invalid XML");
+    return [...document.querySelectorAll("loc")].map(
+      (location) => location.textContent?.trim() ?? "",
+    );
+  }, source);
 }
 
 async function expectArabicDocument(
@@ -364,6 +426,118 @@ test("source oracle, generated routes, and rendered indexes agree independently"
       );
     }
   }
+});
+
+test("raw source, HTML, internal links, canonicals, social URLs, and sitemap agree independently", async ({
+  page,
+  request,
+}) => {
+  const corpus = expectedPublicCorpus();
+  const expectedPaths = structuralPaths(corpus).sort();
+  expect(new Set(expectedPaths).size).toBe(expectedPaths.length);
+
+  const generatedPaths = builtHtmlPaths();
+  expect(generatedPaths).toContain("/404/");
+  expect(generatedPaths.filter((path) => path !== "/404/")).toEqual(
+    expectedPaths,
+  );
+
+  const internalPaths: string[] = [];
+  const canonicalUrls: string[] = [];
+  const socialUrls: string[] = [];
+  for (const path of expectedPaths) {
+    expect((await page.goto(path))?.status()).toBe(200);
+    const anchors = await page.locator("a[href]").evaluateAll((nodes) =>
+      nodes.map((node) => (node as HTMLAnchorElement).href),
+    );
+    for (const href of anchors) {
+      const destination = new URL(href);
+      if (destination.origin !== PRODUCTION_ORIGIN) continue;
+      expect(destination.search).toBe("");
+      expect(destination.hash).toBe("");
+      const pathname = decodeURI(destination.pathname);
+      expect(pathname === "/" || pathname.endsWith("/")).toBe(true);
+      internalPaths.push(pathname);
+    }
+
+    const canonical = page.locator('link[rel="canonical"]');
+    const social = page.locator('meta[property="og:url"]');
+    await expect(canonical).toHaveCount(1);
+    await expect(social).toHaveCount(1);
+    canonicalUrls.push((await canonical.getAttribute("href"))!);
+    socialUrls.push((await social.getAttribute("content"))!);
+  }
+
+  expect(sortedUnique(internalPaths)).toEqual(expectedPaths);
+  for (const path of sortedUnique(internalPaths)) {
+    expect((await request.get(path)).status()).toBe(200);
+  }
+
+  const expectedUrls = expectedPaths
+    .map((path) => new URL(path, PRODUCTION_ORIGIN).href)
+    .sort();
+  expect(canonicalUrls).toHaveLength(expectedUrls.length);
+  expect(socialUrls).toHaveLength(expectedUrls.length);
+  expect(sortedUnique(canonicalUrls)).toEqual(expectedUrls);
+  expect(sortedUnique(socialUrls)).toEqual(expectedUrls);
+
+  const sitemapIndexResponse = await request.get("/sitemap-index.xml");
+  expect(sitemapIndexResponse.status()).toBe(200);
+  const sitemapIndex = await sitemapIndexResponse.text();
+  const sitemapFiles = await xmlLocations(page, sitemapIndex);
+  expect(sitemapFiles).toEqual([`${PRODUCTION_ORIGIN}/sitemap-0.xml`]);
+  const sitemapResponse = await request.get(sitemapFiles[0]);
+  expect(sitemapResponse.status()).toBe(200);
+  const sitemap = await sitemapResponse.text();
+  const sitemapUrls = await xmlLocations(page, sitemap);
+  expect(sitemapUrls).toHaveLength(expectedUrls.length);
+  expect(sortedUnique(sitemapUrls)).toEqual(expectedUrls);
+
+  const excluded = excludedSourceCorpus();
+  expect(excluded.map(({ path }) => path).sort()).toEqual([...PROOF_PATHS].sort());
+  for (const path of [
+    ...excluded.map(({ path }) => path),
+    "/قسم-غير-مسجل/",
+  ]) {
+    expect((await request.get(path)).status()).toBe(404);
+  }
+
+  const robotsResponse = await request.get("/robots.txt");
+  expect(robotsResponse.status()).toBe(200);
+  const outputFamilies = {
+    html: walkFiles("dist", [".html"])
+      .map((path) => readFileSync(path, "utf8"))
+      .join("\n"),
+    xml: `${sitemapIndex}\n${sitemap}`,
+    text: await robotsResponse.text(),
+  };
+  for (const entry of excluded) {
+    for (const identifier of entry.excludedIdentifiers) {
+      for (const [family, output] of Object.entries(outputFamilies)) {
+        expect(
+          output,
+          `${entry.source}: ${identifier} leaked into ${family}`,
+        ).not.toContain(identifier);
+      }
+    }
+  }
+  for (const [family, output] of Object.entries(outputFamilies)) {
+    expect(output, `${family}: fabricated review trace`).not.toMatch(
+      /articleId|sha256|classification|editorial|religiousAccuracy|reviewer|approvedAt|تمت المراجعة|تمت الموافقة|مقال معتمد|مادة معتمدة/iu,
+    );
+  }
+});
+
+test("independent discovery oracle enables document-title checks and avoids the application selector", () => {
+  const source = readFileSync("tests/discovery.spec.ts", "utf8");
+  const disabledTitleRule = [
+    ".disable",
+    'Rules(["document-title"])',
+  ].join("");
+  expect(source).not.toContain(disabledTitleRule);
+  expect(source).not.toMatch(
+    /import\s*\{[^}]*getPublicArticles[^}]*\}\s*from\s*["'][^"']*src\/lib\/articles/u,
+  );
 });
 
 test("author output is truthful and unsupported claims are absent", async ({
