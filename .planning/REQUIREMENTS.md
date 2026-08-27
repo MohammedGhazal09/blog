@@ -14,7 +14,7 @@ Requirements for the first production release. Each requirement will map to exac
 - [x] **SITE-03**: A visitor can navigate from the homepage to الردود والشبهات, القضايا العامة, and القسم العلمي through ordinary crawlable links.
 - [x] **SITE-04**: A visitor can open a crawlable index for each primary section and see a useful Arabic summary and link for every published article in that section.
 - [x] **SITE-05**: A visitor can open an Arabic About/author page and follow every article byline to truthful information about Ahmed El-Mangawy.
-- [ ] **SITE-06**: A visitor who opens a missing route receives a useful Arabic 404 page with a clear path back into the site.
+- [x] **SITE-06**: A visitor who opens a missing route receives a useful Arabic 404 page with a clear path back into the site.
 
 ### Article Experience
 
@@ -29,7 +29,7 @@ Requirements for the first production release. Each requirement will map to exac
 ### SEO and Discovery
 
 - [x] **SEO-01**: Every published article has an explicit, stable, clean Arabic URL slug that is not silently regenerated when its title changes.
-- [ ] **SEO-02**: Every indexable page has a unique descriptive Arabic page title, meta description, and single clear primary heading.
+- [x] **SEO-02**: Every indexable page has a unique descriptive Arabic page title, meta description, and single clear primary heading.
 - [x] **SEO-03**: Every indexable page emits a self-consistent canonical URL and accurate social-sharing metadata derived from the configured production origin.
 - [ ] **SEO-04**: Search crawlers can reach every published article through ordinary HTML links, while drafts and non-public content remain absent from public routes and discovery output.
 - [x] **SEO-05**: The deployed site exposes a sitemap containing only canonical published routes and robots directives that agree with the intended indexing policy.
@@ -121,7 +121,7 @@ Explicit exclusions prevent scope creep during v1.
 | SITE-03 | Phase 3 | Complete |
 | SITE-04 | Phase 3 | Complete |
 | SITE-05 | Phase 3 | Complete |
-| SITE-06 | Phase 4 | Pending |
+| SITE-06 | Phase 4 | Complete |
 | ART-01 | Phase 2 | Complete |
 | ART-02 | Phase 2 | Complete |
 | ART-03 | Phase 2 | Complete |
@@ -130,7 +130,7 @@ Explicit exclusions prevent scope creep during v1.
 | ART-06 | Phase 2 | Complete |
 | ART-07 | Phase 2 | Complete |
 | SEO-01 | Phase 1 | Complete |
-| SEO-02 | Phase 4 | Pending |
+| SEO-02 | Phase 4 | Complete |
 | SEO-03 | Phase 4 | Complete |
 | SEO-04 | Phase 4 | Pending |
 | SEO-05 | Phase 4 | Complete |

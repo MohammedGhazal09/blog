@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-08-27T22:47:33.303Z"
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-08-27T23:07:54.921Z"
 last_activity: 2026-08-27
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 14
-  completed_plans: 12
-  percent: 86
+  completed_plans: 13
+  percent: 93
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-08-26)
 ## Current Position
 
 Phase: 04 (search-discovery-integrity) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-08-27
 
-Progress: [█████████░] 86%
+Progress: [█████████░] 93%
 
 ## Performance Metrics
 
@@ -65,6 +65,7 @@ Progress: [█████████░] 86%
 | Phase 03 P03 | 63min | 3 tasks | 3 files |
 | Phase 03 P04 | 29m | 3 tasks | 16 files |
 | Phase 04 P01 | 8m | 2 tasks | 8 files |
+| Phase 04 P02 | 12min | 3 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -109,6 +110,9 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 04]: Derive sitemap/robots from generated public routes; drafts remain absent rather than hidden by crawler rules.
 - [Phase 04-01]: Keep ordinary builds deterministic at http://127.0.0.1:4322 and accept production identity only through an explicit validated launch build. — Prevents ambient or request-derived host data from changing canonical crawler identity.
 - [Phase 04-01]: Use plain official sitemap output and derive robots from Astro.site so crawler routes and origins cannot drift. — Keeps generated public routes and the configured origin as the sole crawler discovery sources.
+- [Phase 04]: Keep SiteLayout.astro as the sole metadata renderer and expose no canonical or origin override surface. — Prevents duplicate head tags and canonical-host overrides.
+- [Phase 04]: Reuse maintained Arabic body and registry copy for descriptions instead of creating a parallel SEO copy store. — Keeps visible and search identity synchronized.
+- [Phase 04]: Keep the 404 and favicon strictly static, local, and free of client runtime or remote assets. — Preserves the minimal no-JavaScript architecture and inert asset boundary.
 
 ### Pending Todos
 
@@ -127,6 +131,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-27T22:47:33.278Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-08-27T23:07:54.906Z
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None
