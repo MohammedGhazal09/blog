@@ -44,6 +44,19 @@ const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
 const DIGIT = /^[0-9\u0660-\u0669\u06F0-\u06F9]$/u;
 const ARABIC_MARK =
   /^[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u08D3-\u08FF]$/u;
+const PUBLICATION_TIME_ZONE = "Asia/Riyadh";
+
+export function publicationDateAt(instant: Date = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: PUBLICATION_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(instant);
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value;
+  return `${value("year")}-${value("month")}-${value("day")}`;
+}
 
 function fail(location: string, rule: string): never {
   throw new Error(`${location}: ${rule}`);
@@ -176,7 +189,7 @@ export function validateArticleData(
 ): void {
   const sections = options.sections ?? sectionRegistry;
   const authors = options.authors ?? authorRegistry;
-  const today = options.today ?? new Date().toISOString().slice(0, 10);
+  const today = options.today ?? publicationDateAt();
 
   assertRegistries(sections, authors);
   assertNonEmpty(data.title, source, "title");

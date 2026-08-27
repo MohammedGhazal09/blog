@@ -10,6 +10,7 @@ import {
   assertPreviewMode,
   assertRegistries,
   assertUniqueArticlePaths,
+  publicationDateAt,
   selectPreviewArticles,
   selectPublicArticles,
   validateArticleData,
@@ -22,6 +23,13 @@ import {
 } from "../src/lib/mdx-policy.ts";
 
 const fixedToday = "2026-08-26";
+
+test("publication date uses Riyadh civil day when UTC is still yesterday", () => {
+  const instant = new Date("2026-08-26T21:30:00.000Z");
+
+  assert.equal(instant.toISOString().slice(0, 10), "2026-08-26");
+  assert.equal(publicationDateAt(instant), "2026-08-27");
+});
 
 const validData: ArticleData = {
   title: "اختبار عقد المحتوى",
