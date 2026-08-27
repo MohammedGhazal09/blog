@@ -294,7 +294,7 @@ test("unknown slash routes use the exact non-indexable Arabic 404", async ({
     expect((await page.goto(path))?.status()).toBe(404);
     await expect(page.locator("html")).toHaveAttribute("lang", "ar");
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
-    await expect(page.locator("head > title")).toHaveText(NOT_FOUND_TITLE);
+    await expect(page).toHaveTitle(NOT_FOUND_TITLE);
     await expect(page.locator('meta[name="description"]')).toHaveAttribute(
       "content",
       NOT_FOUND_DESCRIPTION,
@@ -415,7 +415,11 @@ test("every document uses one inert local SVG favicon", async ({
   expect(response.headers()["content-type"]).toContain("image/svg+xml");
   const source = await response.text();
   expect(Buffer.byteLength(source)).toBeLessThan(2048);
-  expect(source).not.toMatch(
+  const namespaces = source.match(
+    /xmlns=["']http:\/\/www\.w3\.org\/2000\/svg["']/gu,
+  );
+  expect(namespaces).toHaveLength(1);
+  expect(source.replace(namespaces?.[0] ?? "", "")).not.toMatch(
     /<\/?(?:script|style|text|foreignObject|image|use|animate|filter)\b|\bon\w+\s*=|(?:href|src)\s*=|url\(|data:|https?:|@font-face/iu,
   );
 
