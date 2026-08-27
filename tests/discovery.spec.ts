@@ -38,6 +38,15 @@ function oracleAssert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
 
+function registerPublicRoute(
+  routes: Set<string>,
+  route: string,
+  source: string,
+): void {
+  oracleAssert(!routes.has(route), `${source}: duplicate public article route`);
+  routes.add(route);
+}
+
 function walkFiles(directory: string, extensions: readonly string[]): string[] {
   if (!existsSync(directory)) return [];
   return readdirSync(directory, { withFileTypes: true })
@@ -85,7 +94,6 @@ function frontmatterScalar(block: string, field: string, path: string): string {
 }
 
 function expectedPublicCorpus(): readonly PublicCorpusEntry[] {
-  const articleSlugs = new Set<string>();
   const routes = new Set<string>();
   const sources = new Set<string>();
   const corpus: PublicCorpusEntry[] = [];
@@ -124,16 +132,7 @@ function expectedPublicCorpus(): readonly PublicCorpusEntry[] {
 
     const section = sectionRegistry[sectionKey];
     const route = `/${section.slug}/${articleSlug}/`;
-    oracleAssert(
-      !articleSlugs.has(articleSlug),
-      `${normalizedSource}: duplicate public article slug`,
-    );
-    oracleAssert(
-      !routes.has(route),
-      `${normalizedSource}: duplicate public article route`,
-    );
-    articleSlugs.add(articleSlug);
-    routes.add(route);
+    registerPublicRoute(routes, route, normalizedSource);
     corpus.push({
       sectionKey,
       sectionSlug: section.slug,
@@ -145,6 +144,21 @@ function expectedPublicCorpus(): readonly PublicCorpusEntry[] {
 
   return corpus;
 }
+
+test("discovery oracle permits one slug in two registered sections", () => {
+  const articleSlug = "مقالة-مشتركة";
+  const routes = new Set<string>();
+  const expected = [
+    `/${sectionRegistry.refutations.slug}/${articleSlug}/`,
+    `/${sectionRegistry.generalIssues.slug}/${articleSlug}/`,
+  ];
+
+  expected.forEach((route, index) =>
+    registerPublicRoute(routes, route, `fixture:${index}`),
+  );
+
+  expect([...routes]).toEqual(expected);
+});
 
 function builtArticlePathsForSection(sectionSlug: string): string[] {
   const sectionDirectory = join("dist", sectionSlug);
