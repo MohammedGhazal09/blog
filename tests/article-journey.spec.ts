@@ -137,9 +137,28 @@ for (const fixture of articles) {
 
       await expect(page.locator("html")).toHaveAttribute("lang", "ar");
       await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+      const header = page.getByRole("banner");
+      const homeLink = header.getByRole("link", {
+        name: "مدونة أحمد المنجاوي",
+        exact: true,
+      });
+      await expect(header).toHaveCount(1);
+      await expect(homeLink).toHaveCount(1);
+      await expect(homeLink).toBeVisible();
+      await expect(homeLink).toHaveAttribute("href", "/");
+      await expect(homeLink).not.toHaveAttribute("target", /.+/u);
       await expect(page.locator("main")).toHaveCount(1);
       await expect(page.locator("main > article")).toHaveCount(1);
       await expect(page.locator("main h1")).toHaveCount(1);
+      await expectBefore(header, page.getByRole("main"));
+      expect(
+        await page.locator("[tabindex]").evaluateAll((nodes) =>
+          nodes.every((node) => {
+            const value = Number(node.getAttribute("tabindex"));
+            return !Number.isFinite(value) || value <= 0;
+          }),
+        ),
+      ).toBe(true);
 
       const levels = await page
         .locator(
@@ -535,6 +554,9 @@ for (const fixture of articles) {
       await expect(
         facts.getByRole("link", { name: fixture.section }),
       ).toHaveAttribute("href", fixture.sectionPath);
+      await expect(
+        facts.getByRole("link", { name: fixture.section }),
+      ).not.toHaveAttribute("target", /.+/u);
       await expect(facts.getByText("الكاتب:", { exact: true })).toHaveCount(1);
       await expect(
         facts.getByText("أحمد المنجاوي", { exact: true }),
@@ -542,6 +564,9 @@ for (const fixture of articles) {
       await expect(
         facts.getByRole("link", { name: "أحمد المنجاوي" }),
       ).toHaveAttribute("href", "/عن-أحمد-المنجاوي/");
+      await expect(
+        facts.getByRole("link", { name: "أحمد المنجاوي" }),
+      ).not.toHaveAttribute("target", /.+/u);
       await expect(facts.getByText("نُشر في:", { exact: true })).toHaveCount(1);
       await expect(facts.locator("time bdi[dir='auto']").first()).toBeVisible();
 
@@ -887,6 +912,9 @@ for (const fixture of articles) {
       ).toEqual({ mainBlock: "64px", mainInline: "24px", summary: "24px" });
 
       expect(layoutSource).toMatch(/max-inline-size:\s*70ch/iu);
+      expect(`${layoutSource}\n${routeSource}`).not.toMatch(
+        /ClientRouter|ViewTransitions|data-astro-history|transition:persist/iu,
+      );
       expect(`${layoutSource}\n${routeSource}`).not.toMatch(
         /overflow-x\s*:\s*hidden|@font-face|box-shadow|(?:linear|radial)-gradient|border-radius|grid-template-columns|column-count|<img\b|<svg\b/iu,
       );
