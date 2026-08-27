@@ -5,14 +5,17 @@ import SiteLayout from "../layouts/SiteLayout.astro";
 const sections = Object.entries(sectionRegistry).sort(
   (first, second) => first[1].order - second[1].order,
 );
+const introduction =
+  "مقالات عربية في الردود والشبهات والقضايا العامة والعلوم الشرعية، مرتبطة بالمحتوى الموافق لها على يوتيوب.";
 ---
 
-<SiteLayout>
+<SiteLayout
+  title="مدونة أحمد المنجاوي"
+  description={introduction}
+  ogType="website"
+>
   <h1>أقسام المدونة</h1>
-  <p class="introduction">
-    مقالات عربية في الردود والشبهات والقضايا العامة والعلوم الشرعية، مرتبطة
-    بالمحتوى الموافق لها على يوتيوب.
-  </p>
+  <p class="introduction">{introduction}</p>
   <ul class="discovery-list">
     {
       sections.map(([, section]) => (

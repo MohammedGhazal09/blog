@@ -3,14 +3,17 @@ import { authorRegistry } from "../config/registries.ts";
 import SiteLayout from "../layouts/SiteLayout.astro";
 
 const author = authorRegistry.ahmedElMangawy;
+const description =
+  "تنشر المدونة مقالات عربية في الردود والشبهات والقضايا العامة والعلوم الشرعية، وتربط كل مقال بالمحتوى الموافق له على يوتيوب.";
 ---
 
-<SiteLayout>
+<SiteLayout
+  title="عن أحمد المنجاوي | مدونة أحمد المنجاوي"
+  description={description}
+  ogType="website"
+>
   <h1>عن {author.name}</h1>
-  <p>
-    تنشر المدونة مقالات عربية في الردود والشبهات والقضايا العامة والعلوم
-    الشرعية، وتربط كل مقال بالمحتوى الموافق له على يوتيوب.
-  </p>
+  <p>{description}</p>
   <a href="/">العودة إلى الصفحة الرئيسية</a>
 </SiteLayout>
 

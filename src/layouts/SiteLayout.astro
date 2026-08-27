@@ -1,8 +1,51 @@
+---
+type Props =
+  | {
+      title: string;
+      description: string;
+      ogType: "website" | "article";
+      indexable?: true;
+    }
+  | {
+      title: string;
+      description: string;
+      indexable: false;
+      ogType?: never;
+    };
+
+const page = Astro.props;
+if (!Astro.site) throw new Error("Astro.site must be configured");
+const canonical =
+  page.indexable === false
+    ? undefined
+    : new URL(Astro.url.pathname, Astro.site).href;
+---
+
 <!doctype html>
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{page.title}</title>
+    <meta name="description" content={page.description} />
+    {
+      page.indexable === false ? (
+        <meta name="robots" content="noindex,follow" />
+      ) : (
+        <>
+          <link rel="canonical" href={canonical} />
+          <meta property="og:title" content={page.title} />
+          <meta property="og:description" content={page.description} />
+          <meta property="og:url" content={canonical} />
+          <meta property="og:type" content={page.ogType} />
+          <meta property="og:site_name" content="مدونة أحمد المنجاوي" />
+          <meta property="og:locale" content="ar_AR" />
+          <meta name="twitter:card" content="summary" />
+          <meta name="twitter:title" content={page.title} />
+          <meta name="twitter:description" content={page.description} />
+        </>
+      )
+    }
   </head>
   <body>
     <header>

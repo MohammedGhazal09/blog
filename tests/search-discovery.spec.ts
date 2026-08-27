@@ -179,7 +179,7 @@ test("metadata identity is exact, unique, escaped, and self-canonical", async ({
     await expect(page.locator("html")).toHaveAttribute("lang", "ar");
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
     await expect(page.locator("head > title")).toHaveCount(1);
-    await expect(page.locator("head > title")).toHaveText(identity.title);
+    await expect(page).toHaveTitle(identity.title);
     await expect(page.locator('meta[name="description"]')).toHaveCount(1);
     await expect(page.locator('meta[name="description"]')).toHaveAttribute(
       "content",

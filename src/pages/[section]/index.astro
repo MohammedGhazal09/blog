@@ -36,7 +36,11 @@ const formatDate = (date: string) =>
   dateFormatter.format(new Date(`${date}T00:00:00.000Z`));
 ---
 
-<SiteLayout>
+<SiteLayout
+  title={`${section.label} | مدونة أحمد المنجاوي`}
+  description={section.description}
+  ogType="website"
+>
   <h1>{section.label}</h1>
   <p class="section-description">{section.description}</p>
   {
