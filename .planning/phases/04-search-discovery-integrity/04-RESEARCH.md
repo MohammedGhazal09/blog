@@ -2,7 +2,7 @@
 
 **Researched:** 2026-08-27
 **Domain:** Astro 7 static metadata, canonical-origin integrity, crawler discovery files, static error delivery, and verification
-**Confidence:** HIGH, except the exact Open Graph Arabic locale code and package-legitimacy automation noted below
+**Confidence:** HIGH. The unavailable optional slopcheck probe remains recorded below; the exact official package and Arabic locale defaults were resolved on 2026-08-28.
 
 <user_constraints>
 ## User Constraints (from CONTEXT.md)
@@ -80,7 +80,7 @@ Phase 4 should keep metadata as a static build concern. Each page supplies only 
 
 Do not try to export `defineConfig(({ command, mode }) => ...)`: Astro 7.2.7's `defineConfig` accepts an `AstroUserConfig` object, and its config loader imports the default object without passing a config environment. `command` is available to integration hooks, while build `mode` is kept in Astro's inline build configuration and is not passed to the user's `astro.config.mjs`. [VERIFIED: `node_modules/astro/dist/config/index.d.ts`; `node_modules/astro/dist/core/config/vite-load.js`; `node_modules/astro/dist/types/public/integrations.d.ts`; `node_modules/astro/dist/core/build/index.js`] The clean launch boundary is therefore a small Node entry point that validates the explicit process environment, then calls Astro's exported `build({ site })`; ordinary `astro build` remains pinned to `http://127.0.0.1:4322`. [VERIFIED: installed `astro@7.2.7` exports `build`] This also avoids `loadEnv()` and any `.env` access. [VERIFIED: codebase constraint]
 
-Install only official sitemap 3.7.3 [ASSUMED pending slopcheck]. Its pinned source automatically removes `/404` and `/500`, accepts only page routes, de-duplicates generated URLs, respects directory trailing slashes, and writes `sitemap-index.xml` plus numbered sitemap files beginning with `sitemap-0.xml`. No sitemap filter is needed for this repository; adding one would duplicate route policy and create drift risk. [CITED: https://github.com/withastro/astro/blob/%40astrojs/sitemap%403.7.3/packages/integrations/sitemap/src/index.ts] [CITED: https://docs.astro.build/en/guides/integrations-guide/sitemap/]
+Install only the approved official sitemap 3.7.3 package. Its pinned source automatically removes `/404` and `/500`, accepts only page routes, de-duplicates generated URLs, respects directory trailing slashes, and writes `sitemap-index.xml` plus numbered sitemap files beginning with `sitemap-0.xml`. No sitemap filter is needed for this repository; adding one would duplicate route policy and create drift risk. [APPROVED: owner-authorized routine dependency choice, 2026-08-28] [CITED: https://github.com/withastro/astro/blob/%40astrojs/sitemap%403.7.3/packages/integrations/sitemap/src/index.ts] [CITED: https://docs.astro.build/en/guides/integrations-guide/sitemap/]
 
 **Primary recommendation:** Use a shared discriminated metadata prop in `SiteLayout.astro`, a single fail-closed origin validator invoked by `scripts/launch-ready.mjs`, `sitemap()` with no route list/filter, a generated `robots.txt.ts`, static `404.astro`, and one local allowlisted SVG; prove all outputs with one native origin test file and one fresh-build Playwright discovery suite. [VERIFIED: locked D-01 through D-19]
 
@@ -121,7 +121,7 @@ Install only official sitemap 3.7.3 [ASSUMED pending slopcheck]. Its pinned sour
 
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
-| `@astrojs/sitemap` [ASSUMED pending slopcheck] | 3.7.3, published 2026-05-26 | Route-derived sitemap index and numbered sitemap output | Always in Phase 4; call `sitemap()` with no custom page list or route filter. [CITED: https://docs.astro.build/en/guides/integrations-guide/sitemap/] [CITED: https://registry.npmjs.org/@astrojs/sitemap/3.7.3] |
+| `@astrojs/sitemap` [APPROVED] | 3.7.3, published 2026-05-26 | Route-derived sitemap index and numbered sitemap output | Always in Phase 4; call `sitemap()` with no custom page list or route filter. [APPROVED: owner-authorized routine dependency choice, 2026-08-28] [CITED: https://docs.astro.build/en/guides/integrations-guide/sitemap/] [CITED: https://registry.npmjs.org/@astrojs/sitemap/3.7.3] |
 | `@playwright/test` | 1.62.1 (already installed) | Rendered/status/network/XML/text/UI checks | Extend the existing production-discovery project and preview server lifecycle. [VERIFIED: `package.json`; `playwright.config.ts`] |
 | `@axe-core/playwright` | 4.13.0 (already installed) | Serious/critical accessibility regression checks | Use on the new 404 and re-enable the document-title rule on existing routes after metadata exists. [VERIFIED: `package.json`; `tests/discovery.spec.ts`] |
 | Node test runner | Node 24.19.0 target | Pure origin acceptance/rejection tests | Add one small `tests/site-origin.test.ts`; no new test framework. [CITED: https://nodejs.org/api/test.html] |
@@ -139,8 +139,8 @@ Install only official sitemap 3.7.3 [ASSUMED pending slopcheck]. Its pinned sour
 **Installation:**
 
 ```bash
-# Run only after selecting the repository's exact Node/npm versions and the
-# package-legitimacy human checkpoint described below.
+# Run only with the repository's exact Node/npm versions. Package identity is
+# checked automatically against the official registry/source facts below.
 npm install --save-exact @astrojs/sitemap@3.7.3
 ```
 
@@ -150,13 +150,13 @@ The official docs also offer `npx astro add sitemap`, but the minimal manual ins
 
 | Package | Registry | Age | Downloads | Source Repo | postinstall | slopcheck | Disposition |
 |---------|----------|-----|-----------|-------------|-------------|-----------|-------------|
-| `@astrojs/sitemap` [ASSUMED] | npm 3.7.3; published 2026-05-26 | Package line created 2022-03-18 | 2,642,230 downloads for 2026-08-20 through 2026-08-26 | `github.com/withastro/astro`, package directory `packages/integrations/sitemap`; npm provenance enabled | None declared | Unavailable: active Python 3.11 has no `pip`, so the required tool could not be installed | Flagged for one `checkpoint:human-verify` before install; official docs/source/registry all agree on identity and version. [CITED: https://registry.npmjs.org/@astrojs/sitemap/3.7.3] [CITED: https://github.com/withastro/astro/blob/%40astrojs/sitemap%403.7.3/packages/integrations/sitemap/package.json] |
+| `@astrojs/sitemap` [APPROVED] | npm 3.7.3; published 2026-05-26 | Package line created 2022-03-18 | 2,642,230 downloads for 2026-08-20 through 2026-08-26 | `github.com/withastro/astro`, package directory `packages/integrations/sitemap`; npm provenance enabled | None declared | Unavailable: active Python 3.11 has no `pip` | Approved for autonomous exact-version installation after registry/source/provenance/lifecycle-script checks; official docs/source/registry agree on identity and version. [APPROVED: owner-authorized routine dependency choice, 2026-08-28] [CITED: https://registry.npmjs.org/@astrojs/sitemap/3.7.3] [CITED: https://github.com/withastro/astro/blob/%40astrojs/sitemap%403.7.3/packages/integrations/sitemap/package.json] |
 
 **Packages removed due to slopcheck [SLOP] verdict:** none; slopcheck did not run. [VERIFIED: environment probe]
 
-**Packages flagged as suspicious [SUS]:** none received a `[SUS]` verdict; `@astrojs/sitemap` remains `[ASSUMED]` solely because graceful-degradation rules require a human checkpoint when slopcheck is unavailable. [VERIFIED: environment probe]
+**Packages flagged as suspicious [SUS]:** none received a `[SUS]` verdict. No slopcheck verdict exists; the exact official package is approved through the documented registry/source/provenance/lifecycle checks and the owner's autonomous-default instruction. [APPROVED: 2026-08-28]
 
-The registry check succeeded in the correct ecosystem, the package has no `postinstall` script, and the exact npm repository/homepage match Astro's official integration documentation. These facts reduce risk but do not override the mandatory `[ASSUMED]` disposition without slopcheck. [CITED: https://docs.astro.build/en/guides/integrations-guide/sitemap/] [CITED: https://registry.npmjs.org/@astrojs/sitemap/3.7.3]
+The registry check succeeded in the correct ecosystem, the package has no install lifecycle script, and the exact npm repository/homepage match Astro's official integration documentation. Execution must re-check those facts automatically before and after installation; no human checkpoint remains. [APPROVED: owner-authorized routine dependency choice, 2026-08-28] [CITED: https://docs.astro.build/en/guides/integrations-guide/sitemap/] [CITED: https://registry.npmjs.org/@astrojs/sitemap/3.7.3]
 
 ## Architecture Patterns
 
@@ -293,7 +293,7 @@ In `.astro` pages/layouts, `Astro.site` and `Astro.url` are globals. In `.ts` en
 
 | Problem | Don't Build | Use Instead | Why |
 |---------|-------------|-------------|-----|
-| Sitemap enumeration/XML/index splitting | Custom route walker and XML writer | `@astrojs/sitemap@3.7.3` [ASSUMED pending slopcheck] | It receives Astro's generated routes, handles URL de-duplication/trailing slash/index files, and excludes status pages. [CITED: pinned official source] |
+| Sitemap enumeration/XML/index splitting | Custom route walker and XML writer | Approved `@astrojs/sitemap@3.7.3` | It receives Astro's generated routes, handles URL de-duplication/trailing slash/index files, and excludes status pages. [APPROVED: 2026-08-28] [CITED: pinned official source] |
 | URL parsing/normalization | Host/protocol regex | WHATWG `URL` plus explicit policy and `node:net.isIP` | Regex misses credentials, IPv6, encoded forms, default ports, and normalized hostname behavior. [CITED: https://developer.mozilla.org/en-US/docs/Web/API/URL/URL] |
 | SEO abstraction | Meta component library/schema builder | One typed shared Astro layout | The required tag set is small, static, and must remain inspectable. [VERIFIED: locked D-01 and D-19] |
 | `robots.txt` templating package | robots generator dependency | Static Astro endpoint + `Response` | The output is four deterministic lines and Astro supplies `site` at build time. [CITED: official Astro sitemap docs] |
@@ -518,7 +518,7 @@ const canonical =
 </head>
 ```
 
-The Open Graph protocol requires a `language_TERRITORY` locale shape; `ar_AR` is the recommended generic-Arabic platform convention here but could not be verified from a current authoritative Meta locale registry in this session. [CITED: https://ogp.me/] [ASSUMED] Record it as the one human-confirmable metadata literal; it does not affect URL integrity. [ASSUMED]
+The Open Graph protocol requires a `language_TERRITORY` locale shape. The owner-authorized recommended default locks `ar_AR` as this Arabic-only site's generic Arabic locale for Phase 4; keep the literal in one layout boundary and one test expectation. It does not affect URL integrity. [RESOLVED: 2026-08-28] [CITED: https://ogp.me/]
 
 ### Static Robots Endpoint
 
@@ -581,7 +581,7 @@ The 404 spacing, native anchor behavior, 44px target, logical properties, inheri
 
 | Old/Incorrect Approach | Current Pinned Approach | When/Version | Impact |
 |------------------------|-------------------------|--------------|--------|
-| Assume a single `sitemap.xml` | `sitemap-index.xml` links numbered files beginning at `sitemap-0.xml` | `@astrojs/sitemap` 3.7.3 [ASSUMED pending slopcheck] | Robots/tests must name and parse the index and numbered URL set. [CITED: official sitemap docs] |
+| Assume a single `sitemap.xml` | `sitemap-index.xml` links numbered files beginning at `sitemap-0.xml` | Approved `@astrojs/sitemap` 3.7.3 | Robots/tests must name and parse the index and numbered URL set. [APPROVED: 2026-08-28] [CITED: official sitemap docs] |
 | Manually filter `/404/` | Integration source automatically excludes status pathnames `404` and `500` | Verified in 3.7.3 source | Use `sitemap()` without duplicative URL logic; preserve regression tests. [CITED: pinned official source] |
 | Treat `Astro.url` as always request-host-derived | Prerendered `Astro.url` uses configured `site`/`base`; `Astro.site` is the parsed config URL | Current Astro API docs/7.2.7 | Canonical construction is deterministic during build when `site` is mandatory. [CITED: official Astro API docs] |
 | Assume `404.astro` becomes a directory route | Astro special-cases it to `404.html` | Current Astro/7.2.7 | Static preview/hosts can use one conventional error file. [VERIFIED: installed output source] |
@@ -597,23 +597,21 @@ The 404 spacing, native anchor behavior, 44px target, logical properties, inheri
 
 | # | Claim | Section | Risk if Wrong |
 |---|-------|---------|---------------|
-| A1 | Use `og:locale="ar_AR"` as the generic Arabic Open Graph locale literal. The OGP format is verified, but the exact current Meta-supported Arabic literal was not verified from an authoritative locale registry. [ASSUMED] | Shared Metadata Branch | Low: social locale interpretation could be ignored/misclassified; canonical, title, description, sitemap, and crawling remain correct. Planner should add one human literal-confirmation checkpoint or lock the user-approved default. |
+| A1 | Use `og:locale="ar_AR"` as the generic Arabic Open Graph locale literal. The OGP shape is verified and the recommended literal is owner-approved for this Arabic-only phase. [RESOLVED: 2026-08-28] | Shared Metadata Branch | Closed: keep the literal centralized and assert it exactly. |
 | A2 | Reject leading/trailing whitespace in `SITE_ORIGIN` rather than trimming it. [ASSUMED] | Origin validator | Low: an otherwise valid copied origin with whitespace fails; this is intentionally fail-closed and easy to correct. |
 | A3 | Reject a trailing-dot hostname rather than normalizing it away. [ASSUMED] | Origin validator | Low: a technically valid fully-qualified form fails; the safer clean-origin spelling is unambiguous and easy to supply. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Exact Open Graph Arabic locale literal**
-   - What we know: D-09 requires an Arabic locale, and OGP specifies `language_TERRITORY`. [CITED: https://ogp.me/]
-   - What's unclear: A current authoritative Meta registry for the generic Arabic literal was not accessible; the historical/common `ar_AR` convention remains [ASSUMED].
-   - Recommendation: Lock `ar_AR` for this phase unless the owner explicitly prefers a territorial Arabic locale; keep the test literal in one constant/expectation. [ASSUMED]
+1. **Exact Open Graph Arabic locale literal — resolved**
+   - D-09 requires an Arabic locale, and OGP specifies `language_TERRITORY`. [CITED: https://ogp.me/]
+   - Resolution: use exact `ar_AR` for this Arabic-only site, centralized in `SiteLayout.astro` and asserted once in the discovery suite. The owner pre-approved the recommended routine default. [RESOLVED: 2026-08-28]
 
-2. **No-slash missing paths in local preview**
+2. **No-slash missing paths in local preview — resolved**
    - What we know: With `trailingSlash: "always"`, pinned `astro preview` returns status 404 but uses a generic template before its custom-404 fallback for a no-slash path. [VERIFIED: installed Astro preview source]
-   - What's unclear: Nothing in Phase 4 code can make every static host implement the same slash normalization without deployment configuration, which is deferred. [VERIFIED: phase boundary]
-   - Recommendation: Treat slash-form URLs as the Phase 4 route contract, prove the Arabic custom response on multiple slash-form unknown routes, assert slashless status remains 404, and assign production redirect/fallback parity to Phase 5. [VERIFIED: locked trailing-slash/deployment boundaries]
+   - Resolution: treat slash-form URLs as the Phase 4 route contract, prove the Arabic custom response on multiple slash-form unknown routes, assert slashless status remains 404 without claiming its generic body, and assign production redirect/fallback parity to Phase 5. [RESOLVED: 2026-08-28; locked trailing-slash/deployment boundaries]
 
-No other planning decision is open; titles, descriptions, metadata fields, 404 copy, favicon palette, sitemap policy, test boundaries, and exclusions are locked. [VERIFIED: `04-CONTEXT.md`; `04-UI-SPEC.md`]
+No planning decision remains open; titles, descriptions, metadata fields, locale, 404 copy/route behavior, favicon palette, sitemap policy, test boundaries, and exclusions are locked. [RESOLVED: 2026-08-28] [VERIFIED: `04-CONTEXT.md`; `04-UI-SPEC.md`]
 
 ## Environment Availability
 
@@ -623,17 +621,17 @@ No other planning decision is open; titles, descriptions, metadata fields, 404 c
 | Project-selected npm | Package install/lockfile | Available but wrong | Default `11.12.1`; required `11.17.0`; no nvm/fnm/Volta detected | Select/install npm 11.17.0 under Node 24.19.0 before `npm install`. [VERIFIED: environment probe; `package.json`] |
 | Astro CLI | Build/preview | Yes | 7.2.7 | — [VERIFIED: `npx astro --version`] |
 | Playwright test | Browser validation | Yes | 1.62.1 with matching Chromium 1234 installed | — [VERIFIED: environment probe; `package.json`] |
-| `@astrojs/sitemap` | Sitemap output | No, intentionally not yet installed | Target 3.7.3 [ASSUMED pending slopcheck] | None; phase install required after checkpoint. [VERIFIED: `package.json`; npm registry] |
-| Python `pip` / slopcheck | Package legitimacy automation | No | Active Python 3.11.14 has no `pip` module | Human verification checkpoint using official docs/source/registry evidence. [VERIFIED: environment probe] |
+| `@astrojs/sitemap` | Sitemap output | No, intentionally not yet installed | Approved target 3.7.3 | Phase install runs autonomously after exact registry/source/provenance/lifecycle checks. [APPROVED: 2026-08-28] |
+| Python `pip` / slopcheck | Optional package legitimacy probe | No | Active Python 3.11.14 has no `pip` module | No blocker: retain the unavailable-probe record and enforce the approved automated npm/source checks. [RESOLVED: 2026-08-28] |
 | `SITE_ORIGIN` | Launch-readiness only | Intentionally not inspected | Non-secret explicit future input | Controlled safe HTTPS fixture for Phase 4 launch test; real value supplied in Phase 5. [VERIFIED: locked D-06/D-08] |
 
 **Missing dependencies with no fallback:**
 
-- `@astrojs/sitemap@3.7.3` is required for implementation, but installation is blocked until the exact Node 24.19.0/npm 11.17.0 toolchain is selected because the repository's `preinstall` rejects the current defaults. [VERIFIED: `package.json`; environment probe]
+- `@astrojs/sitemap@3.7.3` is required for implementation. The exact Node 24.19.0/npm 11.17.0 toolchain is available at the pinned project runtime path and must be selected before installation. [RESOLVED: runtime verified 2026-08-28]
 
 **Missing dependencies with fallback:**
 
-- slopcheck is unavailable; use the required human package-legitimacy checkpoint and retain `[ASSUMED]` provenance. [VERIFIED: environment probe]
+- slopcheck is unavailable; preserve that provenance and use the approved automated registry/source/provenance/lifecycle checks without a human checkpoint. [RESOLVED: 2026-08-28]
 - The default Node is wrong but the Codex workspace dependency bundle contains Node 24.19.0; npm 11.17.0 still must be selected. [VERIFIED: workspace dependency probe]
 
 ## Validation Architecture
@@ -723,7 +721,7 @@ The pure test table should include at least these classes. [VERIFIED: locked D-0
 - [ ] `playwright.config.ts` production `testMatch` — include both discovery suites while retaining port 4322 and `.artifacts/`. [VERIFIED: current config]
 - [ ] `package.json` native test file list — include the origin test; replace `launch:ready` with the explicit wrapper. [VERIFIED: current scripts]
 - [ ] Existing axe suite — remove `.disableRules(["document-title"])` after every page has a title. [VERIFIED: `tests/discovery.spec.ts`]
-- [ ] Exact Node 24.19.0/npm 11.17.0 selection and package-legitimacy human checkpoint before sitemap installation. [VERIFIED: environment/package audit]
+- [ ] Select exact Node 24.19.0/npm 11.17.0 and automatically verify package name/version/repository/integrity/lifecycle scripts before sitemap installation. [RESOLVED: no human checkpoint, 2026-08-28]
 
 ## Security Domain
 
@@ -778,18 +776,18 @@ The pure test table should include at least these classes. [VERIFIED: locked D-0
 
 ### Secondary (MEDIUM confidence)
 
-- npm registry metadata for [`@astrojs/sitemap@3.7.3`](https://registry.npmjs.org/@astrojs/sitemap/3.7.3) and [npm weekly downloads API](https://api.npmjs.org/downloads/point/last-week/%40astrojs%2Fsitemap) — version, publication, source/homepage, dependencies/scripts, popularity. Package remains `[ASSUMED]` because slopcheck was unavailable. [CITED]
+- npm registry metadata for [`@astrojs/sitemap@3.7.3`](https://registry.npmjs.org/@astrojs/sitemap/3.7.3) and [npm weekly downloads API](https://api.npmjs.org/downloads/point/last-week/%40astrojs%2Fsitemap) — version, publication, source/homepage, dependencies/scripts, popularity. The optional slopcheck probe was unavailable; exact-package use is nevertheless approved with automated source/provenance/lifecycle checks. [APPROVED: 2026-08-28] [CITED]
 - `.planning/research/STACK.md` and `.planning/research/ARCHITECTURE.md` — prior stack/architecture conclusions, superseded where Phase 4 locked context is narrower. [VERIFIED: codebase]
 
 ### Tertiary (LOW confidence)
 
-- `og:locale="ar_AR"` as the generic Arabic platform literal; OGP's format is verified, exact literal is [ASSUMED] pending human confirmation. [ASSUMED]
+- `og:locale="ar_AR"` as the generic Arabic platform literal; OGP's format is verified and the exact Phase 4 default is owner-approved. [RESOLVED: 2026-08-28]
 
 ## Metadata
 
 **Confidence breakdown:**
 
-- Standard stack: HIGH for existing Astro/platform/test stack; MEDIUM for adding official sitemap only because the mandatory slopcheck tool was unavailable. [VERIFIED: official docs/source/registry + audit]
+- Standard stack: HIGH for the existing Astro/platform/test stack and the approved official sitemap package; the unavailable optional slopcheck probe is recorded without blocking the exact automated package audit. [RESOLVED: 2026-08-28] [VERIFIED: official docs/source/registry + audit]
 - Architecture: HIGH — locked decisions match the installed Astro 7.2.7 source and current code boundaries. [VERIFIED: codebase + pinned source]
 - Sitemap/robots: HIGH for behavior/output names; package identity remains procedurally `[ASSUMED]` until checkpoint. [CITED: pinned official source/docs]
 - Static 404/preview: HIGH — installed preview/output source gives exact status/fallback behavior, including the no-slash caveat. [VERIFIED: installed source]
