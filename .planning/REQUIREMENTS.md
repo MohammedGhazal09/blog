@@ -46,8 +46,8 @@ Requirements for the first production release. Each requirement will map to exac
 
 ### Content and Editorial Trust
 
-- [ ] **CONT-01**: The launch contains at least one substantive Arabic article with a real matching YouTube video in each of the three primary sections.
-- [ ] **CONT-02**: Every launch article records its matching video and supporting sources, discloses AI assistance when used, and makes no human-review claim unless that review actually occurred.
+- [x] **CONT-01**: The launch contains at least one substantive Arabic article with a real matching YouTube video in each of the three primary sections.
+- [x] **CONT-02**: Every launch article records its matching video and supporting sources, discloses AI assistance when used, and makes no human-review claim unless that review actually occurred.
 - [x] **CONT-03**: Public bylines, expertise descriptions, dates, references, and review claims reflect real people, sources, and events rather than SEO-only placeholders.
 
 ### Measurement
@@ -141,8 +141,8 @@ Explicit exclusions prevent scope creep during v1.
 | PUB-04 | Phase 1 | Complete |
 | PUB-05 | Phase 1 | Complete |
 | PUB-06 | Phase 1 | Complete |
-| CONT-01 | Phase 3 | Pending |
-| CONT-02 | Phase 3 | Pending |
+| CONT-01 | Phase 3 | Complete |
+| CONT-02 | Phase 3 | Complete |
 | CONT-03 | Phase 3 | Complete |
 | MEAS-01 | Phase 5 | Pending |
 | MEAS-02 | Phase 5 | Pending |

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: "03-04 Task 2 checkpoint: awaiting genuine owner content, reviews, paths, and consent"
-last_updated: "2026-08-27T07:06:31.611Z"
-last_activity: 2026-08-27 -- Completed 03-02-PLAN.md
+status: verifying
+stopped_at: Completed 03-04-PLAN.md; Phase 3 ready for verification
+last_updated: "2026-08-27T17:39:18.279Z"
+last_activity: 2026-08-27 -- Completed 03-04-PLAN.md
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 11
-  completed_plans: 10
-  percent: 33
+  completed_plans: 11
+  percent: 50
 ---
 
 # Project State
@@ -25,32 +25,33 @@ See: .planning/PROJECT.md (updated 2026-08-26)
 
 ## Current Position
 
-Phase: 03 (real-content-and-section-discovery) — EXECUTING
+Phase: 03 (real-content-and-section-discovery) — VERIFYING
 Plan: 4 of 4
-Status: Ready to execute
-Last activity: 2026-08-27 -- Completed 03-02-PLAN.md
+Status: Phase complete — ready for verification
+Last activity: 2026-08-27 -- Completed 03-04-PLAN.md
 
-Progress: [████████░░] 82%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 7
-- Average duration: 14.3 min
-- Total execution time: 43 min
+- Total plans completed: 11
+- Average duration: 26.5 min
+- Total execution time: 291 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | Phase 01-content-and-url-contract | 3 | 43 min | 14.3 min |
-| 2 | 4 | - | - |
+| Phase 02-complete-arabic-article-journey | 4 | 117 min | 29.3 min |
+| Phase 03-real-content-and-section-discovery | 4 | 131 min | 32.8 min |
 
 **Recent Trend:**
 
-- Last 3 plans: 14 min, 17 min, 12 min
-- Trend: stable
+- Last 3 plans: 17 min, 63 min, 29 min
+- Trend: mixed; Phase 03-03 carried the browser-oracle and evidence-matrix work
 
 | Phase 01-content-and-url-contract P01 | 14min | 3 tasks | 14 files |
 | Phase 01-content-and-url-contract P02 | 17min | 3 tasks | 7 files |
@@ -62,6 +63,7 @@ Progress: [████████░░] 82%
 | Phase 03 P01 | 22 min | 3 tasks | 9 files |
 | Phase 03 P02 | 17min | 2 tasks | 6 files |
 | Phase 03 P03 | 63min | 3 tasks | 3 files |
+| Phase 03 P04 | 29m | 3 tasks | 16 files |
 
 ## Accumulated Context
 
@@ -70,8 +72,8 @@ Progress: [████████░░] 82%
 Decisions are logged in PROJECT.md Key Decisions table.
 
 - [Roadmap]: Use six vertical MVP phases from content identity through production verification.
-- [Architecture]: Keep v1 fully static and registry-driven; no CMS, database, authentication, search, React, Tailwind, community, or AI generation.
-- [Content]: Launch with one real, reviewed article and matching video in each primary section.
+- [Architecture]: Keep v1 fully static and registry-driven; no CMS, database, authentication, search, React, Tailwind, community, or runtime AI generation. AI-assisted source content is allowed only with visible disclosure.
+- [Content]: Launch with one substantive, source-backed AI-assisted article and matching video in each primary section; claim human review only if it actually occurs.
 - [Phase 01]: Keep article identity explicit and title-independent through validated Arabic section and article slugs.
 - [Phase 01]: Use the identical final route family for development draft preview while excluding drafts from every production query.
 - [Phase 01]: Declare UTF-8 directly in the proof route so Arabic renders correctly before the shared metadata system arrives in Phase 4.
@@ -90,14 +92,16 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 02]: Keep the visible focus indicator on the local player region with :focus-within because focus moves inside the cross-origin iframe browsing context.
 - [Phase 02]: Request YouTube's Arabic interface with hl=ar while preserving the hardcoded no-cookie origin, encoded validated ID, and no-autoplay contract.
 - [Phase 02]: Accept the Phase 2 checkpoint only after direct Chrome evidence closes every manual-only validation item; keep metadata and production claims in their planned later phases.
-- [Phase 03-01]: Bind both human approvals to exact raw article bytes with lowercase SHA-256 and expose no approval data. — Prevents stale approval after any source-byte edit and keeps reviewer evidence out of routes.
+- [Phase 03-01, superseded]: The planned human-approval sidecar gate was removed because no review occurred. Publication now relies on raw validated frontmatter, explicit draft state, unique paths, registered-section coverage, source citations, and truthful AI/no-transcript disclosure.
 - [Phase 03-01]: Keep ordinary verification structural and run section coverage only in launch-readiness mode. — Allows truthful empty structural development without misrepresenting the repository as launch-ready.
 - [Phase 03-01]: Preserve Phase 2 proof journeys as drafts served only through explicit development preview. — Retains Markdown and restricted-MDX regression coverage with zero production proof visibility.
 - [Phase 03-02]: Keep discovery registry-derived and approved-public-only; truthful empty sections remain visible while launch readiness stays red.
 - [Phase 03-02]: Expose no author claim beyond the registered name and locked generic publication purpose.
 - [Phase 03-02]: Move document-wide styles into SiteLayout while article prose, provenance, and media rules remain local.
-- [Phase 03-03]: Keep browser mode identity explicit and derive expected production membership from raw source bytes plus current strict sidecars. — Separate projects and an independent oracle prevent draft-mode and common-selector false greens.
-- [Phase 03-03]: Use visible DevTools for live interaction and native zoom, with Playwright used only to persist W: evidence. — This preserves visible evidence while labelling the actual screenshot backend honestly.
+- [Phase 03-03]: Keep browser mode identity explicit and derive expected production membership independently from raw validated article frontmatter. — Separate projects and an independent oracle prevent draft-mode and common-selector false greens.
+- [Phase 03-03]: Use headed Playwright fallback for interaction and persisted evidence; label CDP-emulated page scale honestly and do not claim native browser-chrome zoom.
+- [Phase 03]: Publish the owner-authorized launch corpus with visible AI-assistance and non-transcript disclosure. — Completes the real content journey without misrepresenting how the articles were produced.
+- [Phase 03]: Remove the human-review sidecar gate and make no review claim unless review actually occurs. — Prevents fabricated reviewer identities, dates, consent, or religious approval.
 
 ### Pending Todos
 
@@ -106,7 +110,6 @@ None yet.
 ### Blockers/Concerns
 
 - Final canonical domain and hostname must be chosen before search-discovery and deployment work is completed.
-- Phase 3 needs final owner profile facts, three real articles and videos, truthful dates and references, and recorded editorial/religious sign-off.
 - Analytics governance and the exact outbound-click metric must be confirmed before production measurement is enabled.
 
 ## Deferred Items
@@ -117,6 +120,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-27T07:06:31.603Z
-Stopped at: 03-04 Task 2 checkpoint: awaiting genuine owner content, reviews, paths, and consent
-Resume file: .planning/phases/03-real-content-and-section-discovery/03-CONTENT-INPUTS.md
+Last session: 2026-08-27T17:33:01.225Z
+Stopped at: Completed 03-04-PLAN.md; Phase 3 ready for verification
+Resume file: None
