@@ -1,0 +1,105 @@
+---
+import { sectionRegistry } from "../../config/registries.ts";
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import { getPublicArticles } from "../../lib/articles.ts";
+import { articlePath } from "../../lib/content-contract.ts";
+
+export async function getStaticPaths() {
+  const articles = await getPublicArticles();
+  const sections = Object.entries(sectionRegistry).sort(
+    (first, second) => first[1].order - second[1].order,
+  );
+
+  return sections.map(([sectionKey, section]) => ({
+    params: { section: section.slug },
+    props: {
+      section,
+      articles: articles
+        .filter((article) => article.data.section === sectionKey)
+        .sort((first, second) => {
+          if (first.data.publishedAt > second.data.publishedAt) return -1;
+          if (first.data.publishedAt < second.data.publishedAt) return 1;
+          if (first.data.slug < second.data.slug) return -1;
+          if (first.data.slug > second.data.slug) return 1;
+          return 0;
+        }),
+    },
+  }));
+}
+
+const { section, articles } = Astro.props;
+const dateFormatter = new Intl.DateTimeFormat("ar", {
+  dateStyle: "long",
+  timeZone: "UTC",
+});
+const formatDate = (date: string) =>
+  dateFormatter.format(new Date(`${date}T00:00:00.000Z`));
+---
+
+<SiteLayout>
+  <h1>{section.label}</h1>
+  <p class="section-description">{section.description}</p>
+  {
+    articles.length > 0 ? (
+      <ul class="article-list">
+        {articles.map((article) => (
+          <li>
+            <h2>
+              <a href={articlePath(article)}>{article.data.title}</a>
+            </h2>
+            <p>{article.data.description}</p>
+            <time datetime={article.data.publishedAt}>
+              نُشر في: {" "}
+              <bdi dir="auto">{formatDate(article.data.publishedAt)}</bdi>
+            </time>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p class="empty-state">لا توجد مقالات منشورة في هذا القسم بعد.</p>
+    )
+  }
+</SiteLayout>
+
+<style>
+  h1 {
+    margin-block: 0 0.5rem;
+  }
+
+  .section-description {
+    margin-block: 0 2rem;
+  }
+
+  .article-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .article-list li {
+    padding-block: 1.5rem;
+  }
+
+  .article-list li + li {
+    border-block-start: 1px solid #78716c;
+  }
+
+  .article-list h2 {
+    margin-block: 0 0.5rem;
+  }
+
+  .article-list p {
+    margin-block: 0 0.5rem;
+  }
+
+  .article-list time {
+    color: #57534e;
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.6;
+  }
+
+  .empty-state {
+    margin: 0;
+  }
+</style>

@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body>
+    <header>
+      <a href="/">مدونة أحمد المنجاوي</a>
+    </header>
+    <main>
+      <slot />
+    </main>
+  </body>
+</html>
+
+<style>
+  :global(*) {
+    box-sizing: border-box;
+  }
+
+  :global(html) {
+    background: #fffdf8;
+  }
+
+  :global(body) {
+    margin: 0;
+    background: #fffdf8;
+    color: #1c1917;
+    font-family:
+      system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Arial,
+      sans-serif;
+    font-size: 1.125rem;
+    font-synthesis: none;
+    font-weight: 400;
+    letter-spacing: normal;
+    line-height: 1.9;
+    text-align: start;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  header,
+  main {
+    max-inline-size: 70ch;
+    min-inline-size: 0;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+
+  header {
+    border-block-end: 1px solid #78716c;
+  }
+
+  header a {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: 44px;
+    font-weight: 700;
+  }
+
+  main {
+    padding-block: 2rem;
+  }
+
+  main :global(*) {
+    min-inline-size: 0;
+  }
+
+  main :global(h1),
+  main :global(h2) {
+    color: #1c1917;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+
+  main :global(h1) {
+    font-size: 2rem;
+    line-height: 1.3;
+  }
+
+  main :global(h2) {
+    font-size: 1.5rem;
+    line-height: 1.4;
+  }
+
+  :global(a) {
+    color: #166534;
+    text-decoration-line: underline;
+    text-decoration-skip-ink: auto;
+    text-decoration-thickness: from-font;
+    text-underline-position: from-font;
+  }
+
+  :global(a:hover) {
+    text-decoration-thickness: 3px;
+  }
+
+  :global(a:focus-visible) {
+    outline: 3px solid #166534;
+    outline-offset: 3px;
+  }
+
+  :global(a),
+  main :global(code),
+  main :global(bdi) {
+    overflow-wrap: anywhere;
+  }
+
+  @media (min-width: 48rem) {
+    header,
+    main {
+      padding-inline: 1.5rem;
+    }
+
+    main {
+      padding-block: 4rem;
+    }
+  }
+</style>

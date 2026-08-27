@@ -1,0 +1,60 @@
+---
+import { sectionRegistry } from "../config/registries.ts";
+import SiteLayout from "../layouts/SiteLayout.astro";
+
+const sections = Object.entries(sectionRegistry).sort(
+  (first, second) => first[1].order - second[1].order,
+);
+---
+
+<SiteLayout>
+  <h1>أقسام المدونة</h1>
+  <p class="introduction">
+    مقالات عربية في الردود والشبهات والقضايا العامة والعلوم الشرعية، مرتبطة
+    بالمحتوى الموافق لها على يوتيوب.
+  </p>
+  <ul class="discovery-list">
+    {
+      sections.map(([, section]) => (
+        <li>
+          <h2>
+            <a href={`/${section.slug}/`}>{section.label}</a>
+          </h2>
+          <p>{section.description}</p>
+        </li>
+      ))
+    }
+  </ul>
+</SiteLayout>
+
+<style>
+  h1 {
+    margin-block: 0 0.5rem;
+  }
+
+  .introduction {
+    margin-block: 0 2rem;
+  }
+
+  .discovery-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .discovery-list li {
+    padding-block: 1.5rem;
+  }
+
+  .discovery-list li + li {
+    border-block-start: 1px solid #78716c;
+  }
+
+  .discovery-list h2 {
+    margin-block: 0 0.5rem;
+  }
+
+  .discovery-list p {
+    margin: 0;
+  }
+</style>
