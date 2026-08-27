@@ -236,10 +236,10 @@ This split keeps each concern at one boundary and adds no reusable abstraction b
 **Validator contract:**
 
 1. Reject a missing/non-string/empty value before URL construction. [VERIFIED: locked D-06]
-2. Reject surrounding whitespace rather than silently repairing it. [ASSUMED: recommended strictness]
+2. Reject surrounding whitespace rather than silently repairing it. [RESOLVED: owner-approved strict default, 2026-08-28]
 3. Parse with `new URL(raw)` and require `protocol === "https:"`. [CITED: https://developer.mozilla.org/en-US/docs/Web/API/URL/URL]
 4. Require empty username/password and reject any raw `@`; require `pathname === "/"`; require empty search/hash and reject raw `?`/`#` so even empty delimiters cannot survive URL parsing unnoticed. [VERIFIED: locked D-07; WHATWG behavior verified in Node 24]
-5. Lowercase through URL normalization; reject a trailing-dot hostname; strip IPv6 brackets only for `isIP()` checking; reject IPv4/IPv6. [CITED: https://nodejs.org/api/net.html#netisipinput] [ASSUMED: strict trailing-dot rejection]
+5. Lowercase through URL normalization; reject a trailing-dot hostname; strip IPv6 brackets only for `isIP()` checking; reject IPv4/IPv6. [RESOLVED: owner-approved strict default, 2026-08-28] [CITED: https://nodejs.org/api/net.html#netisipinput]
 6. Reject the special-use single-label roots `localhost`, `test`, `invalid`, and `example` plus all their subdomains; also reject `example.com`, `example.net`, `example.org` and their subdomains. [CITED: https://www.rfc-editor.org/rfc/rfc2606] [CITED: https://www.rfc-editor.org/rfc/rfc6761]
 7. Return `url.origin`; do not return the untrusted input or a per-page repaired value. [CITED: https://developer.mozilla.org/en-US/docs/Web/API/URL/origin]
 
@@ -593,13 +593,13 @@ The 404 spacing, native anchor behavior, 44px target, logical properties, inheri
 - A static `public/robots.txt` recommendation in early project research: locked D-13 supersedes it with a site-derived endpoint. [VERIFIED: `04-CONTEXT.md` precedence]
 - JSON-LD/social images from early architecture research: the phase specification explicitly defers both. [VERIFIED: `04-SPEC.md` and deferred context]
 
-## Assumptions Log
+## Assumptions Log (RESOLVED)
 
 | # | Claim | Section | Risk if Wrong |
 |---|-------|---------|---------------|
 | A1 | Use `og:locale="ar_AR"` as the generic Arabic Open Graph locale literal. The OGP shape is verified and the recommended literal is owner-approved for this Arabic-only phase. [RESOLVED: 2026-08-28] | Shared Metadata Branch | Closed: keep the literal centralized and assert it exactly. |
-| A2 | Reject leading/trailing whitespace in `SITE_ORIGIN` rather than trimming it. [ASSUMED] | Origin validator | Low: an otherwise valid copied origin with whitespace fails; this is intentionally fail-closed and easy to correct. |
-| A3 | Reject a trailing-dot hostname rather than normalizing it away. [ASSUMED] | Origin validator | Low: a technically valid fully-qualified form fails; the safer clean-origin spelling is unambiguous and easy to supply. |
+| A2 | Reject leading/trailing whitespace in `SITE_ORIGIN` rather than trimming it. [RESOLVED: 2026-08-28] | Origin validator | Closed: fail closed and require the clean spelling. |
+| A3 | Reject a trailing-dot hostname rather than normalizing it away. [RESOLVED: 2026-08-28] | Origin validator | Closed: fail closed and require the unambiguous normalized hostname. |
 
 ## Open Questions (RESOLVED)
 
@@ -646,7 +646,7 @@ No planning decision remains open; titles, descriptions, metadata fields, locale
 | Quick native command | `npm test` after its explicit Node test file list includes `tests/site-origin.test.ts`. [VERIFIED: recommended minimal change] |
 | Focused browser command | `npm run build && npx playwright test tests/search-discovery.spec.ts --project=production-discovery`. [VERIFIED: existing lifecycle + locked D-18] |
 | Full suite command | `npm run verify`. [VERIFIED: `package.json`] |
-| Launch acceptance command | PowerShell: `$env:SITE_ORIGIN='https://blog.ahmed-mangawy.org'; npm run launch:ready; Remove-Item Env:SITE_ORIGIN` using a controlled non-placeholder fixture that is never deployed. [ASSUMED fixture hostname; no network request occurs] |
+| Launch acceptance command | PowerShell: `$env:SITE_ORIGIN='https://blog.ahmed-mangawy.org'; npm run launch:ready; Remove-Item Env:SITE_ORIGIN` using a controlled non-placeholder fixture that is never deployed or requested over the network. [CONTROLLED TEST FIXTURE] |
 
 Update the production-discovery project's `testMatch` to include both `discovery.spec.ts` and `search-discovery.spec.ts`; keep the one preview server and current artifact routing. [VERIFIED: locked D-17; `playwright.config.ts`]
 
@@ -691,13 +691,13 @@ The pure test table should include at least these classes. [VERIFIED: locked D-0
 | Class | Examples | Expected |
 |-------|----------|----------|
 | Valid normalized HTTPS | `https://blog.ahmed-mangawy.org`, trailing `/`, uppercase host, explicit default `:443` | Return one lowercase normalized `.origin`; default port removed by URL normalization. [CITED: WHATWG URL] |
-| Missing/unclean | `undefined`, `""`, leading/trailing whitespace | Throw before accepted build output. [VERIFIED: D-06; whitespace [ASSUMED]] |
+| Missing/unclean | `undefined`, `""`, leading/trailing whitespace | Throw before accepted build output. [VERIFIED: D-06] [RESOLVED: strict whitespace policy, 2026-08-28] |
 | Scheme | `http:`, `ftp:` | Throw. [VERIFIED: D-07] |
 | Credentials | username, password, both | Throw. [VERIFIED: D-07] |
 | URL state | non-empty or empty `?` query delimiter, non-empty or empty `#` fragment delimiter, `/path`, `/path/` | Throw. [VERIFIED: D-07; Node 24 URL probe] |
 | Local/IP | `localhost`, `sub.localhost`, `127.0.0.1`, public IPv4, `[::1]`, public IPv6 | Throw. [VERIFIED: D-07] |
 | Reserved | `example.com/.net/.org`, their subdomains, `.example`, `.invalid`, `.test` | Throw. [CITED: RFC 2606/6761] |
-| Host normalization hazards | `localhost.`, `example.com.`, raw empty userinfo `@` | Throw. [ASSUMED: strict clean-origin policy] |
+| Host normalization hazards | `localhost.`, `example.com.`, raw empty userinfo `@` | Throw. [RESOLVED: strict clean-origin policy, 2026-08-28] |
 | Malformed | relative string, invalid URL, missing hostname | Throw. [CITED: WHATWG URL] |
 
 ### Browser/Data Parsing Requirements
@@ -789,11 +789,11 @@ The pure test table should include at least these classes. [VERIFIED: locked D-0
 
 - Standard stack: HIGH for the existing Astro/platform/test stack and the approved official sitemap package; the unavailable optional slopcheck probe is recorded without blocking the exact automated package audit. [RESOLVED: 2026-08-28] [VERIFIED: official docs/source/registry + audit]
 - Architecture: HIGH — locked decisions match the installed Astro 7.2.7 source and current code boundaries. [VERIFIED: codebase + pinned source]
-- Sitemap/robots: HIGH for behavior/output names; package identity remains procedurally `[ASSUMED]` until checkpoint. [CITED: pinned official source/docs]
+- Sitemap/robots: HIGH for behavior/output names and approved exact package identity; autonomous execution re-checks registry name/version/repository/integrity/lifecycle facts before and after installation. No checkpoint remains. [RESOLVED: 2026-08-28] [CITED: pinned official source/docs]
 - Static 404/preview: HIGH — installed preview/output source gives exact status/fallback behavior, including the no-slash caveat. [VERIFIED: installed source]
 - Security: HIGH — threat paths and controls derive directly from explicit trust boundaries and ASVS L1 policy. [VERIFIED: config + phase decisions]
 - Validation: HIGH — existing independent oracle, Playwright lifecycle, axe, artifacts, and commands are present; gaps are specific. [VERIFIED: test/config scan]
 
 **Research date:** 2026-08-27
 
-**Valid until:** 2026-09-26 for the pinned versions. Re-run registry/source checks if Astro or sitemap versions change. [ASSUMED: 30-day stable-version review window]
+**Valid until:** 2026-09-26 for the pinned versions. Re-run registry/source checks if Astro or sitemap versions change. [PROCESS NOTE: 30-day stable-version review window]
