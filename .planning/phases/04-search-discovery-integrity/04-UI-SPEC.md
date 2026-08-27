@@ -1,7 +1,8 @@
 ---
 phase: 4
 slug: search-discovery-integrity
-status: draft
+status: approved
+reviewed: "2026-08-27T19:25:15.3250124Z"
 shadcn_initialized: false
 preset: none
 created: 2026-08-27
