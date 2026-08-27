@@ -31,7 +31,7 @@ Requirements for the first production release. Each requirement will map to exac
 - [x] **SEO-01**: Every published article has an explicit, stable, clean Arabic URL slug that is not silently regenerated when its title changes.
 - [x] **SEO-02**: Every indexable page has a unique descriptive Arabic page title, meta description, and single clear primary heading.
 - [x] **SEO-03**: Every indexable page emits a self-consistent canonical URL and accurate social-sharing metadata derived from the configured production origin.
-- [ ] **SEO-04**: Search crawlers can reach every published article through ordinary HTML links, while drafts and non-public content remain absent from public routes and discovery output.
+- [x] **SEO-04**: Search crawlers can reach every published article through ordinary HTML links, while drafts and non-public content remain absent from public routes and discovery output.
 - [x] **SEO-05**: The deployed site exposes a sitemap containing only canonical published routes and robots directives that agree with the intended indexing policy.
 - [ ] **SEO-06**: The production property is verified in Google Search Console and its canonical sitemap is submitted for crawl and index monitoring.
 
@@ -132,7 +132,7 @@ Explicit exclusions prevent scope creep during v1.
 | SEO-01 | Phase 1 | Complete |
 | SEO-02 | Phase 4 | Complete |
 | SEO-03 | Phase 4 | Complete |
-| SEO-04 | Phase 4 | Pending |
+| SEO-04 | Phase 4 | Complete |
 | SEO-05 | Phase 4 | Complete |
 | SEO-06 | Phase 5 | Pending |
 | PUB-01 | Phase 1 | Complete |

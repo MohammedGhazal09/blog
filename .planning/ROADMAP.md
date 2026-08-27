@@ -9,7 +9,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 - [x] **Phase 1: Content and URL Contract** - The owner can maintain validated Markdown/MDX content with stable public identities. (completed 2026-08-26)
 - [x] **Phase 2: Complete Arabic Article Journey** - A reader can consume one accessible RTL article and continue to its matching YouTube content. (completed 2026-08-26)
 - [x] **Phase 3: Real Content and Section Discovery** - Visitors can discover truthful launch content across the homepage and all three primary sections. (completed 2026-08-27)
-- [ ] **Phase 4: Search Discovery Integrity** - Every public route presents one consistent, crawlable identity to readers and search engines.
+- [x] **Phase 4: Search Discovery Integrity** - Every public route presents one consistent, crawlable identity to readers and search engines. (completed 2026-08-27)
 - [ ] **Phase 5: Deployment and Measurement** - The live site can be monitored for search discovery and outbound YouTube activation without profiling readers.
 - [ ] **Phase 6: Production Launch Verification** - Production behavior is verified across crawlability, Arabic presentation, links, and performance.
 
@@ -78,7 +78,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
   4. The deployed sitemap contains only canonical published routes, and robots directives agree with the intended indexing policy.
   5. A visitor who opens a missing route receives a useful Arabic 404 page with a clear link back into the site.
 
-**Plans:** 0/3 plans executed
+**Plans:** 3/3 plans complete
 **UI hint:** yes
 
 ### Phase 5: Deployment and Measurement
@@ -119,6 +119,6 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 | 1. Content and URL Contract | 3/3 | Complete    | 2026-08-26 |
 | 2. Complete Arabic Article Journey | 4/4 | Complete    | 2026-08-26 |
 | 3. Real Content and Section Discovery | 4/4 | Complete   | 2026-08-27 |
-| 4. Search Discovery Integrity | 0/3 | Planned    |  |
+| 4. Search Discovery Integrity | 3/3 | Complete   | 2026-08-27 |
 | 5. Deployment and Measurement | 0/TBD | Not started | - |
 | 6. Production Launch Verification | 0/TBD | Not started | - |

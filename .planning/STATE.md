@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 04-02-PLAN.md
-last_updated: "2026-08-27T23:07:54.921Z"
+status: verifying
+stopped_at: Completed 04-03-PLAN.md; Phase 04 ready for verification
+last_updated: "2026-08-27T23:51:17.970Z"
 last_activity: 2026-08-27
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 14
-  completed_plans: 13
-  percent: 93
+  completed_plans: 14
+  percent: 67
 ---
 
 # Project State
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-08-26)
 
 Phase: 04 (search-discovery-integrity) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-08-27
 
-Progress: [█████████░] 93%
+Progress: [███████░░░] 67%
 
 ## Performance Metrics
 
@@ -66,6 +66,7 @@ Progress: [█████████░] 93%
 | Phase 03 P04 | 29m | 3 tasks | 16 files |
 | Phase 04 P01 | 8m | 2 tasks | 8 files |
 | Phase 04 P02 | 12min | 3 tasks | 9 files |
+| Phase 04 P03 | 29min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -113,6 +114,9 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 04]: Keep SiteLayout.astro as the sole metadata renderer and expose no canonical or origin override surface. — Prevents duplicate head tags and canonical-host overrides.
 - [Phase 04]: Reuse maintained Arabic body and registry copy for descriptions instead of creating a parallel SEO copy store. — Keeps visible and search identity synchronized.
 - [Phase 04]: Keep the 404 and favicon strictly static, local, and free of client runtime or remote assets. — Preserves the minimal no-JavaScript architecture and inert asset boundary.
+- [Phase 04]: Separate declared absolute site identity from localhost browser transport. — This proves controlled launch canonical and discovery output while keeping all browser traffic local and deterministic.
+- [Phase 04]: Lock Phase 3 body output through text, DOM order, computed tokens, focus, and containment. — Deterministic assertions catch visible regressions without treating screenshots as the only oracle.
+- [Phase 04]: Classify deliberate 404 console noise only through an independent exact-URL HTTP response ledger. — Generic Chromium console echoes alone cannot prove that an error belongs to an intentional missing-route request.
 
 ### Pending Todos
 
@@ -131,6 +135,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-27T23:07:54.906Z
-Stopped at: Completed 04-02-PLAN.md
+Last session: 2026-08-27T23:50:19.109Z
+Stopped at: Completed 04-03-PLAN.md; Phase 04 ready for verification
 Resume file: None
