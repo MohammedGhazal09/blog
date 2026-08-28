@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Phase 06 repository verification passed; awaiting owner-controlled production UAT
-last_updated: "2026-08-28T13:50:35Z"
+stopped_at: v1.0 milestone audit found five external-evidence gaps; Phases 5 and 6 remain human_needed
+last_updated: "2026-08-28T13:59:32Z"
 last_activity: 2026-08-28
 progress:
   total_phases: 6
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-08-28)
 
 Phase: 06 (production-launch-verification) — VERIFYING
 Plan: 2 of 2
-Status: Human verification required — repository gates and security pass; 10 external checks remain blocked
+Status: Milestone audit gaps_found — 31/36 requirements verified; Phases 5 and 6 await external evidence
 Last activity: 2026-08-28
 
 Progress: [██████████] 100%
@@ -136,6 +136,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 06-02]: Keep final-origin, native-zoom, field, provider, QUAL-05, and QUAL-06 evidence pending until direct owner-controlled proof exists.
 - [Phase 06 security]: Close all 11 registered threats only after applying report-wide URL redaction at the final serialization boundary and proving sensitive values are absent from both returned and persisted reports.
 - [Phase 06 verification]: Keep Phase 6 `human_needed`; all repository-controlled gates pass, but the two production truths and QUAL-05/QUAL-06 require direct final-origin and owner/provider evidence.
+- [v1.0 milestone audit]: Do not archive, tag, or declare v1.0 launched while SEO-06, MEAS-01, MEAS-02, QUAL-05, and QUAL-06 remain unsatisfied.
 
 ### Pending Todos
 
@@ -155,6 +156,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-28T13:50:35Z
-Stopped at: Phase 06 repository verification passed; awaiting owner-controlled production UAT
+Last session: 2026-08-28T13:59:32Z
+Stopped at: v1.0 milestone audit found five external-evidence gaps; Phases 5 and 6 remain human_needed
 Resume file: None
