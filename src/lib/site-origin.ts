@@ -1,9 +1,10 @@
 // @ts-ignore Node built-in types are intentionally not a project dependency.
-import { lookup } from "node:dns/promises";
+import { Resolver } from "node:dns/promises";
 // @ts-ignore Node built-in types are intentionally not a project dependency.
 import { BlockList, isIP } from "node:net";
 
 export const LOCAL_SITE_ORIGIN = "http://127.0.0.1:4322";
+export const DNS_RESOLUTION_TIMEOUT_MS = 5_000;
 
 const RESERVED_ROOTS = [
   "localhost",
@@ -60,7 +61,7 @@ for (const [network, prefix] of [
 
 type ResolveHostname = (
   hostname: string,
-  options: { all: true; verbatim: true },
+  options: { all: true; verbatim: true; signal: AbortSignal },
 ) => Promise<readonly { address: string; family: number }[]>;
 
 export type VerifiedProductionSite = {
@@ -75,6 +76,40 @@ type PinnedLookupCallback = (
   address: string | { address: string; family: 4 | 6 }[],
   family?: number,
 ) => void;
+
+async function resolvePublicAddresses(
+  hostname: string,
+  { signal }: { signal: AbortSignal },
+): Promise<readonly { address: string; family: number }[]> {
+  const resolver = new Resolver();
+  const cancel = () => resolver.cancel();
+  signal.addEventListener("abort", cancel, { once: true });
+  try {
+    const results = await Promise.allSettled([
+      resolver.resolve4(hostname),
+      resolver.resolve6(hostname),
+    ]);
+    const unexpectedFailure = results.find(
+      (result) =>
+        result.status === "rejected" &&
+        !["ENODATA", "ENOTFOUND"].includes(
+          typeof result.reason === "object" &&
+            result.reason !== null &&
+            "code" in result.reason
+            ? String(result.reason.code)
+            : "",
+        ),
+    );
+    if (unexpectedFailure?.status === "rejected") throw unexpectedFailure.reason;
+    return results.flatMap((result, index) =>
+      result.status === "fulfilled"
+        ? result.value.map((address) => ({ address, family: index === 0 ? 4 : 6 }))
+        : [],
+    );
+  } finally {
+    signal.removeEventListener("abort", cancel);
+  }
+}
 
 export function productionSiteOrigin(raw: unknown): string {
   if (typeof raw !== "string" || raw.length === 0 || raw !== raw.trim()) {
@@ -116,14 +151,34 @@ export function productionSiteOrigin(raw: unknown): string {
 
 export async function verifiedProductionSiteOrigin(
   raw: unknown,
-  resolveHostname: ResolveHostname = lookup,
+  resolveHostname: ResolveHostname = resolvePublicAddresses,
+  timeoutMs = DNS_RESOLUTION_TIMEOUT_MS,
 ): Promise<VerifiedProductionSite> {
   const origin = productionSiteOrigin(raw);
   const hostname = new URL(origin).hostname;
-  const addresses = await resolveHostname(hostname, {
-    all: true,
-    verbatim: true,
+  const controller = new AbortController();
+  let timer;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(
+        new Error(`SITE_ORIGIN DNS resolution timed out after ${timeoutMs} ms`),
+      );
+      controller.abort();
+    }, timeoutMs);
   });
+  let addresses;
+  try {
+    addresses = await Promise.race([
+      resolveHostname(hostname, {
+        all: true,
+        verbatim: true,
+        signal: controller.signal,
+      }),
+      timeout,
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
   if (
     addresses.length === 0 ||
     addresses.some(({ address, family }) => {

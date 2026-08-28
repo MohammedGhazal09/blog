@@ -44,9 +44,10 @@ type ControlledFixture = {
   browserRouteInstallCount: number;
   readerIdleMs: number;
   fontReadyTimeoutMs?: number;
+  dnsResolutionTimeoutMs?: number;
   resolveHostname(
     hostname: string,
-    options: { all: true; verbatim: true },
+    options: { all: true; verbatim: true; signal: AbortSignal },
   ): Promise<readonly { address: string; family: number }[]>;
   auditKinds?: readonly ("performance" | "media" | "presentation")[];
   performanceSamples: Map<
@@ -282,7 +283,9 @@ function createFixture(): ControlledFixture {
     readerIdleMs: 10,
     async resolveHostname(hostname, options) {
       assert.equal(hostname, new URL(CONTROLLED_ORIGIN).hostname);
-      assert.deepEqual(options, { all: true, verbatim: true });
+      assert.equal(options.all, true);
+      assert.equal(options.verbatim, true);
+      assert.ok(options.signal instanceof AbortSignal);
       return [{ address: "93.184.216.34", family: 4 }];
     },
     performanceSamples,
@@ -946,6 +949,35 @@ test("every registered article route fails crawl and media when its media is abs
   } finally {
     await cleanupReport(report);
   }
+});
+
+test("stalled DNS resolution is aborted before browser, fetch, route, or artifact I/O", async () => {
+  const fixture = createFixture();
+  fixture.dnsResolutionTimeoutMs = 25;
+  let aborted = false;
+  fixture.resolveHostname = async (_hostname, { signal }) =>
+    new Promise((_resolve, reject) => {
+      signal.addEventListener(
+        "abort",
+        () => {
+          aborted = true;
+          reject(new Error("resolver aborted"));
+        },
+        { once: true },
+      );
+    });
+  const before = existsSync(ARTIFACT_ROOT) ? await readdir(ARTIFACT_ROOT) : [];
+  const started = Date.now();
+  await assert.rejects(
+    () => runControlled(fixture),
+    /SITE_ORIGIN DNS resolution timed out/u,
+  );
+  assert.ok(Date.now() - started < 1_000);
+  assert.equal(aborted, true);
+  assert.deepEqual(fixture.requests, []);
+  assert.equal(fixture.browserRouteInstalled, false);
+  const after = existsSync(ARTIFACT_ROOT) ? await readdir(ARTIFACT_ROOT) : [];
+  assert.deepEqual(after, before);
 });
 
 for (const [name, markup] of [

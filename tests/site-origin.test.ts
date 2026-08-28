@@ -127,3 +127,29 @@ test("pins the approved DNS answer for Node and Chromium", async () => {
   );
   assert.equal(chromiumHostResolverRules(verified).includes("192.168.1.1"), false);
 });
+
+test("aborts a stalled DNS resolver at the configured deadline", async () => {
+  let aborted = false;
+  const started = Date.now();
+  await assert.rejects(
+    () =>
+      verifiedProductionSiteOrigin(
+        "https://blog.ahmed-mangawy.org",
+        async (_hostname, { signal }) =>
+          new Promise((_resolve, reject) => {
+            signal.addEventListener(
+              "abort",
+              () => {
+                aborted = true;
+                reject(new Error("resolver aborted"));
+              },
+              { once: true },
+            );
+          }),
+        25,
+      ),
+    /SITE_ORIGIN DNS resolution timed out after 25 ms/u,
+  );
+  assert.ok(Date.now() - started < 1_000);
+  assert.equal(aborted, true);
+});

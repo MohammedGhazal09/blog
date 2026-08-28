@@ -1486,6 +1486,7 @@ export async function runProductionVerification(options = {}) {
   const verifiedSite = await verifiedProductionSiteOrigin(
     process.env.SITE_ORIGIN,
     controlledFixture?.resolveHostname,
+    controlledFixture?.dnsResolutionTimeoutMs,
   );
   const normalizedOrigin = verifiedSite.origin;
   const networkFetch = createPinnedFetch(verifiedSite);
