@@ -193,6 +193,14 @@ function createPinnedFetch(verifiedSite) {
     });
 }
 
+export function chromiumLaunchArgs(verifiedSite) {
+  return [
+    "--no-proxy-server",
+    "--proxy-bypass-list=*",
+    `--host-resolver-rules=${chromiumHostResolverRules(verifiedSite)}`,
+  ];
+}
+
 function cleanSameOriginUrl(raw, origin, findings, sourceUrl) {
   let url;
   try {
@@ -686,9 +694,44 @@ async function navigateSameOrigin({
   origin,
   timeout,
   findings,
+  browserTransport,
   intentionalBlockedUrl = () => false,
 }) {
   const unexpectedRequests = [];
+  const responseChecks = [];
+  const responseListener = (response) => {
+    if (new URL(response.url()).origin !== origin) return;
+    responseChecks.push(
+      response
+        .serverAddr()
+        .then((server) => {
+          if (!server) {
+            if (browserTransport.requireRemoteAddress)
+              unexpectedRequests.push(
+                `missing remote address: ${response.url()}`,
+              );
+            return;
+          }
+          browserTransport.remoteAddresses.add(
+            `${server.ipAddress}:${server.port}`,
+          );
+          if (
+            !browserTransport.approvedAddresses.has(
+              server.ipAddress.toLowerCase(),
+            )
+          )
+            unexpectedRequests.push(
+              `unapproved remote address ${server.ipAddress}: ${response.url()}`,
+            );
+        })
+        .catch((error) => {
+          if (browserTransport.requireRemoteAddress)
+            unexpectedRequests.push(
+              `remote address unavailable for ${response.url()}: ${error instanceof Error ? error.message : String(error)}`,
+            );
+        }),
+    );
+  };
   const guard = async (route) => {
     const request = route.request();
     const destination = new URL(request.url());
@@ -706,8 +749,18 @@ async function navigateSameOrigin({
   };
   await page.context().route("**/*", guard);
   await page.route("**/*", guard);
-  await page.goto(url, { waitUntil: "load", timeout });
-  await page.waitForTimeout(0);
+  page.on("response", responseListener);
+  try {
+    await page.goto(url, { waitUntil: "load", timeout });
+    await page.waitForTimeout(0);
+    await Promise.all(responseChecks);
+  } finally {
+    page.off("response", responseListener);
+  }
+  for (const detail of unexpectedRequests.filter((value) =>
+    value.includes("remote address"),
+  ))
+    finding(findings, "BROWSER_REMOTE_ADDRESS", detail, url);
   if (unexpectedRequests.length > 0)
     throw new Error(
       `blocked off-origin browser requests: ${unexpectedRequests.join(", ")}`,
@@ -777,6 +830,7 @@ async function auditPerformance({
   readerIdleMs,
   fontReadyTimeoutMs,
   findings,
+  browserTransport,
 }) {
   const results = [];
   let contextSequence = 0;
@@ -806,6 +860,7 @@ async function auditPerformance({
           origin,
           timeout: PERFORMANCE_NAVIGATION_TIMEOUT_MS,
           findings,
+          browserTransport,
         });
         await waitForFontReadiness(page, fontReadyTimeoutMs);
         await page.waitForTimeout(readerIdleMs);
@@ -901,7 +956,10 @@ async function newAuditPage(
   controlledFixture,
   viewport = PROFILE.viewport,
 ) {
-  const context = await browser.newContext({ viewport, serviceWorkers: "block" });
+  const context = await browser.newContext({
+    viewport,
+    serviceWorkers: "block",
+  });
   const page = await context.newPage();
   await installControlledRoutes(page, controlledFixture);
   return { context, page };
@@ -943,6 +1001,7 @@ async function activationObservation(
   url,
   key,
   findings,
+  browserTransport,
 ) {
   const requests = [];
   const { context, page } = await newAuditPage(browser, controlledFixture);
@@ -954,6 +1013,7 @@ async function activationObservation(
       origin,
       timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
       findings,
+      browserTransport,
       intentionalBlockedUrl: isMediaUrl,
     });
     const region = page.locator(MEDIA_REGION_SELECTOR);
@@ -1002,6 +1062,7 @@ async function auditMedia({
   documents,
   controlledFixture,
   findings,
+  browserTransport,
 }) {
   const results = [];
   for (const url of articleUrls.sort(comparePublicUrls)) {
@@ -1057,6 +1118,7 @@ async function auditMedia({
         origin,
         timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
         findings,
+        browserTransport,
         intentionalBlockedUrl: isMediaUrl,
       });
       const region = pre.page.locator(MEDIA_REGION_SELECTOR);
@@ -1076,6 +1138,7 @@ async function auditMedia({
       url,
       undefined,
       findings,
+      browserTransport,
     );
     const keyboard = await activationObservation(
       browser,
@@ -1084,6 +1147,7 @@ async function auditMedia({
       url,
       "Enter",
       findings,
+      browserTransport,
     );
 
     const fallbackPage = await newAuditPage(browser, controlledFixture);
@@ -1097,6 +1161,7 @@ async function auditMedia({
         origin,
         timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
         findings,
+        browserTransport,
         intentionalBlockedUrl: isMediaUrl,
       });
       await fallbackPage.page.locator(MEDIA_ACTIVATE_SELECTOR).click();
@@ -1268,6 +1333,7 @@ async function auditPresentation({
   urls,
   controlledFixture,
   findings,
+  browserTransport,
 }) {
   const results = [];
   for (const url of urls) {
@@ -1282,6 +1348,7 @@ async function auditPresentation({
         origin,
         timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
         findings,
+        browserTransport,
       });
       const identity = await page.locator("html").evaluate((node) => ({
         lang: node.getAttribute("lang"),
@@ -1502,6 +1569,7 @@ export async function runProductionVerification(options = {}) {
     crawledUrls: [],
     sameOriginLinks: [],
     externalLinks: [],
+    browserRemoteAddresses: [],
   };
   const documents = new Map();
   const readerIdleMs = controlledFixture
@@ -1525,11 +1593,18 @@ export async function runProductionVerification(options = {}) {
   let crawlPassed = false;
   let browser;
   let chromiumVersion = "unavailable";
+  const browserTransport = {
+    approvedAddresses: new Set(
+      verifiedSite.addresses.map(({ address }) => address.toLowerCase()),
+    ),
+    remoteAddresses: new Set(),
+    requireRemoteAddress: !controlledFixture,
+  };
 
   try {
     browser = await chromium.launch({
       headless: true,
-      args: [`--host-resolver-rules=${chromiumHostResolverRules(verifiedSite)}`],
+      args: chromiumLaunchArgs(verifiedSite),
     });
     chromiumVersion = browser.version();
     const context = await browser.newContext({ serviceWorkers: "block" });
@@ -1826,6 +1901,7 @@ export async function runProductionVerification(options = {}) {
         readerIdleMs,
         fontReadyTimeoutMs,
         findings,
+        browserTransport,
       });
     }
     discoveredArticleUrls = routeGraph.sitemapUrls.filter((url) =>
@@ -1839,6 +1915,7 @@ export async function runProductionVerification(options = {}) {
         documents,
         controlledFixture,
         findings,
+        browserTransport,
       });
     }
     if (auditKinds.has("presentation")) {
@@ -1848,6 +1925,7 @@ export async function runProductionVerification(options = {}) {
         urls: [...routeGraph.sitemapUrls, missingUrl].sort(comparePublicUrls),
         controlledFixture,
         findings,
+        browserTransport,
       });
     }
   } catch (error) {
@@ -1860,6 +1938,9 @@ export async function runProductionVerification(options = {}) {
   routeGraph.crawledUrls = [...new Set(routeGraph.crawledUrls)].sort();
   routeGraph.sameOriginLinks.sort();
   routeGraph.externalLinks.sort();
+  routeGraph.browserRemoteAddresses = [
+    ...browserTransport.remoteAddresses,
+  ].sort();
   const completedAt = new Date().toISOString();
   const report = {
     schemaVersion: 1,

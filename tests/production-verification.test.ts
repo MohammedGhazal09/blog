@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { readdir, rm } from "node:fs/promises";
+import { createServer } from "node:http";
 import { dirname, resolve } from "node:path";
 import test from "node:test";
 
-import type { Page } from "@playwright/test";
+import { chromium, type Page } from "@playwright/test";
 
 const CONTROLLED_ORIGIN = "https://controlled-mangawy-fixture.dev";
 const ARTIFACT_ROOT = resolve(".artifacts/phase-06");
@@ -80,6 +81,7 @@ type VerificationReport = {
     crawledUrls: string[];
     sameOriginLinks: string[];
     externalLinks: string[];
+    browserRemoteAddresses: string[];
   };
   profile: {
     viewport: { width: number; height: number };
@@ -327,11 +329,35 @@ function createFixture(): ControlledFixture {
 }
 
 async function loadRunner(): Promise<{
+  chromiumLaunchArgs(verifiedSite: {
+    hostname: string;
+    addresses: readonly { address: string; family: 4 | 6 }[];
+  }): string[];
   runProductionVerification(
     options?: Record<string, unknown>,
   ): Promise<VerificationReport>;
 }> {
   return import("../scripts/verify-production.mjs");
+}
+
+async function listen(
+  server: ReturnType<typeof createServer>,
+): Promise<number> {
+  await new Promise<void>((resolveListen, rejectListen) => {
+    server.once("error", rejectListen);
+    server.listen(0, "127.0.0.1", resolveListen);
+  });
+  const address = server.address();
+  assert.ok(address && typeof address === "object");
+  return address.port;
+}
+
+async function closeServer(
+  server: ReturnType<typeof createServer>,
+): Promise<void> {
+  await new Promise<void>((resolveClose, rejectClose) =>
+    server.close((error) => (error ? rejectClose(error) : resolveClose())),
+  );
 }
 
 async function runControlled(
@@ -829,7 +855,9 @@ test("media hostname spoofing is blocked without intentional-media classificatio
       report.findings.some(({ code }) => code === "BROWSER_ORIGIN_ESCAPE"),
     );
     assert.equal(
-      fixture.browserRequests.some((url) => url.includes("youtube.evil.invalid")),
+      fixture.browserRequests.some((url) =>
+        url.includes("youtube.evil.invalid"),
+      ),
       false,
     );
     assert.equal(report.automatedGates.media, "FAIL");
@@ -887,6 +915,41 @@ test("private DNS answers fail before fixture, browser, artifact, or route I/O",
   assert.equal(fixture.browserRouteInstalled, false);
   const after = existsSync(ARTIFACT_ROOT) ? await readdir(ARTIFACT_ROOT) : [];
   assert.deepEqual(after, before);
+});
+
+test("Chromium uses the pinned destination directly even when a proxy is configured", async () => {
+  let proxyContacts = 0;
+  const destination = createServer((_request, response) => response.end("ok"));
+  const proxy = createServer((_request, response) => {
+    proxyContacts += 1;
+    response.statusCode = 502;
+    response.end("proxy must not be used");
+  });
+  const destinationPort = await listen(destination);
+  const proxyPort = await listen(proxy);
+  const { chromiumLaunchArgs } = await loadRunner();
+  const browser = await chromium.launch({
+    headless: true,
+    args: [
+      `--proxy-server=http://127.0.0.1:${proxyPort}`,
+      ...chromiumLaunchArgs({
+        hostname: "direct.test",
+        addresses: [{ address: "127.0.0.1", family: 4 }],
+      }),
+    ],
+  });
+  try {
+    const page = await browser.newPage();
+    const response = await page.goto(`http://direct.test:${destinationPort}/`, {
+      waitUntil: "load",
+    });
+    assert.equal(response?.status(), 200);
+    assert.equal(proxyContacts, 0);
+  } finally {
+    await browser.close();
+    await closeServer(proxy);
+    await closeServer(destination);
+  }
 });
 
 test("browser-only redirects are blocked before the destination is contacted", async () => {
@@ -1018,7 +1081,9 @@ for (const [name, markup] of [
         JSON.stringify(report.findings),
       );
       assert.equal(
-        fixture.browserRequests.some((url) => url.startsWith("https://127.0.0.1:4443/")),
+        fixture.browserRequests.some((url) =>
+          url.startsWith("https://127.0.0.1:4443/"),
+        ),
         false,
       );
       assert.equal(report.automatedGates.presentation, "FAIL");
@@ -1042,7 +1107,8 @@ test("an unavailable sitemap article fails both crawl and media coverage", async
     assert.ok(report.findings.some(({ code }) => code === "MEDIA_IDENTITY"));
     assert.equal(report.media.length, ARTICLE_PATHS.length);
     assert.equal(
-      report.media.find(({ url }) => url === absolute(ARTICLE_PATHS[0]))?.status,
+      report.media.find(({ url }) => url === absolute(ARTICLE_PATHS[0]))
+        ?.status,
       "FAIL",
     );
     assert.equal(report.automatedGates.media, "FAIL");
