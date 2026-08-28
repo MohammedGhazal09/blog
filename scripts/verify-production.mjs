@@ -28,6 +28,8 @@ const FONT_READY_TIMEOUT_MS = 10_000;
 const PERFORMANCE_AUDIT_TIMEOUT_MS = 65_000;
 const RENDERED_AUDIT_TIMEOUT_MS = 45_000;
 const AUDIT_CLOSE_TIMEOUT_MS = 1_000;
+const RUNNER_SETUP_TIMEOUT_MS = 30_000;
+const BROWSER_CLOSE_TIMEOUT_MS = 5_000;
 const MEDIA_REGION_SELECTOR = "[data-video-region]";
 const MEDIA_ACTIVATE_SELECTOR = "[data-video-activate]";
 const MEDIA_DIRECT_SELECTOR = ".youtube-cta";
@@ -50,6 +52,8 @@ const PROFILE = {
   fontReadyTimeoutMs: FONT_READY_TIMEOUT_MS,
   performanceAuditTimeoutMs: PERFORMANCE_AUDIT_TIMEOUT_MS,
   renderedAuditTimeoutMs: RENDERED_AUDIT_TIMEOUT_MS,
+  runnerSetupTimeoutMs: RUNNER_SETUP_TIMEOUT_MS,
+  browserCloseTimeoutMs: BROWSER_CLOSE_TIMEOUT_MS,
   commands: [
     "Network.emulateNetworkConditionsByRule",
     "Network.overrideNetworkState",
@@ -888,24 +892,20 @@ async function auditPerformance({
     const runs = [];
     for (let iteration = 0; iteration < 3; iteration += 1) {
       contextSequence += 1;
-      const context = await browser.newContext({
-        viewport: PROFILE.viewport,
-        deviceScaleFactor: PROFILE.deviceScaleFactor,
-        isMobile: PROFILE.isMobile,
-        hasTouch: PROFILE.hasTouch,
-        serviceWorkers: "block",
-      });
-      await context.addInitScript(disableWebRtc);
-      await context.addInitScript(installVitalsObserver);
-      const page = await context.newPage();
       try {
-        const run = await withAuditDeadline({
-          page,
-          context,
+        const run = await withAuditPage({
+          browser,
+          controlledFixture,
+          contextOptions: {
+            deviceScaleFactor: PROFILE.deviceScaleFactor,
+            isMobile: PROFILE.isMobile,
+            hasTouch: PROFILE.hasTouch,
+          },
+          prepareContext: (context) =>
+            context.addInitScript(installVitalsObserver),
           timeoutMs: auditTimeoutMs,
           label: `performance run ${iteration + 1}`,
-          task: async () => {
-            await installControlledRoutes(page, controlledFixture);
+          task: async ({ context, page }) => {
             await applyPerformanceProfile(
               context,
               page,
@@ -976,8 +976,6 @@ async function auditPerformance({
           cls: null,
           observerSupport: [],
         });
-      } finally {
-        await closeAuditPage(page, context);
       }
     }
     const medianLcpMs = median(runs.map(({ lcpMs }) => lcpMs));
@@ -1011,25 +1009,11 @@ async function auditPerformance({
   return results;
 }
 
-async function newAuditPage(
-  browser,
-  controlledFixture,
-  viewport = PROFILE.viewport,
-) {
-  const context = await browser.newContext({
-    viewport,
-    serviceWorkers: "block",
-  });
-  await context.addInitScript(disableWebRtc);
-  const page = await context.newPage();
-  await installControlledRoutes(page, controlledFixture);
-  return { context, page };
-}
-
-async function closeAuditPage(page, context) {
+async function bestEffortCloseAuditPage(page, context) {
+  if (!page && !context) return;
   const closing = Promise.allSettled([
-    page.close({ runBeforeUnload: false }),
-    context.close(),
+    page?.close({ runBeforeUnload: false }),
+    context?.close(),
   ]);
   let timer;
   try {
@@ -1044,36 +1028,25 @@ async function closeAuditPage(page, context) {
   }
 }
 
+async function closeAuditPage(page, context) {
+  await page?.close({ runBeforeUnload: false });
+  await context?.close();
+}
+
 async function finishBrowserTransport(page) {
   const finish = PAGE_TRANSPORT_MONITORS.get(page);
   PAGE_TRANSPORT_MONITORS.delete(page);
   await finish?.();
 }
 
-async function withAuditDeadline({ page, context, timeoutMs, label, task }) {
+async function withHardDeadline({ timeoutMs, label, task, onTimeout }) {
   let timer;
   try {
     return await Promise.race([
-      (async () => {
-        let result;
-        let failure;
-        try {
-          result = await task();
-        } catch (error) {
-          failure = error;
-        }
-        await closeAuditPage(page, context).catch(
-          (error) => (failure ??= error),
-        );
-        await finishBrowserTransport(page).catch(
-          (error) => (failure ??= error),
-        );
-        if (failure) throw failure;
-        return result;
-      })(),
+      task(),
       new Promise((_, reject) => {
         timer = setTimeout(() => {
-          void closeAuditPage(page, context);
+          onTimeout?.();
           reject(new Error(`${label} timed out after ${timeoutMs} ms`));
         }, timeoutMs);
       }),
@@ -1081,6 +1054,52 @@ async function withAuditDeadline({ page, context, timeoutMs, label, task }) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function withAuditPage({
+  browser,
+  controlledFixture,
+  contextOptions,
+  prepareContext,
+  timeoutMs,
+  label,
+  task,
+}) {
+  let context;
+  let page;
+  return withHardDeadline({
+    timeoutMs,
+    label,
+    onTimeout: () => {
+      void bestEffortCloseAuditPage(page, context)
+        .then(() => finishBrowserTransport(page))
+        .catch(() => {});
+    },
+    task: async () => {
+      await controlledFixture?.beforeAuditPageSetup?.(label);
+      context = await browser.newContext({
+        viewport: PROFILE.viewport,
+        serviceWorkers: "block",
+        ...contextOptions,
+      });
+      await context.addInitScript(disableWebRtc);
+      await prepareContext?.(context);
+      page = await context.newPage();
+      await installControlledRoutes(page, controlledFixture);
+      let result;
+      let failure;
+      try {
+        result = await task({ context, page });
+      } catch (error) {
+        failure = error;
+      }
+      await controlledFixture?.beforeAuditPageClose?.(label);
+      await closeAuditPage(page, context).catch((error) => (failure ??= error));
+      await finishBrowserTransport(page).catch((error) => (failure ??= error));
+      if (failure) throw failure;
+      return result;
+    },
+  });
 }
 
 function exactMediaIntent(expectedSrc, requests) {
@@ -1133,63 +1152,58 @@ async function activationObservation(
 ) {
   const requests = [];
   const intent = exactMediaIntent(expectedSrc, requests);
-  const { context, page } = await newAuditPage(browser, controlledFixture);
-  try {
-    return await withAuditDeadline({
-      page,
-      context,
-      timeoutMs: auditTimeoutMs,
-      label: `media ${key ? "keyboard" : "pointer"} pass`,
-      task: async () => {
-        await navigateSameOrigin({
-          page,
-          url,
-          origin,
-          timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
-          findings,
-          browserTransport,
-          intentionalBlockedRequest: intent.classify,
-        });
-        const region = page.locator(MEDIA_REGION_SELECTOR);
-        const trigger = region.locator(MEDIA_ACTIVATE_SELECTOR);
-        const before = await mediaGeometry(region);
-        intent.activate();
-        if (key) {
-          await trigger.focus();
-          await page.keyboard.press(key);
-        } else {
-          await trigger.click();
-        }
-        const iframe = region.locator("iframe");
-        await iframe
-          .first()
-          .waitFor({ state: "attached", timeout: 5_000 })
-          .catch(() => {});
-        const after = await mediaGeometry(region);
-        return {
-          iframeCount: await iframe.count(),
-          src:
-            (await iframe
-              .first()
-              .getAttribute("src")
-              .catch(() => null)) ?? "",
-          title:
-            (await iframe
-              .first()
-              .getAttribute("title")
-              .catch(() => null)) ?? "",
-          focused: await iframe
+  return withAuditPage({
+    browser,
+    controlledFixture,
+    timeoutMs: auditTimeoutMs,
+    label: `media ${key ? "keyboard" : "pointer"} pass`,
+    task: async ({ page }) => {
+      await navigateSameOrigin({
+        page,
+        url,
+        origin,
+        timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
+        findings,
+        browserTransport,
+        intentionalBlockedRequest: intent.classify,
+      });
+      const region = page.locator(MEDIA_REGION_SELECTOR);
+      const trigger = region.locator(MEDIA_ACTIVATE_SELECTOR);
+      const before = await mediaGeometry(region);
+      intent.activate();
+      if (key) {
+        await trigger.focus();
+        await page.keyboard.press(key);
+      } else {
+        await trigger.click();
+      }
+      const iframe = region.locator("iframe");
+      await iframe
+        .first()
+        .waitFor({ state: "attached", timeout: 5_000 })
+        .catch(() => {});
+      const after = await mediaGeometry(region);
+      return {
+        iframeCount: await iframe.count(),
+        src:
+          (await iframe
             .first()
-            .evaluate((node) => document.activeElement === node)
-            .catch(() => false),
-          geometryStable: geometryStable(before, after),
-          requests,
-        };
-      },
-    });
-  } finally {
-    await closeAuditPage(page, context);
-  }
+            .getAttribute("src")
+            .catch(() => null)) ?? "",
+        title:
+          (await iframe
+            .first()
+            .getAttribute("title")
+            .catch(() => null)) ?? "",
+        focused: await iframe
+          .first()
+          .evaluate((node) => document.activeElement === node)
+          .catch(() => false),
+        geometryStable: geometryStable(before, after),
+        requests,
+      };
+    },
+  });
 }
 
 function failedMediaResult(url, youtubeId = "") {
@@ -1257,47 +1271,41 @@ async function auditMedia({
         `https://i.ytimg.com/vi/${encodeURIComponent(youtubeId)}/default.jpg`,
       ]);
       let eagerMediaFindingRecorded = false;
-      const pre = await newAuditPage(browser, controlledFixture);
-      let preIntent;
-      try {
-        preIntent = await withAuditDeadline({
-          page: pre.page,
-          context: pre.context,
-          timeoutMs: auditTimeoutMs,
-          label: "media pre-intent pass",
-          task: async () => {
-            await navigateSameOrigin({
-              page: pre.page,
-              url,
-              origin,
-              timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
-              findings,
-              browserTransport,
-              intentionalBlockedRequest: preIntentClassifier.classify,
-              onUnexpectedRequest: (request) => {
-                if (!expectedPreIntentUrls.has(request.url())) return;
-                preRequests.push(request.url());
-                if (eagerMediaFindingRecorded) return;
-                eagerMediaFindingRecorded = true;
-                finding(
-                  findings,
-                  "MEDIA_PRE_INTENT",
-                  "article made an off-origin request before media intent",
-                  url,
-                );
-              },
-            });
-            const region = pre.page.locator(MEDIA_REGION_SELECTOR);
-            return {
-              iframeCount: await pre.page.locator("iframe").count(),
-              mediaRequests: preRequests,
-              geometry: await mediaGeometry(region),
-            };
-          },
-        });
-      } finally {
-        await closeAuditPage(pre.page, pre.context);
-      }
+      const preIntent = await withAuditPage({
+        browser,
+        controlledFixture,
+        timeoutMs: auditTimeoutMs,
+        label: "media pre-intent pass",
+        task: async ({ page }) => {
+          await navigateSameOrigin({
+            page,
+            url,
+            origin,
+            timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
+            findings,
+            browserTransport,
+            intentionalBlockedRequest: preIntentClassifier.classify,
+            onUnexpectedRequest: (request) => {
+              if (!expectedPreIntentUrls.has(request.url())) return;
+              preRequests.push(request.url());
+              if (eagerMediaFindingRecorded) return;
+              eagerMediaFindingRecorded = true;
+              finding(
+                findings,
+                "MEDIA_PRE_INTENT",
+                "article made an off-origin request before media intent",
+                url,
+              );
+            },
+          });
+          const region = page.locator(MEDIA_REGION_SELECTOR);
+          return {
+            iframeCount: await page.locator("iframe").count(),
+            mediaRequests: preRequests,
+            geometry: await mediaGeometry(region),
+          };
+        },
+      });
 
       const pointer = await activationObservation(
         browser,
@@ -1322,47 +1330,40 @@ async function auditMedia({
         expectedSrc,
       );
 
-      const fallbackPage = await newAuditPage(browser, controlledFixture);
       const fallbackRequests = [];
       const fallbackIntent = exactMediaIntent(expectedSrc, fallbackRequests);
-      let fallback;
-      try {
-        fallback = await withAuditDeadline({
-          page: fallbackPage.page,
-          context: fallbackPage.context,
-          timeoutMs: auditTimeoutMs,
-          label: "media fallback pass",
-          task: async () => {
-            await navigateSameOrigin({
-              page: fallbackPage.page,
-              url,
-              origin,
-              timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
-              findings,
-              browserTransport,
-              intentionalBlockedRequest: fallbackIntent.classify,
-            });
-            fallbackIntent.activate();
-            await fallbackPage.page.locator(MEDIA_ACTIVATE_SELECTOR).click();
-            const link = fallbackPage.page.locator(MEDIA_DIRECT_SELECTOR);
-            await link.focus().catch(() => {});
-            return {
-              href: (await link.getAttribute("href")) ?? "",
-              label: (await link.innerText()).trim(),
-              visible: await link.isVisible(),
-              focusable: await link
-                .evaluate(
-                  (node) =>
-                    document.activeElement === node && node.tabIndex >= 0,
-                )
-                .catch(() => false),
-              sameTab: (await link.getAttribute("target")) === null,
-            };
-          },
-        });
-      } finally {
-        await closeAuditPage(fallbackPage.page, fallbackPage.context);
-      }
+      const fallback = await withAuditPage({
+        browser,
+        controlledFixture,
+        timeoutMs: auditTimeoutMs,
+        label: "media fallback pass",
+        task: async ({ page }) => {
+          await navigateSameOrigin({
+            page,
+            url,
+            origin,
+            timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
+            findings,
+            browserTransport,
+            intentionalBlockedRequest: fallbackIntent.classify,
+          });
+          fallbackIntent.activate();
+          await page.locator(MEDIA_ACTIVATE_SELECTOR).click();
+          const link = page.locator(MEDIA_DIRECT_SELECTOR);
+          await link.focus().catch(() => {});
+          return {
+            href: (await link.getAttribute("href")) ?? "",
+            label: (await link.innerText()).trim(),
+            visible: await link.isVisible(),
+            focusable: await link
+              .evaluate(
+                (node) => document.activeElement === node && node.tabIndex >= 0,
+              )
+              .catch(() => false),
+            sameTab: (await link.getAttribute("target")) === null,
+          };
+        },
+      });
 
       const validActivation = (observation) => {
         if (observation.iframeCount !== 1 || observation.src !== expectedSrc)
@@ -1546,17 +1547,14 @@ async function auditPresentation({
 }) {
   const results = [];
   for (const url of urls) {
-    const { context, page } = await newAuditPage(browser, controlledFixture, {
-      width: 320,
-      height: 844,
-    });
     try {
-      const result = await withAuditDeadline({
-        page,
-        context,
+      const result = await withAuditPage({
+        browser,
+        controlledFixture,
+        contextOptions: { viewport: { width: 320, height: 844 } },
         timeoutMs: auditTimeoutMs,
         label: "presentation page audit",
-        task: async () => {
+        task: async ({ context, page }) => {
           await navigateSameOrigin({
             page,
             url,
@@ -1747,8 +1745,6 @@ async function auditPresentation({
         horizontalOverflow: false,
         status: "FAIL",
       });
-    } finally {
-      await closeAuditPage(page, context);
     }
   }
   return results;
@@ -1818,12 +1814,30 @@ export async function runProductionVerification(options = {}) {
         ),
       )
     : RENDERED_AUDIT_TIMEOUT_MS;
+  const runnerSetupTimeoutMs = controlledFixture
+    ? Math.max(
+        1,
+        Number(
+          controlledFixture.runnerSetupTimeoutMs ?? RUNNER_SETUP_TIMEOUT_MS,
+        ),
+      )
+    : RUNNER_SETUP_TIMEOUT_MS;
+  const browserCloseTimeoutMs = controlledFixture
+    ? Math.max(
+        1,
+        Number(
+          controlledFixture.browserCloseTimeoutMs ?? BROWSER_CLOSE_TIMEOUT_MS,
+        ),
+      )
+    : BROWSER_CLOSE_TIMEOUT_MS;
   const profile = {
     ...PROFILE,
     readerIdleMs,
     fontReadyTimeoutMs,
     performanceAuditTimeoutMs,
     renderedAuditTimeoutMs,
+    runnerSetupTimeoutMs,
+    browserCloseTimeoutMs,
   };
   const auditKinds = new Set(
     controlledFixture?.auditKinds ?? ["performance", "media", "presentation"],
@@ -1851,10 +1865,23 @@ export async function runProductionVerification(options = {}) {
       args: chromiumLaunchArgs(verifiedSite),
     });
     chromiumVersion = browser.version();
-    const context = await browser.newContext({ serviceWorkers: "block" });
-    await context.addInitScript(disableWebRtc);
-    const page = await context.newPage();
-    if (controlledFixture) await controlledFixture.installBrowserRoutes(page);
+    let setupContext;
+    let setupPage;
+    const { context, page } = await withHardDeadline({
+      timeoutMs: runnerSetupTimeoutMs,
+      label: "crawl browser setup",
+      onTimeout: () => {
+        void bestEffortCloseAuditPage(setupPage, setupContext);
+      },
+      task: async () => {
+        setupContext = await browser.newContext({ serviceWorkers: "block" });
+        await setupContext.addInitScript(disableWebRtc);
+        setupPage = await setupContext.newPage();
+        if (controlledFixture)
+          await controlledFixture.installBrowserRoutes(setupPage);
+        return { context: setupContext, page: setupPage };
+      },
+    });
 
     const robotsUrl = new URL("/robots.txt", normalizedOrigin).href;
     const sitemapIndexUrl = new URL("/sitemap-index.xml", normalizedOrigin)
@@ -2137,7 +2164,14 @@ export async function runProductionVerification(options = {}) {
         );
       }
     }
-    await context.close();
+    await withHardDeadline({
+      timeoutMs: runnerSetupTimeoutMs,
+      label: "crawl browser cleanup",
+      onTimeout: () => {
+        void bestEffortCloseAuditPage(page, context);
+      },
+      task: () => closeAuditPage(page, context),
+    });
 
     selectedPerformanceRoutes = selectPerformanceRoutes(
       normalizedOrigin,
@@ -2190,7 +2224,23 @@ export async function runProductionVerification(options = {}) {
   } catch (error) {
     errors.push(error instanceof Error ? error.message : String(error));
   } finally {
-    await browser?.close();
+    if (browser) {
+      try {
+        await withHardDeadline({
+          timeoutMs: browserCloseTimeoutMs,
+          label: "browser close",
+          onTimeout: () => {
+            void browser.close().catch(() => {});
+          },
+          task: async () => {
+            await controlledFixture?.beforeBrowserClose?.();
+            await browser.close();
+          },
+        });
+      } catch (error) {
+        errors.push(error instanceof Error ? error.message : String(error));
+      }
+    }
   }
 
   routeGraph.sitemapUrls.sort();

@@ -72,7 +72,12 @@ type ControlledFixture = {
   fontReadyTimeoutMs?: number;
   performanceAuditTimeoutMs?: number;
   renderedAuditTimeoutMs?: number;
+  runnerSetupTimeoutMs?: number;
+  browserCloseTimeoutMs?: number;
   dnsResolutionTimeoutMs?: number;
+  beforeAuditPageSetup?(label: string): Promise<void>;
+  beforeAuditPageClose?(label: string): Promise<void>;
+  beforeBrowserClose?(): Promise<void>;
   resolveHostname(
     hostname: string,
     options: { all: true; verbatim: true; signal: AbortSignal },
@@ -125,6 +130,8 @@ type VerificationReport = {
     fontReadyTimeoutMs: number;
     performanceAuditTimeoutMs: number;
     renderedAuditTimeoutMs: number;
+    runnerSetupTimeoutMs: number;
+    browserCloseTimeoutMs: number;
     readerIdleMs: number;
     commands: string[];
   };
@@ -529,6 +536,8 @@ test("controlled performance profile selects five roles and preserves fifteen co
       fontReadyTimeoutMs: 10_000,
       performanceAuditTimeoutMs: 65_000,
       renderedAuditTimeoutMs: 45_000,
+      runnerSetupTimeoutMs: 30_000,
+      browserCloseTimeoutMs: 5_000,
       readerIdleMs: 10,
       commands: [
         "Network.emulateNetworkConditionsByRule",
@@ -1692,6 +1701,69 @@ test("a non-terminating media task fails its article within the audit deadline",
     );
     assert.equal(report.errors.length, 0);
     assert.equal(report.automatedGates.media, "FAIL");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+for (const stage of ["setup", "cleanup"] as const) {
+  test(`stalled audit ${stage} returns a failed media result within the hard deadline`, async () => {
+    const fixture = createFixture();
+    fixture.auditKinds = ["media"];
+    fixture.renderedAuditTimeoutMs = 100;
+    let stalled = false;
+    const stallOnce = async (label: string) => {
+      if (stalled || label !== "media pre-intent pass") return;
+      stalled = true;
+      await new Promise(() => {});
+    };
+    if (stage === "setup") fixture.beforeAuditPageSetup = stallOnce;
+    else fixture.beforeAuditPageClose = stallOnce;
+    const started = Date.now();
+    let report: VerificationReport | undefined;
+    try {
+      report = await runControlled(fixture);
+      assert.ok(Date.now() - started < 8_000);
+      assert.ok(
+        report.findings.some(
+          ({ code, detail, url }) =>
+            code === "MEDIA_NAVIGATION" &&
+            url === absolute(ARTICLE_PATHS[0]) &&
+            detail.includes("media pre-intent pass timed out after 100 ms"),
+        ),
+        JSON.stringify({ findings: report.findings, errors: report.errors }),
+      );
+      assert.equal(
+        report.media.find(({ url }) => url === absolute(ARTICLE_PATHS[0]))
+          ?.status,
+        "FAIL",
+      );
+      assert.equal(report.automatedGates.media, "FAIL");
+    } finally {
+      await cleanupReport(report);
+    }
+  });
+}
+
+test("stalled final browser close returns a failed runner report within its deadline", async () => {
+  const fixture = createFixture();
+  fixture.auditKinds = [];
+  fixture.browserCloseTimeoutMs = 100;
+  fixture.beforeBrowserClose = async () => new Promise<void>(() => {});
+  const started = Date.now();
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    assert.ok(Date.now() - started < 8_000);
+    assert.ok(
+      report.errors.some((detail) =>
+        detail.includes("browser close timed out after 100 ms"),
+      ),
+      JSON.stringify(report.errors),
+    );
+    assert.equal(report.automatedGates.runner, "FAIL");
+    assert.equal(report.automatedGates.crawl, "FAIL");
+    assert.equal(existsSync(report.artifactPath), true);
   } finally {
     await cleanupReport(report);
   }
