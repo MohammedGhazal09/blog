@@ -792,10 +792,14 @@ async function navigateSameOrigin({
         method: request.method(),
         resourceType: request.resourceType(),
       });
-    if (
-      !isApprovedPlausibleRequest(request, browserTransport.plausibleLoader) &&
-      !intentionalBlockedRequest(request)
-    ) {
+    const approvedPlausibleRequest = isApprovedPlausibleRequest(
+      request,
+      browserTransport.plausibleLoader,
+    );
+    const approvedIntentionalRequest = approvedPlausibleRequest
+      ? false
+      : await intentionalBlockedRequest(request);
+    if (!approvedPlausibleRequest && !approvedIntentionalRequest) {
       unexpectedRequests.push(destination.href);
       onUnexpectedRequest(request);
       finding(
@@ -1130,27 +1134,56 @@ async function withAuditPage({
 }
 
 function exactMediaIntent(expectedSrc, requests) {
-  let active = false;
+  let readEventSequence = async () => 0;
+  let consumedEventSequence = 0;
   let preActivationRequestCount = 0;
   return {
-    activate() {
-      active = true;
+    bindEventSequenceReader(reader) {
+      readEventSequence = reader;
     },
-    classify(request) {
+    async classify(request) {
       if (request.url() !== expectedSrc) return false;
       requests.push(request.url());
-      if (!active) preActivationRequestCount += 1;
-      return (
-        active &&
+      const eventSequence = await readEventSequence().catch(() => 0);
+      const eventBoundaryReached = eventSequence > consumedEventSequence;
+      if (!eventBoundaryReached) preActivationRequestCount += 1;
+      const approved =
+        eventBoundaryReached &&
         request.method() === "GET" &&
         request.resourceType() === "document" &&
-        request.isNavigationRequest()
-      );
+        request.isNavigationRequest();
+      if (approved) consumedEventSequence = eventSequence;
+      return approved;
     },
     preActivationRequestCount() {
       return preActivationRequestCount;
     },
   };
+}
+
+async function bindExactMediaEventIntent(intent, page, trigger, type, key) {
+  await trigger.evaluate(
+    (node, eventContract) => {
+      const marker = Symbol.for("mangawy.production.media-intent-event");
+      const state = { sequence: 0 };
+      document[marker] = state;
+      node.addEventListener(
+        eventContract.type,
+        (event) => {
+          if (eventContract.key && event.key !== eventContract.key) return;
+          state.sequence += 1;
+        },
+        { capture: true },
+      );
+    },
+    { type, key },
+  );
+  intent.bindEventSequenceReader(() =>
+    page.evaluate(() => {
+      const marker = Symbol.for("mangawy.production.media-intent-event");
+      return document[marker]?.sequence ?? 0;
+    }),
+  );
 }
 
 async function mediaGeometry(region) {
@@ -1288,15 +1321,18 @@ async function activationObservation(
       const before = await mediaGeometry(region);
       await startMediaStabilityObservation(region);
       if (key) {
+        await bindExactMediaEventIntent(intent, page, trigger, "keydown", key);
         await trigger.focus();
         await page.waitForTimeout(MEDIA_PRE_INTENT_STABILITY_MS);
-        intent.activate();
         await page.keyboard.press(key);
       } else {
+        await bindExactMediaEventIntent(intent, page, trigger, "click");
         const box = await trigger.boundingBox();
         if (!box) throw new Error("media pointer trigger has no hit target");
-        intent.activate();
-        await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await page.waitForTimeout(MEDIA_PRE_INTENT_STABILITY_MS);
+        await page.mouse.down();
+        await page.mouse.up();
       }
       const stability = await completeMediaStabilityObservation(region);
       const iframe = region.locator("iframe");
@@ -1478,9 +1514,20 @@ async function auditMedia({
             intentionalBlockedRequest: fallbackIntent.classify,
           });
           const region = page.locator(MEDIA_REGION_SELECTOR);
+          const trigger = page.locator(MEDIA_ACTIVATE_SELECTOR);
           await startMediaStabilityObservation(region);
-          fallbackIntent.activate();
-          await page.locator(MEDIA_ACTIVATE_SELECTOR).click();
+          await bindExactMediaEventIntent(
+            fallbackIntent,
+            page,
+            trigger,
+            "click",
+          );
+          const box = await trigger.boundingBox();
+          if (!box) throw new Error("media fallback trigger has no hit target");
+          await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+          await page.waitForTimeout(MEDIA_PRE_INTENT_STABILITY_MS);
+          await page.mouse.down();
+          await page.mouse.up();
           const stability = await completeMediaStabilityObservation(region);
           const link = page.locator(MEDIA_DIRECT_SELECTOR);
           await link.focus().catch(() => {});

@@ -702,6 +702,45 @@ test("focus-only media activation is not relabeled as Enter intent", async () =>
   }
 });
 
+test("hover-only media activation is not relabeled as click intent", async () => {
+  const fixture = createFixture();
+  const articleUrl = absolute(ARTICLE_PATHS[0]);
+  const articleResponse = fixture.responses.get(articleUrl);
+  assert.ok(articleResponse);
+  const expectedSrc = `https://www.youtube-nocookie.com/embed/${VIDEO_IDS[0]}?hl=ar`;
+  const hoverOnlyActivation = `<script>{const region=document.querySelector('[data-video-region]');const button=region.querySelector('[data-video-activate]');button.addEventListener('pointermove',()=>{if(region.querySelector('iframe'))return;const iframe=document.createElement('iframe');iframe.title=region.getAttribute('data-iframe-title');iframe.src=${JSON.stringify(expectedSrc)};region.append(iframe);iframe.focus()},{once:true})}</script>`;
+  const mutatedResponse = {
+    ...articleResponse,
+    body: articleResponse.body.replace(
+      "</body>",
+      `${hoverOnlyActivation}</body>`,
+    ),
+  };
+  fixture.beforeAuditPageSetup = async (label) => {
+    if (label === "media pointer pass")
+      fixture.browserOverrides.set(articleUrl, mutatedResponse);
+    else fixture.browserOverrides.delete(articleUrl);
+  };
+  fixture.auditKinds = ["media"];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    const article = report.media.find(({ url }) => url === articleUrl);
+    assert.ok(article);
+    assert.ok(
+      report.findings.some(
+        ({ code, url }) => code === "MEDIA_ACTIVATION" && url === articleUrl,
+      ),
+      JSON.stringify({ findings: report.findings, article }),
+    );
+    assert.equal(article.pointer.intentBoundaryClean, false);
+    assert.equal(article.status, "FAIL");
+    assert.equal(report.automatedGates.media, "FAIL");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
 test("duplicate exact iframe navigations fail media even when one iframe is removed before observation", async () => {
   const fixture = createFixture();
   replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
