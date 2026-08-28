@@ -167,6 +167,7 @@ type VerificationReport = {
     pointer: {
       iframeCount: number;
       maxIframeCount: number;
+      intentBoundaryClean: boolean;
       src: string;
       title: string;
       focused: boolean;
@@ -176,6 +177,7 @@ type VerificationReport = {
     keyboard: {
       iframeCount: number;
       maxIframeCount: number;
+      intentBoundaryClean: boolean;
       src: string;
       title: string;
       focused: boolean;
@@ -612,6 +614,7 @@ test("controlled media audit covers every article intent path and direct fallbac
       for (const activation of [article.pointer, article.keyboard]) {
         assert.equal(activation.iframeCount, 1);
         assert.equal(activation.maxIframeCount, 1);
+        assert.equal(activation.intentBoundaryClean, true);
         assert.equal(
           activation.src,
           `https://www.youtube-nocookie.com/embed/${article.youtubeId}?hl=ar`,
@@ -636,6 +639,64 @@ test("controlled media audit covers every article intent path and direct fallbac
       assert.equal(article.status, "PASS");
     }
     assert.equal(report.automatedGates.media, "PASS");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+test("delayed eager media during the pre-intent dwell fails the article and media gate", async () => {
+  const fixture = createFixture();
+  const articleUrl = absolute(ARTICLE_PATHS[0]);
+  const expectedSrc = `https://www.youtube-nocookie.com/embed/${VIDEO_IDS[0]}?hl=ar`;
+  const delayedEagerMedia = `<script>setTimeout(()=>{const region=document.querySelector('[data-video-region]');if(region.querySelector('iframe'))return;const iframe=document.createElement('iframe');iframe.src=${JSON.stringify(expectedSrc)};region.append(iframe)},100)</script>`;
+  replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
+    ...response,
+    body: response.body.replace("</body>", `${delayedEagerMedia}</body>`),
+  }));
+  fixture.auditKinds = ["media"];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    const article = report.media.find(({ url }) => url === articleUrl);
+    assert.ok(article);
+    assert.ok(
+      report.findings.some(
+        ({ code, url }) => code === "MEDIA_PRE_INTENT" && url === articleUrl,
+      ),
+      JSON.stringify({ findings: report.findings, article }),
+    );
+    assert.equal(article.status, "FAIL");
+    assert.equal(report.automatedGates.media, "FAIL");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+test("focus-only media activation is not relabeled as Enter intent", async () => {
+  const fixture = createFixture();
+  const articleUrl = absolute(ARTICLE_PATHS[0]);
+  replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
+    ...response,
+    body: response.body.replace(
+      "button?.addEventListener('click'",
+      "button?.addEventListener('focus'",
+    ),
+  }));
+  fixture.auditKinds = ["media"];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    const article = report.media.find(({ url }) => url === articleUrl);
+    assert.ok(article);
+    assert.ok(
+      report.findings.some(
+        ({ code, url }) => code === "MEDIA_ACTIVATION" && url === articleUrl,
+      ),
+      JSON.stringify({ findings: report.findings, article }),
+    );
+    assert.equal(article.keyboard.intentBoundaryClean, false);
+    assert.equal(article.status, "FAIL");
+    assert.equal(report.automatedGates.media, "FAIL");
   } finally {
     await cleanupReport(report);
   }

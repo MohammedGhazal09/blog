@@ -33,6 +33,9 @@ const BROWSER_CLOSE_TIMEOUT_MS = 5_000;
 const MEDIA_REGION_SELECTOR = "[data-video-region]";
 const MEDIA_ACTIVATE_SELECTOR = "[data-video-activate]";
 const MEDIA_DIRECT_SELECTOR = ".youtube-cta";
+// A reader may pause after the article becomes usable. Keep the no-intent
+// transport guard alive long enough to expose delayed eager media work.
+const MEDIA_PRE_INTENT_STABILITY_MS = 250;
 // Activation may schedule follow-up DOM and navigation work. Observe every
 // mutation and request for one bounded interval after the interaction ends.
 const MEDIA_POST_ACTIVATION_STABILITY_MS = 250;
@@ -1128,6 +1131,7 @@ async function withAuditPage({
 
 function exactMediaIntent(expectedSrc, requests) {
   let active = false;
+  let preActivationRequestCount = 0;
   return {
     activate() {
       active = true;
@@ -1135,12 +1139,16 @@ function exactMediaIntent(expectedSrc, requests) {
     classify(request) {
       if (request.url() !== expectedSrc) return false;
       requests.push(request.url());
+      if (!active) preActivationRequestCount += 1;
       return (
         active &&
         request.method() === "GET" &&
         request.resourceType() === "document" &&
         request.isNavigationRequest()
       );
+    },
+    preActivationRequestCount() {
+      return preActivationRequestCount;
     },
   };
 }
@@ -1256,12 +1264,16 @@ async function activationObservation(
       const trigger = region.locator(MEDIA_ACTIVATE_SELECTOR);
       const before = await mediaGeometry(region);
       await startMediaStabilityObservation(region);
-      intent.activate();
       if (key) {
         await trigger.focus();
+        await page.waitForTimeout(MEDIA_PRE_INTENT_STABILITY_MS);
+        intent.activate();
         await page.keyboard.press(key);
       } else {
-        await trigger.click();
+        const box = await trigger.boundingBox();
+        if (!box) throw new Error("media pointer trigger has no hit target");
+        intent.activate();
+        await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
       }
       const stability = await completeMediaStabilityObservation(region);
       const iframe = region.locator("iframe");
@@ -1269,6 +1281,7 @@ async function activationObservation(
       return {
         iframeCount: stability.iframeCount,
         maxIframeCount: stability.maxIframeCount,
+        intentBoundaryClean: intent.preActivationRequestCount() === 0,
         src:
           (await iframe
             .first()
@@ -1298,6 +1311,7 @@ function failedMediaResult(url, youtubeId = "") {
     pointer: {
       iframeCount: 0,
       maxIframeCount: 0,
+      intentBoundaryClean: false,
       src: "",
       title: "",
       focused: false,
@@ -1307,6 +1321,7 @@ function failedMediaResult(url, youtubeId = "") {
     keyboard: {
       iframeCount: 0,
       maxIframeCount: 0,
+      intentBoundaryClean: false,
       src: "",
       title: "",
       focused: false,
@@ -1389,6 +1404,7 @@ async function auditMedia({
               );
             },
           });
+          await page.waitForTimeout(MEDIA_PRE_INTENT_STABILITY_MS);
           const region = page.locator(MEDIA_REGION_SELECTOR);
           return {
             iframeCount: await page.locator("iframe").count(),
@@ -1469,6 +1485,7 @@ async function auditMedia({
         if (
           observation.iframeCount !== 1 ||
           observation.maxIframeCount !== 1 ||
+          !observation.intentBoundaryClean ||
           observation.src !== expectedSrc ||
           !hasOneExactMediaRequest(observation)
         )
@@ -1545,6 +1562,7 @@ async function auditMedia({
         pointer: {
           iframeCount: pointer.iframeCount,
           maxIframeCount: pointer.maxIframeCount,
+          intentBoundaryClean: pointer.intentBoundaryClean,
           src: pointer.src,
           title: pointer.title,
           focused: pointer.focused,
@@ -1554,6 +1572,7 @@ async function auditMedia({
         keyboard: {
           iframeCount: keyboard.iframeCount,
           maxIframeCount: keyboard.maxIframeCount,
+          intentBoundaryClean: keyboard.intentBoundaryClean,
           src: keyboard.src,
           title: keyboard.title,
           focused: keyboard.focused,
