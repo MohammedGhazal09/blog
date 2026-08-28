@@ -39,6 +39,20 @@ type ControlledFixture = {
   responses: Map<string, FixtureResponse>;
   requests: string[];
   browserRouteInstalled: boolean;
+  browserRouteInstallCount: number;
+  readerIdleMs: number;
+  performanceSamples: Map<
+    string,
+    readonly {
+      lcp: number | null;
+      supported: readonly string[];
+      shifts: readonly {
+        startTime: number;
+        value: number;
+        hadRecentInput?: boolean;
+      }[];
+    }[]
+  >;
   fetch(url: string, init: RequestInit): Promise<Response>;
   installBrowserRoutes(page: Page): Promise<void>;
 };
@@ -58,6 +72,80 @@ type VerificationReport = {
     sameOriginLinks: string[];
     externalLinks: string[];
   };
+  profile: {
+    viewport: { width: number; height: number };
+    deviceScaleFactor: number;
+    isMobile: boolean;
+    hasTouch: boolean;
+    cpuThrottlingRate: number;
+    latencyMs: number;
+    downloadThroughputBytesPerSecond: number;
+    uploadThroughputBytesPerSecond: number;
+    connectionType: string;
+    performanceNavigationTimeoutMs: number;
+    renderedNavigationTimeoutMs: number;
+    readerIdleMs: number;
+    commands: string[];
+  };
+  selectedPerformanceRoutes: {
+    role: string;
+    url: string;
+    sectionUrl?: string;
+  }[];
+  performance: {
+    url: string;
+    runs: {
+      iteration: number;
+      contextSequence: number;
+      lcpMs: number | null;
+      cls: number | null;
+      observerSupport: string[];
+    }[];
+    medianLcpMs: number | null;
+    medianCls: number | null;
+    status: "PASS" | "FAIL";
+  }[];
+  fieldInp: { status: "PENDING"; authority: "field-only" };
+  media: {
+    url: string;
+    youtubeId: string;
+    preIntent: {
+      iframeCount: number;
+      mediaRequests: string[];
+      geometry: { width: number; height: number; ratio: number } | null;
+    };
+    pointer: {
+      iframeCount: number;
+      src: string;
+      title: string;
+      focused: boolean;
+      geometryStable: boolean;
+    };
+    keyboard: {
+      iframeCount: number;
+      src: string;
+      title: string;
+      focused: boolean;
+      geometryStable: boolean;
+    };
+    fallback: {
+      href: string;
+      visible: boolean;
+      focusable: boolean;
+      sameTab: boolean;
+    };
+    status: "PASS" | "FAIL";
+  }[];
+  presentation: {
+    url: string;
+    latinLeaks: string[];
+    axeFindings: { id: string; impact: string | null }[];
+    keyboardReachable: boolean;
+    visibleFocus: boolean;
+    textSpacingLoss: boolean;
+    horizontalOverflow: boolean;
+    status: "PASS" | "FAIL";
+  }[];
   findings: { code: string; url?: string; detail: string }[];
   errors: string[];
   automatedGates: Record<string, "PASS" | "FAIL" | "PENDING">;
@@ -82,9 +170,9 @@ function pageHtml({
   youtubeId?: string;
 }): string {
   const media = youtubeId
-    ? `<section><div data-video-region data-youtube-id="${youtubeId}" data-iframe-title="فيديو المقال: ${title}"></div><a href="https://www.youtube.com/watch?v=${youtubeId}">مشاهدة الفيديو على يوتيوب</a></section>`
+    ? `<section><h2>الفيديو المرتبط بالمقال</h2><div data-video-region data-youtube-id="${youtubeId}" data-iframe-title="فيديو المقال: ${title}"><button type="button" data-video-activate>تشغيل الفيديو هنا</button><p role="status" hidden data-video-error>تعذر تشغيل الفيديو هنا. يمكنك مشاهدة الفيديو مباشرة على يوتيوب.</p></div><a data-youtube-direct href="https://www.youtube.com/watch?v=${youtubeId}">مشاهدة الفيديو على يوتيوب</a></section>`
     : "";
-  return `<!doctype html><html lang="ar" dir="rtl"><head><title>${title}</title><meta name="description" content="${description}"><link rel="canonical" href="${absolute(path)}"></head><body><header><a href="/">مدونة أحمد المنجاوي</a></header><main><h1>${title}</h1>${links.map((href) => `<a href="${href}">رابط عربي</a>`).join("")}${media}</main></body></html>`;
+  return `<!doctype html><html lang="ar" dir="rtl"><head><title>${title}</title><meta name="description" content="${description}"><link rel="canonical" href="${absolute(path)}"><style>*{box-sizing:border-box}body{margin:0;font:18px/1.7 sans-serif}header,main{max-inline-size:70ch;margin-inline:auto;padding:1rem}a,button{min-inline-size:44px;min-block-size:44px}a:focus-visible,button:focus-visible,[data-video-region]:focus-within{outline:3px solid #166534;outline-offset:3px}[data-video-region]{aspect-ratio:16/9;inline-size:100%;display:grid;place-items:center;background:#eee}[data-video-region] iframe{border:0;inline-size:100%;block-size:100%}</style></head><body><header><a href="/">مدونة أحمد المنجاوي</a></header><main><h1>${title}</h1>${links.map((href) => `<a href="${href}">رابط عربي</a>`).join("")}${media}</main><script>for(const region of document.querySelectorAll('[data-video-region]')){const button=region.querySelector('[data-video-activate]');button?.addEventListener('click',()=>{if(region.querySelector('iframe'))return;try{const id=region.getAttribute('data-youtube-id');const title=region.getAttribute('data-iframe-title');const iframe=document.createElement('iframe');iframe.title=title;iframe.src='https://www.youtube-nocookie.com/embed/'+encodeURIComponent(id)+'?hl=ar';button.replaceWith(iframe);iframe.focus()}catch{button.hidden=true;region.querySelector('[data-video-error]').hidden=false}},{once:true})}</script></body></html>`;
 }
 
 function notFoundHtml(): string {
@@ -159,10 +247,28 @@ function createFixture(): ControlledFixture {
   );
   set(MISSING_PATH, notFoundHtml(), "text/html; charset=utf-8", 404);
 
+  const performanceSamples = new Map(
+    ["/", SECTION_PATHS[0], ...ARTICLE_PATHS].map((path, routeIndex) => [
+      absolute(path),
+      [0, 1, 2].map((iteration) => ({
+        lcp: 900 + routeIndex * 100 + iteration * 10,
+        supported: ["largest-contentful-paint", "layout-shift"],
+        shifts: [
+          { startTime: 100, value: 0.02 },
+          { startTime: 500, value: 0.03 },
+          { startTime: 6_000, value: 0.01 },
+        ],
+      })),
+    ]),
+  );
+
   const fixture: ControlledFixture = {
     responses,
     requests: [],
     browserRouteInstalled: false,
+    browserRouteInstallCount: 0,
+    readerIdleMs: 10,
+    performanceSamples,
     async fetch(url, init) {
       fixture.requests.push(url);
       assert.equal(init.redirect, "manual");
@@ -181,6 +287,7 @@ function createFixture(): ControlledFixture {
     },
     async installBrowserRoutes(page) {
       fixture.browserRouteInstalled = true;
+      fixture.browserRouteInstallCount += 1;
       await page.route("**/*", async (route) => {
         const response = responses.get(route.request().url());
         if (!response) return route.abort("blockedbyclient");
@@ -292,6 +399,370 @@ test("exact controlled crawl reports sitemap membership and same-origin closure"
     assert.deepEqual(
       JSON.parse(readFileSync(report.artifactPath, "utf8")),
       report,
+    );
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+test("controlled performance profile selects five roles and preserves fifteen cold raw samples", async () => {
+  const fixture = createFixture();
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    assert.deepEqual(report.profile, {
+      viewport: { width: 390, height: 844 },
+      deviceScaleFactor: 1,
+      isMobile: true,
+      hasTouch: true,
+      cpuThrottlingRate: 4,
+      latencyMs: 562.5,
+      downloadThroughputBytesPerSecond: 180_000,
+      uploadThroughputBytesPerSecond: 84_375,
+      connectionType: "cellular4g",
+      performanceNavigationTimeoutMs: 45_000,
+      renderedNavigationTimeoutMs: 30_000,
+      readerIdleMs: 10,
+      commands: [
+        "Network.emulateNetworkConditionsByRule",
+        "Network.overrideNetworkState",
+        "Emulation.setCPUThrottlingRate",
+      ],
+    });
+    assert.deepEqual(
+      report.selectedPerformanceRoutes.map(({ role, url }) => [role, url]),
+      [
+        ["homepage", absolute("/")],
+        ["section-index", absolute(SECTION_PATHS[0])],
+        ["section-article", absolute(ARTICLE_PATHS[0])],
+        ["section-article", absolute(ARTICLE_PATHS[1])],
+        ["section-article", absolute(ARTICLE_PATHS[2])],
+      ],
+    );
+    assert.equal(report.performance.length, 5);
+    assert.equal(report.performance.flatMap(({ runs }) => runs).length, 15);
+    assert.equal(
+      new Set(
+        report.performance.flatMap(({ runs }) =>
+          runs.map(({ contextSequence }) => contextSequence),
+        ),
+      ).size,
+      15,
+    );
+    for (const route of report.performance) {
+      assert.equal(route.runs.length, 3);
+      assert.ok(
+        route.runs.every(({ lcpMs, cls }) => lcpMs !== null && cls === 0.05),
+      );
+      assert.equal(route.medianLcpMs, route.runs[1].lcpMs);
+      assert.equal(route.medianCls, 0.05);
+      assert.equal(route.status, "PASS");
+    }
+    assert.deepEqual(report.fieldInp, {
+      status: "PENDING",
+      authority: "field-only",
+    });
+    assert.equal(report.automatedGates.performance, "PASS");
+    assert.equal(report.automatedGates["QUAL-05"], "PENDING");
+    assert.equal(report.automatedGates["QUAL-06"], "PENDING");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+test("controlled media audit covers every article intent path and direct fallback", async () => {
+  const fixture = createFixture();
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    assert.deepEqual(
+      report.media.map(({ url }) => url).sort(),
+      ARTICLE_PATHS.map(absolute).sort(),
+    );
+    for (const article of report.media) {
+      assert.equal(article.preIntent.iframeCount, 0);
+      assert.deepEqual(article.preIntent.mediaRequests, []);
+      assert.ok(
+        Math.abs((article.preIntent.geometry?.ratio ?? 0) - 16 / 9) < 0.02,
+      );
+      for (const activation of [article.pointer, article.keyboard]) {
+        assert.equal(activation.iframeCount, 1);
+        assert.equal(
+          activation.src,
+          `https://www.youtube-nocookie.com/embed/${article.youtubeId}?hl=ar`,
+        );
+        assert.match(activation.title, /\p{Script=Arabic}/u);
+        assert.equal(activation.focused, true);
+        assert.equal(activation.geometryStable, true);
+      }
+      assert.deepEqual(article.fallback, {
+        href: `https://www.youtube.com/watch?v=${article.youtubeId}`,
+        visible: true,
+        focusable: true,
+        sameTab: true,
+      });
+      assert.equal(article.status, "PASS");
+    }
+    assert.equal(report.automatedGates.media, "PASS");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+test("controlled Arabic RTL accessibility and reflow audit covers every route plus 404", async () => {
+  const fixture = createFixture();
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    assert.deepEqual(
+      report.presentation.map(({ url }) => url).sort(),
+      [...PUBLIC_PATHS.map(absolute), absolute(MISSING_PATH)].sort(),
+    );
+    for (const page of report.presentation) {
+      assert.deepEqual(page.latinLeaks, []);
+      assert.deepEqual(page.axeFindings, []);
+      assert.equal(page.keyboardReachable, true);
+      assert.equal(page.visibleFocus, true);
+      assert.equal(page.textSpacingLoss, false);
+      assert.equal(page.horizontalOverflow, false);
+      assert.equal(page.status, "PASS");
+    }
+    assert.equal(report.automatedGates.presentation, "PASS");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+const renderedAuditCases: readonly {
+  name: string;
+  code: string;
+  mutate(fixture: ControlledFixture): void;
+}[] = [
+  {
+    name: "performance selection with fewer than three article sections",
+    code: "PERFORMANCE_SELECTION",
+    mutate: (fixture) =>
+      replaceResponse(fixture, "/sitemap-0.xml", (response) => ({
+        ...response,
+        body: response.body.replace(
+          `<url><loc>${absolute(ARTICLE_PATHS[2])}</loc></url>`,
+          "",
+        ),
+      })),
+  },
+  {
+    name: "performance missing LCP metric",
+    code: "PERFORMANCE_METRIC",
+    mutate: (fixture) => {
+      const samples = fixture.performanceSamples.get(absolute("/"));
+      assert.ok(samples);
+      fixture.performanceSamples.set(absolute("/"), [
+        { ...samples[0], lcp: null },
+        samples[1],
+        samples[2],
+      ]);
+    },
+  },
+  {
+    name: "performance unsupported CLS observer",
+    code: "PERFORMANCE_OBSERVER",
+    mutate: (fixture) => {
+      const samples = fixture.performanceSamples.get(absolute("/"));
+      assert.ok(samples);
+      fixture.performanceSamples.set(absolute("/"), [
+        {
+          ...samples[0],
+          supported: ["largest-contentful-paint"],
+        },
+        samples[1],
+        samples[2],
+      ]);
+    },
+  },
+  {
+    name: "performance median over threshold",
+    code: "PERFORMANCE_THRESHOLD",
+    mutate: (fixture) => {
+      const samples = fixture.performanceSamples.get(absolute("/"));
+      assert.ok(samples);
+      fixture.performanceSamples.set(
+        absolute("/"),
+        samples.map((sample, index) => ({
+          ...sample,
+          lcp: 2_600 + index,
+        })),
+      );
+    },
+  },
+  {
+    name: "media eager exact-suffix request",
+    code: "MEDIA_PRE_INTENT",
+    mutate: (fixture) =>
+      replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
+        ...response,
+        body: response.body.replace(
+          "</main>",
+          '<img src="https://i.ytimg.com/vi/gO9yWa85OBc/default.jpg" alt="صورة الفيديو"></main>',
+        ),
+      })),
+  },
+  {
+    name: "media incorrect pointer and keyboard activation",
+    code: "MEDIA_ACTIVATION",
+    mutate: (fixture) =>
+      replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
+        ...response,
+        body: response.body.replace(
+          "encodeURIComponent(id)+'?hl=ar'",
+          "encodeURIComponent(id)+'?hl=ar&autoplay=1'",
+        ),
+      })),
+  },
+  {
+    name: "media unstable geometry",
+    code: "MEDIA_GEOMETRY",
+    mutate: (fixture) =>
+      replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
+        ...response,
+        body: response.body.replace(
+          "button.replaceWith(iframe)",
+          "region.style.aspectRatio='1/1';button.replaceWith(iframe)",
+        ),
+      })),
+  },
+  {
+    name: "media unusable blocked-player fallback",
+    code: "MEDIA_FALLBACK",
+    mutate: (fixture) =>
+      replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
+        ...response,
+        body: response.body.replace(
+          "<a data-youtube-direct",
+          "<a hidden data-youtube-direct",
+        ),
+      })),
+  },
+  {
+    name: "Arabic RTL rendered identity drift",
+    code: "PRESENTATION_IDENTITY",
+    mutate: (fixture) =>
+      replaceResponse(fixture, "/", (response) => ({
+        ...response,
+        body: response.body.replace(
+          '<html lang="ar" dir="rtl">',
+          '<html lang="en" dir="ltr">',
+        ),
+      })),
+  },
+  {
+    name: "Arabic visible Latin leakage",
+    code: "PRESENTATION_LATIN",
+    mutate: (fixture) =>
+      replaceResponse(fixture, "/", (response) => ({
+        ...response,
+        body: response.body.replace("</main>", "<p>English leak</p></main>"),
+      })),
+  },
+  {
+    name: "accessibility tree Latin leakage",
+    code: "PRESENTATION_LATIN",
+    mutate: (fixture) =>
+      replaceResponse(fixture, "/", (response) => ({
+        ...response,
+        body: response.body.replace(
+          "<main>",
+          '<main aria-label="English main">',
+        ),
+      })),
+  },
+  {
+    name: "accessibility missing landmark and heading sequence",
+    code: "PRESENTATION_SEMANTICS",
+    mutate: (fixture) =>
+      replaceResponse(fixture, "/", (response) => ({
+        ...response,
+        body: response.body
+          .replace("<main><h1>", "<div><h3>")
+          .replace("</main>", "</div>"),
+      })),
+  },
+  {
+    name: "accessibility serious Axe finding",
+    code: "PRESENTATION_AXE",
+    mutate: (fixture) =>
+      replaceResponse(fixture, "/", (response) => ({
+        ...response,
+        body: response.body.replace("</main>", "<button></button></main>"),
+      })),
+  },
+  {
+    name: "accessibility keyboard focus failure",
+    code: "PRESENTATION_KEYBOARD",
+    mutate: (fixture) =>
+      replaceResponse(fixture, "/", (response) => ({
+        ...response,
+        body: response.body.replace(
+          '<a href="/">مدونة أحمد المنجاوي</a>',
+          '<a href="/" tabindex="-1">مدونة أحمد المنجاوي</a>',
+        ),
+      })),
+  },
+  {
+    name: "reflow horizontal overflow at 320 CSS pixels",
+    code: "PRESENTATION_REFLOW",
+    mutate: (fixture) =>
+      replaceResponse(fixture, "/", (response) => ({
+        ...response,
+        body: response.body.replace("<h1>", '<h1 style="inline-size:600px">'),
+      })),
+  },
+  {
+    name: "accessibility text spacing loss",
+    code: "PRESENTATION_TEXT_SPACING",
+    mutate: (fixture) =>
+      replaceResponse(fixture, "/", (response) => ({
+        ...response,
+        body: response.body.replace(
+          "</main>",
+          '<p style="block-size:1em;overflow:hidden">نص عربي طويل لاختبار بقاء المحتوى كاملًا بعد توسيع المسافات بين الكلمات والأسطر والحروف.</p></main>',
+        ),
+      })),
+  },
+];
+
+for (const scenario of renderedAuditCases) {
+  test(`controlled ${scenario.name}`, async () => {
+    const fixture = createFixture();
+    scenario.mutate(fixture);
+    let report: VerificationReport | undefined;
+    try {
+      report = await runControlled(fixture);
+      assert.ok(
+        report.findings.some(({ code }) => code === scenario.code),
+        `${scenario.code} not found in ${JSON.stringify(report.findings)}`,
+      );
+    } finally {
+      await cleanupReport(report);
+    }
+  });
+}
+
+test("media hostname matching ignores substring spoofing", async () => {
+  const fixture = createFixture();
+  replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
+    ...response,
+    body: response.body.replace(
+      "</main>",
+      '<img src="https://youtube.evil.invalid/asset.png" alt="صورة تجريبية"></main>',
+    ),
+  }));
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    assert.deepEqual(report.media[0].preIntent.mediaRequests, []);
+    assert.equal(
+      report.findings.some(({ code }) => code === "MEDIA_PRE_INTENT"),
+      false,
     );
   } finally {
     await cleanupReport(report);
