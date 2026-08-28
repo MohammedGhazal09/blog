@@ -43,6 +43,7 @@ type ControlledFixture = {
   browserRouteInstalled: boolean;
   browserRouteInstallCount: number;
   readerIdleMs: number;
+  fontReadyTimeoutMs?: number;
   resolveHostname(
     hostname: string,
     options: { all: true; verbatim: true },
@@ -91,6 +92,7 @@ type VerificationReport = {
     connectionType: string;
     performanceNavigationTimeoutMs: number;
     renderedNavigationTimeoutMs: number;
+    fontReadyTimeoutMs: number;
     readerIdleMs: number;
     commands: string[];
   };
@@ -447,6 +449,7 @@ test("controlled performance profile selects five roles and preserves fifteen co
       connectionType: "cellular4g",
       performanceNavigationTimeoutMs: 45_000,
       renderedNavigationTimeoutMs: 30_000,
+      fontReadyTimeoutMs: 10_000,
       readerIdleMs: 10,
       commands: [
         "Network.emulateNetworkConditionsByRule",
@@ -941,6 +944,37 @@ test("every registered article route fails crawl and media when its media is abs
       "FAIL",
     );
     assert.equal(report.automatedGates.media, "FAIL");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+test("stalled font readiness returns a failed performance report within its bound", async () => {
+  const fixture = createFixture();
+  const homepage = fixture.responses.get(absolute("/"));
+  assert.ok(homepage);
+  fixture.browserOverrides.set(absolute("/"), {
+    ...homepage,
+    body: homepage.body.replace(
+      "</body>",
+      "<script>Object.defineProperty(document.fonts,'ready',{value:new Promise(()=>{})})</script></body>",
+    ),
+  });
+  fixture.auditKinds = ["performance"];
+  fixture.fontReadyTimeoutMs = 50;
+  const started = Date.now();
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    assert.ok(Date.now() - started < 8_000);
+    assert.ok(
+      report.findings.some(
+        ({ code, detail }) =>
+          code === "PERFORMANCE_NAVIGATION" &&
+          detail.includes("font readiness timed out"),
+      ),
+    );
+    assert.equal(report.automatedGates.performance, "FAIL");
   } finally {
     await cleanupReport(report);
   }

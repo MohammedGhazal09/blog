@@ -18,6 +18,7 @@ const LATIN = /[A-Za-z]/u;
 const FINAL_READER_IDLE_MS = 5_000;
 const PERFORMANCE_NAVIGATION_TIMEOUT_MS = 45_000;
 const RENDERED_NAVIGATION_TIMEOUT_MS = 30_000;
+const FONT_READY_TIMEOUT_MS = 10_000;
 const MEDIA_REGION_SELECTOR = "[data-video-region]";
 const MEDIA_ACTIVATE_SELECTOR = "[data-video-activate]";
 const MEDIA_DIRECT_SELECTOR = ".youtube-cta";
@@ -46,6 +47,7 @@ const PROFILE = {
   connectionType: "cellular4g",
   performanceNavigationTimeoutMs: PERFORMANCE_NAVIGATION_TIMEOUT_MS,
   renderedNavigationTimeoutMs: RENDERED_NAVIGATION_TIMEOUT_MS,
+  fontReadyTimeoutMs: FONT_READY_TIMEOUT_MS,
   commands: [
     "Network.emulateNetworkConditionsByRule",
     "Network.overrideNetworkState",
@@ -675,12 +677,33 @@ async function applyPerformanceProfile(context, page, controlled) {
   });
 }
 
+async function waitForFontReadiness(page, timeoutMs) {
+  let timer;
+  try {
+    await Promise.race([
+      page.evaluate(() => document.fonts?.ready),
+      new Promise((_, reject) => {
+        timer = setTimeout(
+          () =>
+            reject(
+              new Error(`font readiness timed out after ${timeoutMs} ms`),
+            ),
+          timeoutMs,
+        );
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function auditPerformance({
   browser,
   origin,
   selectedRoutes,
   controlledFixture,
   readerIdleMs,
+  fontReadyTimeoutMs,
   findings,
 }) {
   const results = [];
@@ -711,7 +734,7 @@ async function auditPerformance({
           timeout: PERFORMANCE_NAVIGATION_TIMEOUT_MS,
           findings,
         });
-        await page.evaluate(() => document.fonts?.ready);
+        await waitForFontReadiness(page, fontReadyTimeoutMs);
         await page.waitForTimeout(readerIdleMs);
         const controlledSample =
           controlledFixture?.performanceSamples?.get(url)?.[iteration];
@@ -1407,7 +1430,13 @@ export async function runProductionVerification(options = {}) {
   const readerIdleMs = controlledFixture
     ? Math.max(0, Number(controlledFixture.readerIdleMs ?? 0))
     : FINAL_READER_IDLE_MS;
-  const profile = { ...PROFILE, readerIdleMs };
+  const fontReadyTimeoutMs = controlledFixture
+    ? Math.max(
+        1,
+        Number(controlledFixture.fontReadyTimeoutMs ?? FONT_READY_TIMEOUT_MS),
+      )
+    : FONT_READY_TIMEOUT_MS;
+  const profile = { ...PROFILE, readerIdleMs, fontReadyTimeoutMs };
   const auditKinds = new Set(
     controlledFixture?.auditKinds ?? ["performance", "media", "presentation"],
   );
@@ -1708,6 +1737,7 @@ export async function runProductionVerification(options = {}) {
         selectedRoutes: selectedPerformanceRoutes,
         controlledFixture,
         readerIdleMs,
+        fontReadyTimeoutMs,
         findings,
       });
     }
