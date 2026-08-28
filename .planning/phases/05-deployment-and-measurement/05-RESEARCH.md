@@ -2,7 +2,7 @@
 
 **Researched:** 2026-08-28
 **Domain:** Static Cloudflare Pages deployment, Plausible aggregate measurement, and Google Search Console evidence
-**Confidence:** HIGH for deterministic deployment/search contracts; MEDIUM for final Plausible source wiring pending the owner-generated current snippet
+**Confidence:** HIGH for deterministic deployment/search contracts and the Plausible wiring contract; live provider evidence remains owner-controlled
 
 <user_constraints>
 
@@ -21,14 +21,14 @@
 
 - **D-05:** Use Plausible Cloud through its maintained direct browser script; add no analytics npm package, wrapper, tag manager, server endpoint, or custom collection system.
 - **D-06:** Include analytics only when Astro is building in the explicit `launch-readiness` mode already used by `scripts/launch-ready.mjs`. Development and ordinary deterministic production builds stay analytics-free and retain their zero-unexpected-remote-request contract.
-- **D-07:** Render the loader once through `SiteLayout.astro`, the sole shared document-head boundary. Derive its configured public hostname from the already validated `Astro.site`; do not introduce a second domain/origin input or page-level override.
-- **D-08:** Use the official current Plausible outbound-link extension identified by Phase 5 research. Preserve `defer`, keep the markup invisible, and do not add reader-facing English, a consent banner, or a visible analytics state.
+- **D-07:** Render the loader once through `SiteLayout.astro`, the sole shared document-head boundary. Accept the current owner-generated public `https://plausible.io/js/pa-….js` asset as explicit build input `PLAUSIBLE_SCRIPT_SRC`; validate its exact HTTPS host/path shape and never commit the real production value. This is not a second canonical origin.
+- **D-08:** Use Plausible's current site-specific snippet model identified by Phase 5 research, with **Outbound links** enabled in the Plausible dashboard. Do not use the legacy `script.outbound-links.js` extension. Preserve deferred loading, keep the markup invisible, and add no reader-facing English, consent banner, or visible analytics state.
 
 ### Outbound YouTube Metric
 
 - **D-09:** Define the metric as Plausible's automatic outbound-link click event for the permanent static YouTube anchor. The event represents a link action only; documentation and evidence must never call it a video play, view, watch, completion, or iframe interaction.
 - **D-10:** Retain the existing same-tab direct anchor, exact generated `youtube.com/watch` destination, Arabic accessible name, and position outside the replaceable player region. Do not add custom click listeners, `onclick`, bespoke data attributes, or calls from the iframe activation button.
-- **D-11:** Configure/filter the Plausible property for YouTube-family outbound destinations in the service console using the exact event and property names confirmed by official research. One physical direct-link activation must not be double-counted by project code.
+- **D-11:** Enable Plausible's **Outbound links** default tracking and filter the exact automatic goal `Outbound Link: Click` by destination property `url` for YouTube-family links. One physical direct-link activation must not be double-counted by project code.
 
 ### Search Console and External Evidence
 
@@ -41,7 +41,7 @@
 
 - **D-16:** Extend the existing native/build/browser verification stack. Prove one launch-only loader, canonical-host configuration, ordinary-build omission, unchanged Arabic/RTL output, permanent direct-link integrity, and no duplicate project wiring; keep all artifacts under `.artifacts/`.
 - **D-17:** Keep vendor behavior and account proof distinct from project wiring. Deterministic tests may prove the markup and browser integration seam, but must not present a mock/stub as proof that Plausible received or reported a real event.
-- **D-18:** Scan source and built output for tokens, credentials, verification artifacts, secret loaders, session replay, fingerprinting, cookies, tag managers, and per-reader identifiers. Never read or create `.env` files.
+- **D-18:** Scan source and built output for tokens, credentials, verification artifacts, secret loaders, session replay, fingerprinting, cookies, tag managers, and per-reader identifiers. The owner-generated `pa-…` asset key is public but remains provider-supplied and uncommitted; controlled tests use an unmistakable fake fixture. Never read or create `.env` files.
 - **D-19:** Preserve every prior phase gate: public/draft separation, canonical/sitemap/robots agreement, text-first Arabic reader behavior, no eager YouTube request, exact static link topology, accessibility, responsive layout, and zero framework/runtime expansion.
 
 ### the agent's Discretion
@@ -49,7 +49,7 @@
 - Exact internal helper names and whether launch-mode detection is kept inline in `SiteLayout.astro` or exposed through one tiny existing-boundary helper, provided there is no second origin source or speculative abstraction.
 - Exact deterministic browser seam for proving one project-side outbound attempt, provided it is labelled as wiring evidence and never as real Plausible ingestion/reporting.
 - Exact structure of the Phase 5 evidence table and README headings, provided local and external statuses cannot be confused and owner steps remain concise and executable.
-- Exact safe fallback if official Plausible script naming has changed since project research, provided the current official no-package automatic outbound-link integration is used and its source is recorded.
+- Exact helper/module name for validating `PLAUSIBLE_SCRIPT_SRC`, provided it accepts only the current official `https://plausible.io/js/pa-….js` shape and rejects legacy/generic or alternate-host inputs.
 
 ### Deferred Ideas (OUT OF SCOPE)
 
@@ -77,19 +77,19 @@ Cloudflare Pages needs no Astro adapter for this existing static `dist/` deploym
 
 The critical current-vendor finding is that Plausible changed its script in October 2025. New sites receive a unique site-specific snippet, and default outbound tracking is toggled in Plausible settings without changing that snippet. The old generic `script.outbound-links.js` path still responds, but it is the pre-October-2025 integration and must not be selected as the "current" solution. The automatic goal is exactly `Outbound Link: Click`; the outbound URL is exposed as property `url`, which is the property to filter for YouTube-family destinations. [CITED: https://plausible.io/docs/script-update-guide] [CITED: https://plausible.io/docs/outbound-link-click-tracking] [CITED: https://plausible.io/docs/script-extensions]
 
-**Primary recommendation:** plan the Cloudflare/runbook/tests/evidence work immediately, but add an explicit owner checkpoint before final analytics source wiring: copy the exact current site-specific snippet generated for the final Plausible property, verify its embedded domain against the canonical origin, and do not substitute the legacy outbound script. The locked ban on any public identifier beyond the hostname conflicts with the current `pa-…` site-specific asset and must be resolved explicitly rather than bypassed. [CITED: https://plausible.io/docs/script-update-guide] [VERIFIED: official live Plausible site source inspected 2026-08-28]
+**Primary recommendation:** implement launch-only wiring now around an explicit, fail-closed `PLAUSIBLE_SCRIPT_SRC` input. Accept only the current owner-generated public `https://plausible.io/js/pa-….js` shape, use a clearly fake valid fixture for deterministic tests, never commit the real production value, and do not substitute the legacy outbound script. The real provider asset and its property identity are required only for deployment and live evidence. [CITED: https://plausible.io/docs/script-update-guide] [VERIFIED: 05-CONTEXT.md D-07/D-18]
 
 ## Architectural Responsibility Map
 
-| Capability                                   | Primary Tier             | Secondary Tier           | Rationale                                                                                                                                                                                                                                |
-| -------------------------------------------- | ------------------------ | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Reproducible static build                    | Frontend build / SSG     | CDN / Static             | Astro creates `dist/`; Pages uploads and serves it without a request-time adapter. [VERIFIED: astro.config.mjs, scripts/launch-ready.mjs] [CITED: https://developers.cloudflare.com/pages/framework-guides/deploy-an-astro-site/]        |
-| Canonical launch identity                    | Frontend build / SSG     | CDN / Static             | `productionSiteOrigin()` validates the single input and `Astro.site` drives page/discovery identity. [VERIFIED: src/lib/site-origin.ts, src/layouts/SiteLayout.astro, tests/content-contract.test.ts]                                    |
-| Pageview and outbound observation            | Browser / Client         | Plausible Cloud          | The deferred vendor snippet observes documents and external anchors; project code must not own click behavior. [CITED: https://plausible.io/docs/plausible-script] [CITED: https://plausible.io/docs/outbound-link-click-tracking]       |
-| Aggregate reporting                          | Plausible Cloud          | Browser / Client         | Dashboard state and received events are external service facts, not build artifacts. [CITED: https://plausible.io/docs/outbound-link-click-tracking]                                                                                     |
-| Production delivery and rollback             | CDN / Static             | Cloudflare control plane | Pages deploys static output and rolls production back to an earlier successful production deployment. [CITED: https://developers.cloudflare.com/pages/configuration/rollbacks/]                                                          |
-| Property verification and sitemap monitoring | Google Search Console    | CDN / Static             | Search Console verifies the exact property and fetches the live sitemap; local XML cannot prove either result. [CITED: https://support.google.com/webmasters/answer/34592] [CITED: https://support.google.com/webmasters/answer/7451001] |
-| Evidence status                              | Repository documentation | External control planes  | Local and owner-controlled results must remain separate dated rows with distinct evidence sources. [VERIFIED: 05-SPEC.md, 05-CONTEXT.md]                                                                                                 |
+| Capability                                   | Primary Tier             | Secondary Tier           | Rationale                                                                                                                                                                                                                                                         |
+| -------------------------------------------- | ------------------------ | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Reproducible static build                    | Frontend build / SSG     | CDN / Static             | Astro creates `dist/`; Pages uploads and serves it without a request-time adapter. [VERIFIED: astro.config.mjs, scripts/launch-ready.mjs] [CITED: https://developers.cloudflare.com/pages/framework-guides/deploy-an-astro-site/]                                 |
+| Canonical launch identity                    | Frontend build / SSG     | CDN / Static             | `productionSiteOrigin()` validates the sole canonical-origin input and `Astro.site` drives page/discovery identity; `PLAUSIBLE_SCRIPT_SRC` controls only a vendor asset URL. [VERIFIED: src/lib/site-origin.ts, src/layouts/SiteLayout.astro, 05-CONTEXT.md D-07] |
+| Pageview and outbound observation            | Browser / Client         | Plausible Cloud          | The deferred vendor snippet observes documents and external anchors; project code must not own click behavior. [CITED: https://plausible.io/docs/plausible-script] [CITED: https://plausible.io/docs/outbound-link-click-tracking]                                |
+| Aggregate reporting                          | Plausible Cloud          | Browser / Client         | Dashboard state and received events are external service facts, not build artifacts. [CITED: https://plausible.io/docs/outbound-link-click-tracking]                                                                                                              |
+| Production delivery and rollback             | CDN / Static             | Cloudflare control plane | Pages deploys static output and rolls production back to an earlier successful production deployment. [CITED: https://developers.cloudflare.com/pages/configuration/rollbacks/]                                                                                   |
+| Property verification and sitemap monitoring | Google Search Console    | CDN / Static             | Search Console verifies the exact property and fetches the live sitemap; local XML cannot prove either result. [CITED: https://support.google.com/webmasters/answer/34592] [CITED: https://support.google.com/webmasters/answer/7451001]                          |
+| Evidence status                              | Repository documentation | External control planes  | Local and owner-controlled results must remain separate dated rows with distinct evidence sources. [VERIFIED: 05-SPEC.md, 05-CONTEXT.md]                                                                                                                          |
 
 ## Project Constraints (from AGENTS.md)
 
@@ -170,6 +170,7 @@ Git push to main
   → npm ci
   → npm run check
   → SITE_ORIGIN=<owner-controlled final HTTPS origin>
+  → PLAUSIBLE_SCRIPT_SRC=<owner-generated public pa-….js URL>
   → npm run launch:ready
       → productionSiteOrigin() validation
       → Astro build mode = launch-readiness
@@ -187,9 +188,9 @@ Git push to main
            → external status: Success / error / pending
 
 Decision boundary:
-  current site-specific snippet unavailable
-    → local deployment/runbook/evidence work may pass
-    → live analytics wiring and MEAS evidence remain pending
+  real site-specific snippet unavailable
+    → local implementation and controlled verification use a clearly fake valid fixture
+    → deployment and live analytics evidence remain pending
 ```
 
 The flow keeps build identity, browser observation, and external reporting in separate tiers. [VERIFIED: codebase grep] [CITED: https://developers.cloudflare.com/pages/framework-guides/deploy-an-astro-site/] [CITED: https://plausible.io/docs/outbound-link-click-tracking] [CITED: https://support.google.com/webmasters/answer/7451001]
@@ -198,9 +199,11 @@ The flow keeps build identity, browser observation, and external reporting in se
 
 ```text
 scripts/
-└── launch-ready.mjs                         # reuse unchanged mode/origin boundary
+└── launch-ready.mjs                         # extend existing boundary with Plausible asset validation
 src/
-├── lib/site-origin.ts                       # reuse unchanged production origin validator
+├── lib/
+│   ├── site-origin.ts                       # reuse unchanged production origin validator
+│   └── measurement.ts                       # one fail-closed Plausible asset URL validator
 ├── layouts/SiteLayout.astro                 # only runtime source integration point
 └── components/YouTubePlayer.astro           # leave unchanged
 tests/
@@ -227,11 +230,11 @@ const isLaunchReadiness = import.meta.env.MODE === "launch-readiness";
 ---
 ```
 
-### Pattern 2: Exact Generated Snippet, Not a Reimplementation
+### Pattern 2: Validated Generated Asset, Not a Reimplementation
 
-**What:** After the owner creates the final Plausible property, copy the exact current site-specific Site Installation snippet into the launch-only head boundary and preserve its deferred external load. Do not reconstruct, minify, proxy, or wrap it. [CITED: https://plausible.io/docs/plausible-script]
+**What:** Read the exact current site-specific asset URL from `PLAUSIBLE_SCRIPT_SRC`, validate the official HTTPS host/path shape at build time, and emit it once through the launch-only head boundary with `defer`. Do not reconstruct, minify, proxy, or wrap the vendor asset. [CITED: https://plausible.io/docs/plausible-script] [VERIFIED: 05-CONTEXT.md D-07]
 
-**When to use:** Only after the snippet's embedded site identity has been checked against `Astro.site.hostname`. A deterministic test may replace the remote asset response to prove the browser seam, but the evidence must say "project wiring" rather than "Plausible received the event." [VERIFIED: 05-CONTEXT.md D-07/D-17]
+**When to use:** Only in `launch-readiness` mode. Deterministic tests use an unmistakably fake valid asset URL and may replace its response to prove the browser seam; evidence must say "project wiring" rather than "Plausible received the event." The owner checks the real property/bundle identity separately. [VERIFIED: 05-CONTEXT.md D-07/D-17/D-18]
 
 ### Pattern 3: Provider Build With Explicit Install Semantics
 
@@ -248,7 +251,7 @@ const isLaunchReadiness = import.meta.env.MODE === "launch-readiness";
 ### Anti-Patterns to Avoid
 
 - **Legacy Plausible extension:** Do not use `script.outbound-links.js` merely because it can derive `data-domain` from `Astro.site`; it is the old script model superseded by the October 2025 site-specific snippet. [CITED: https://plausible.io/docs/script-update-guide]
-- **Second analytics origin input:** Do not add a second hostname variable or a page prop. The only domain identity remains validated `Astro.site`; the current snippet must be verified against it at the owner checkpoint. [VERIFIED: 05-CONTEXT.md D-07]
+- **Second canonical origin input:** `PLAUSIBLE_SCRIPT_SRC` is an allowed public asset URL, not canonical identity. Do not derive metadata from it, add a second hostname variable, or expose a page prop; `Astro.site` remains the sole canonical origin authority. [VERIFIED: 05-CONTEXT.md D-07]
 - **Custom click tracking:** Do not touch `YouTubePlayer.astro`, add `onclick`, delay navigation, or call `plausible()` from project code. [VERIFIED: 05-CONTEXT.md D-09/D-10]
 - **Preview analytics contamination:** Do not leave Pages' default all-branch previews enabled with the launch-only production command. [CITED: https://developers.cloudflare.com/pages/configuration/branch-build-controls/]
 - **Ambient provider URL:** Do not use `CF_PAGES_URL` as canonical identity; Pages documents it as the URL of the current deployment, which may be a preview. [CITED: https://developers.cloudflare.com/pages/configuration/build-configuration/]
@@ -256,14 +259,14 @@ const isLaunchReadiness = import.meta.env.MODE === "launch-readiness";
 
 ## Don't Hand-Roll
 
-| Problem                   | Don't Build                                             | Use Instead                                                             | Why                                                                                                                                                                       |
-| ------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Static hosting            | Worker, server adapter, container, deploy API client    | Cloudflare Pages Git dashboard + `dist/`                                | Current site is portable static output and official Pages supports Astro `dist/`. [CITED: https://developers.cloudflare.com/pages/framework-guides/deploy-an-astro-site/] |
-| Analytics loader          | Wrapper component, npm SDK, proxy, copied vendor bundle | Exact current Plausible Site Installation snippet in `SiteLayout.astro` | The current snippet is site-specific and dashboard configuration changes its automatic features. [CITED: https://plausible.io/docs/script-update-guide]                   |
-| Outbound measurement      | Project listener, custom event queue, navigation delay  | Plausible **Outbound links** Default tracking                           | It automatically produces `Outbound Link: Click` and `url`. [CITED: https://plausible.io/docs/outbound-link-click-tracking]                                               |
-| Search Console submission | OAuth/API automation or committed verification artifact | Owner-operated URL-prefix verification and Sitemaps report              | Ownership remains an external authority fact; the API does not remove it. [CITED: https://support.google.com/webmasters/answer/9008080]                                   |
-| Rollback system           | Custom artifact registry or redeploy script             | Pages rollback to a prior successful production deployment              | Rollback is a built-in provider operation. [CITED: https://developers.cloudflare.com/pages/configuration/rollbacks/]                                                      |
-| Evidence capture          | Browser screenshots in `.planning/`                     | Text status matrix plus artifacts under `.artifacts/`                   | Project rules isolate browser artifacts and require claims to identify their real source. [VERIFIED: AGENTS.md, 05-SPEC.md]                                               |
+| Problem                   | Don't Build                                             | Use Instead                                                          | Why                                                                                                                                                                                    |
+| ------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Static hosting            | Worker, server adapter, container, deploy API client    | Cloudflare Pages Git dashboard + `dist/`                             | Current site is portable static output and official Pages supports Astro `dist/`. [CITED: https://developers.cloudflare.com/pages/framework-guides/deploy-an-astro-site/]              |
+| Analytics loader          | Wrapper component, npm SDK, proxy, copied vendor bundle | Validated `PLAUSIBLE_SCRIPT_SRC` rendered once in `SiteLayout.astro` | The current snippet is site-specific and dashboard configuration changes its automatic features. [CITED: https://plausible.io/docs/script-update-guide] [VERIFIED: 05-CONTEXT.md D-07] |
+| Outbound measurement      | Project listener, custom event queue, navigation delay  | Plausible **Outbound links** Default tracking                        | It automatically produces `Outbound Link: Click` and `url`. [CITED: https://plausible.io/docs/outbound-link-click-tracking]                                                            |
+| Search Console submission | OAuth/API automation or committed verification artifact | Owner-operated URL-prefix verification and Sitemaps report           | Ownership remains an external authority fact; the API does not remove it. [CITED: https://support.google.com/webmasters/answer/9008080]                                                |
+| Rollback system           | Custom artifact registry or redeploy script             | Pages rollback to a prior successful production deployment           | Rollback is a built-in provider operation. [CITED: https://developers.cloudflare.com/pages/configuration/rollbacks/]                                                                   |
+| Evidence capture          | Browser screenshots in `.planning/`                     | Text status matrix plus artifacts under `.artifacts/`                | Project rules isolate browser artifacts and require claims to identify their real source. [VERIFIED: AGENTS.md, 05-SPEC.md]                                                            |
 
 **Key insight:** the difficult parts of this phase are service identity and evidence provenance, not code volume. One head boundary and one provider build path are sufficient; custom infrastructure would make truthful verification harder. [VERIFIED: 05-SPEC.md, codebase inspection]
 
@@ -283,11 +286,11 @@ const isLaunchReadiness = import.meta.env.MODE === "launch-readiness";
 
 **What goes wrong:** Tests claim the snippet is configured from `Astro.site`, but the unique asset key is generated by Plausible and the bundle embeds the site's domain. [CITED: https://plausible.io/docs/script-update-guide] [VERIFIED: official live Plausible site source inspected 2026-08-28]
 
-**Why it happens:** The locked context was written against a hostname-configured model while the vendor now uses a site-specific asset. [VERIFIED: 05-CONTEXT.md D-07/D-18]
+**Why it happens:** The legacy integration used a hostname-configured script while the current vendor model uses a provider-generated site-specific asset. [CITED: https://plausible.io/docs/script-update-guide]
 
-**How to avoid:** Make this an explicit owner checkpoint. Verify the generated snippet/bundle domain against `Astro.site.hostname`; do not invent the key or revert silently to the old script. [CITED: https://plausible.io/docs/plausible-script]
+**How to avoid:** Accept and validate `PLAUSIBLE_SCRIPT_SRC` explicitly, never invent or commit the real key, use a clearly fake valid fixture locally, and verify the real property/bundle identity only as external evidence. [CITED: https://plausible.io/docs/plausible-script] [VERIFIED: 05-CONTEXT.md D-07/D-18]
 
-**Warning signs:** Placeholder `pa-…` values, a hash derived locally from the hostname, or a claim that the asset key is a secret. The key is public browser markup, but whether it is permitted by D-18 requires a locked-decision clarification. [ASSUMED]
+**Warning signs:** A committed real `pa-…` value, a locally derived key, an alternate host/path, legacy `script.outbound-links.js`, or a claim that the public asset key is a secret. Controlled tests may use only an unmistakably fake structurally valid fixture. [VERIFIED: 05-CONTEXT.md D-07/D-18]
 
 ### Pitfall 3: Believing Cloudflare's Automatic Install Proves `npm ci`
 
@@ -362,7 +365,7 @@ const site = productionSiteOrigin(process.env.SITE_ORIGIN);
 await build({ site, mode: "launch-readiness" });
 ```
 
-The analytics domain comparison must consume `Astro.site.hostname` downstream rather than reading `SITE_ORIGIN` again. [VERIFIED: 05-CONTEXT.md D-07]
+Canonical metadata continues to consume `Astro.site`; the independent Plausible asset validator may only control the deferred script `src` and must never become a canonical-origin source. [VERIFIED: 05-CONTEXT.md D-07]
 
 ### Pages Provider Settings
 
@@ -373,6 +376,7 @@ Build output directory: dist
 Node version: 24.19.0 (from committed .nvmrc; optionally mirror NODE_VERSION)
 Environment values:
   SITE_ORIGIN=<exact owner-controlled final HTTPS origin>
+  PLAUSIBLE_SCRIPT_SRC=<exact owner-generated public https://plausible.io/js/pa-….js URL>
   SKIP_DEPENDENCY_INSTALL=1
 Build command:
   npm ci && npm run check && npm run launch:ready
@@ -411,22 +415,17 @@ Extend this existing lifecycle rather than leaving `dist/` in launch mode after 
 
 ## Assumptions Log
 
-| #   | Claim                                                                                                                               | Section                      | Risk if Wrong                                                                                                                             |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| A1  | The public `pa-…` asset key is not a secret but may still be considered a forbidden account identifier under locked D-18. [ASSUMED] | Summary / Plausible contract | The plan could violate a locked credential-boundary decision or remain unable to wire the current snippet. Resolve before implementation. |
-| A2  | No owner-controlled Cloudflare, Plausible, DNS, or Search Console service session is available to this researcher. [ASSUMED]        | Environment / Open Questions | External evidence may be obtainable later; all such rows must start pending until actually inspected.                                     |
+| #   | Claim                                                                                                                        | Section                          | Risk if Wrong                                                                                         |
+| --- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| A1  | No owner-controlled Cloudflare, Plausible, DNS, or Search Console service session is available to this researcher. [ASSUMED] | Environment / Resolved Questions | External evidence may be obtainable later; all such rows must start pending until actually inspected. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **May the current public Plausible site-specific asset key appear in repository/browser output?**
-   - What we know: Plausible's current model requires a unique site-specific snippet, while D-07/D-18 require hostname-derived configuration and prohibit an identifier beyond the public hostname. [CITED: https://plausible.io/docs/script-update-guide] [VERIFIED: 05-CONTEXT.md]
-   - What's unclear: whether the public `pa-…` asset key is accepted as unavoidable public installation configuration rather than an account identifier/token. [ASSUMED]
-   - Recommendation: explicitly allow the exact public owner-generated snippet source while continuing to forbid credentials, verification tokens, APIs, and secret loaders. If that clarification is rejected, Phase 5 cannot use the current Plausible Cloud snippet under the locked constraints; do not silently fall back to the legacy extension. [CITED: https://plausible.io/docs/plausible-script]
+1. **RESOLVED — May the current public Plausible site-specific asset key appear in browser output?**
+   - Yes. `PLAUSIBLE_SCRIPT_SRC` is permitted as validated public installation configuration and appears as the deferred script `src` only in launch-readiness output. Its real owner-generated value is never committed; deterministic tests use an unmistakably fake valid fixture. Credentials, verification tokens, alternate hosts/paths, legacy scripts, APIs, and secret loaders remain forbidden. [VERIFIED: 05-CONTEXT.md D-07/D-18]
 
-2. **Which final origin and service accounts are owner-controlled?**
-   - What we know: no repository value proves domain ownership, production delivery, Plausible property state, or Search Console verification. [VERIFIED: codebase and planning artifact inspection]
-   - What's unclear: the final owned HTTPS origin and whether the owner can access the three service control planes during execution. [ASSUMED]
-   - Recommendation: finish every deterministic artifact first, then request only the minimum owner operations/evidence at the planned external checkpoint. Keep SEO-06 and live MEAS rows pending if access is unavailable. [VERIFIED: 05-CONTEXT.md D-15]
+2. **RESOLVED — How are unavailable owner-controlled services handled?**
+   - The repository completes all local implementation, documentation, controlled launch, security, and test work without those services. The final origin, Cloudflare deployment, Plausible property/snippet/dashboard events, Search Console verification, and sitemap submission remain external dependencies; their evidence rows stay `PENDING` until real owner-controlled proof exists. [VERIFIED: 05-CONTEXT.md D-13/D-15/D-17]
 
 ## Environment Availability
 
@@ -497,27 +496,27 @@ The planner should require these falsifiable checks:
 
 ### Applicable ASVS Categories
 
-| ASVS Category           | Applies                        | Standard Control                                                                                                                                                              |
-| ----------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| V2 Authentication       | No                             | Public static site; provider/search/analytics authentication remains outside repository/browser output. [VERIFIED: 05-SPEC.md]                                                |
-| V3 Session Management   | No project session             | Do not add reader sessions, cookies, localStorage identifiers, or tag manager state. Plausible documents no persistent identifiers. [CITED: https://plausible.io/data-policy] |
-| V4 Access Control       | No runtime application control | Owner control planes enforce service access; repository evidence must not contain credentials. [VERIFIED: 05-SPEC.md]                                                         |
-| V5 Input Validation     | Yes                            | Reuse `productionSiteOrigin()` for the only public origin input; no second analytics hostname parser. [VERIFIED: src/lib/site-origin.ts]                                      |
-| V6 Cryptography         | No project cryptography        | Use HTTPS provider/service endpoints and owner DNS verification; never invent token encryption or hashing. [VERIFIED: 05-SPEC.md]                                             |
-| V12 Files and Resources | Yes                            | Serve only static `dist/`; do not add verification files/tokens or environment files to public output. [VERIFIED: 05-CONTEXT.md D-18]                                         |
-| V14 Configuration       | Yes                            | Pin runtime/lockfile, gate analytics by exact build mode, restrict preview builds, and document separate provider values. [VERIFIED: package.json, 05-CONTEXT.md]             |
+| ASVS Category           | Applies                        | Standard Control                                                                                                                                                                                                                       |
+| ----------------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| V2 Authentication       | No                             | Public static site; provider/search/analytics authentication remains outside repository/browser output. [VERIFIED: 05-SPEC.md]                                                                                                         |
+| V3 Session Management   | No project session             | Do not add reader sessions, cookies, localStorage identifiers, or tag manager state. Plausible documents no persistent identifiers. [CITED: https://plausible.io/data-policy]                                                          |
+| V4 Access Control       | No runtime application control | Owner control planes enforce service access; repository evidence must not contain credentials. [VERIFIED: 05-SPEC.md]                                                                                                                  |
+| V5 Input Validation     | Yes                            | Keep `productionSiteOrigin()` as canonical validation and add one fail-closed URL-shape validator for public `PLAUSIBLE_SCRIPT_SRC`; the asset URL is never canonical identity. [VERIFIED: src/lib/site-origin.ts, 05-CONTEXT.md D-07] |
+| V6 Cryptography         | No project cryptography        | Use HTTPS provider/service endpoints and owner DNS verification; never invent token encryption or hashing. [VERIFIED: 05-SPEC.md]                                                                                                      |
+| V12 Files and Resources | Yes                            | Serve only static `dist/`; do not add verification files/tokens or environment files to public output. [VERIFIED: 05-CONTEXT.md D-18]                                                                                                  |
+| V14 Configuration       | Yes                            | Pin runtime/lockfile, gate analytics by exact build mode, restrict preview builds, and document separate provider values. [VERIFIED: package.json, 05-CONTEXT.md]                                                                      |
 
 ### Known Threat Patterns for This Stack
 
-| Pattern                                                | STRIDE                  | Standard Mitigation                                                                                                                                                                                                                    |
-| ------------------------------------------------------ | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Unsafe or attacker-controlled canonical/analytics host | Spoofing / Tampering    | Existing HTTPS production-origin validator plus one `Astro.site` identity. [VERIFIED: src/lib/site-origin.ts]                                                                                                                          |
-| Credential or verification token committed/published   | Information Disclosure  | DNS-based owner verification when possible; no committed Search Console artifact, analytics credential, provider token, or secret loader. [CITED: https://support.google.com/webmasters/answer/9008080] [VERIFIED: 05-CONTEXT.md D-18] |
-| Third-party script supply-chain change                 | Tampering               | Load only the exact official `https://plausible.io/js/pa-…js` asset from the owner-generated snippet, only in launch mode; preserve complete static functionality if blocked. [CITED: https://plausible.io/docs/plausible-script]      |
-| Duplicate project and vendor tracking                  | Repudiation / Integrity | No project click listener or custom event call; source and browser tests enforce one integration seam. [VERIFIED: 05-CONTEXT.md D-10/D-11]                                                                                             |
-| Preview traffic contaminates production measurement    | Integrity               | Disable automatic preview branch builds for v1. [CITED: https://developers.cloudflare.com/pages/configuration/branch-build-controls/]                                                                                                  |
-| Analytics becomes a navigation dependency              | Denial of Service       | Deferred vendor loading, native anchor, no `preventDefault`, no wait/retry/status UI. [VERIFIED: 05-UI-SPEC.md]                                                                                                                        |
-| Local evidence is promoted to production status        | Repudiation             | Four-state evidence matrix with explicit source/authority and external rows defaulting to pending. [VERIFIED: 05-SPEC.md requirement 6]                                                                                                |
+| Pattern                                              | STRIDE                  | Standard Mitigation                                                                                                                                                                                                                    |
+| ---------------------------------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unsafe canonical origin or analytics asset URL       | Spoofing / Tampering    | Existing HTTPS production-origin validator plus a separate exact Plausible HTTPS host/path validator; only `Astro.site` controls canonical identity. [VERIFIED: src/lib/site-origin.ts, 05-CONTEXT.md D-07]                            |
+| Credential or verification token committed/published | Information Disclosure  | DNS-based owner verification when possible; no committed Search Console artifact, analytics credential, provider token, or secret loader. [CITED: https://support.google.com/webmasters/answer/9008080] [VERIFIED: 05-CONTEXT.md D-18] |
+| Third-party script supply-chain change               | Tampering               | Load only the exact official `https://plausible.io/js/pa-…js` asset from the owner-generated snippet, only in launch mode; preserve complete static functionality if blocked. [CITED: https://plausible.io/docs/plausible-script]      |
+| Duplicate project and vendor tracking                | Repudiation / Integrity | No project click listener or custom event call; source and browser tests enforce one integration seam. [VERIFIED: 05-CONTEXT.md D-10/D-11]                                                                                             |
+| Preview traffic contaminates production measurement  | Integrity               | Disable automatic preview branch builds for v1. [CITED: https://developers.cloudflare.com/pages/configuration/branch-build-controls/]                                                                                                  |
+| Analytics becomes a navigation dependency            | Denial of Service       | Deferred vendor loading, native anchor, no `preventDefault`, no wait/retry/status UI. [VERIFIED: 05-UI-SPEC.md]                                                                                                                        |
+| Local evidence is promoted to production status      | Repudiation             | Four-state evidence matrix with explicit source/authority and external rows defaulting to pending. [VERIFIED: 05-SPEC.md requirement 6]                                                                                                |
 
 ## Evidence Record Schema
 
@@ -566,14 +565,14 @@ No row may pass from screenshots of localhost, the Phase 4 controlled hostname, 
 
 ### Tertiary (LOW confidence)
 
-- None. Unresolved items are explicitly listed as assumptions/open questions rather than asserted. [VERIFIED: this research]
+- None. The two former open questions are formally resolved above; live service state remains pending evidence rather than an architectural ambiguity. [VERIFIED: 05-CONTEXT.md]
 
 ## Metadata
 
 **Confidence breakdown:**
 
 - Standard stack: HIGH — locked existing stack plus current official Cloudflare, Plausible, Google, and Astro documentation. [CITED: https://developers.cloudflare.com/pages/framework-guides/deploy-an-astro-site/] [CITED: https://plausible.io/docs/script-update-guide] [CITED: https://support.google.com/webmasters/answer/34592] [CITED: https://docs.astro.build/en/reference/programmatic-reference/]
-- Architecture: HIGH for static deployment/evidence separation; MEDIUM for final Plausible source wiring because the current site-specific asset conflicts with locked hostname-only/no-identifier constraints. [CITED: https://plausible.io/docs/script-update-guide] [VERIFIED: 05-CONTEXT.md]
+- Architecture: HIGH for static deployment, explicit Plausible asset validation, launch-only wiring, and evidence separation; the real provider value and live reporting remain external facts. [CITED: https://plausible.io/docs/script-update-guide] [VERIFIED: 05-CONTEXT.md]
 - Pitfalls: HIGH — derived from official vendor changes, official provider defaults, and concrete existing code/test boundaries. [CITED: https://plausible.io/docs/script-update-guide] [CITED: https://developers.cloudflare.com/pages/configuration/branch-build-controls/] [VERIFIED: codebase grep]
 - Validation: HIGH for deterministic contracts; external receipt/reporting necessarily remains owner-controlled. [VERIFIED: 05-SPEC.md]
 
