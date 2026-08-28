@@ -47,6 +47,7 @@ const MEDIA_HOST_SUFFIXES = [
   "doubleclick.net",
   "googlesyndication.com",
 ];
+const PAGE_TRANSPORT_MONITORS = new WeakMap();
 const PROFILE = {
   viewport: { width: 390, height: 844 },
   deviceScaleFactor: 1,
@@ -825,21 +826,20 @@ async function navigateSameOrigin({
   await page.context().route("**/*", guard);
   await page.route("**/*", guard);
   page.on("response", responseListener);
-  try {
-    await page.goto(url, { waitUntil: "load", timeout });
-    await page.waitForTimeout(0);
-    await Promise.all(responseChecks);
-  } finally {
+  PAGE_TRANSPORT_MONITORS.set(page, async () => {
     page.off("response", responseListener);
-  }
-  for (const detail of unexpectedRequests.filter((value) =>
-    value.includes("remote address"),
-  ))
-    finding(findings, "BROWSER_REMOTE_ADDRESS", detail, url);
-  if (unexpectedRequests.length > 0)
-    throw new Error(
-      `blocked off-origin browser requests: ${unexpectedRequests.join(", ")}`,
-    );
+    await Promise.allSettled(responseChecks);
+    for (const detail of unexpectedRequests.filter((value) =>
+      value.includes("remote address"),
+    ))
+      finding(findings, "BROWSER_REMOTE_ADDRESS", detail, url);
+    if (unexpectedRequests.length > 0)
+      throw new Error(
+        `blocked off-origin browser requests: ${unexpectedRequests.join(", ")}`,
+      );
+  });
+  await page.goto(url, { waitUntil: "load", timeout });
+  await page.waitForTimeout(0);
   if (page.url() !== url) {
     finding(
       findings,
@@ -925,7 +925,7 @@ async function auditPerformance({
       await context.addInitScript(installVitalsObserver);
       const page = await context.newPage();
       try {
-        await withAuditDeadline({
+        const run = await withAuditDeadline({
           page,
           context,
           timeoutMs: auditTimeoutMs,
@@ -978,15 +978,16 @@ async function auditPerformance({
                 url,
               );
             }
-            runs.push({
+            return {
               iteration: iteration + 1,
               contextSequence,
               lcpMs,
               cls,
               observerSupport,
-            });
+            };
           },
         });
+        runs.push(run);
       } catch (error) {
         finding(
           findings,
@@ -1069,11 +1070,33 @@ async function closeAuditPage(page, context) {
   }
 }
 
+async function finishBrowserTransport(page) {
+  const finish = PAGE_TRANSPORT_MONITORS.get(page);
+  PAGE_TRANSPORT_MONITORS.delete(page);
+  await finish?.();
+}
+
 async function withAuditDeadline({ page, context, timeoutMs, label, task }) {
   let timer;
   try {
     return await Promise.race([
-      task(),
+      (async () => {
+        let result;
+        let failure;
+        try {
+          result = await task();
+        } catch (error) {
+          failure = error;
+        }
+        await closeAuditPage(page, context).catch(
+          (error) => (failure ??= error),
+        );
+        await finishBrowserTransport(page).catch(
+          (error) => (failure ??= error),
+        );
+        if (failure) throw failure;
+        return result;
+      })(),
       new Promise((_, reject) => {
         timer = setTimeout(() => {
           void closeAuditPage(page, context);
@@ -1524,7 +1547,7 @@ async function auditPresentation({
       height: 844,
     });
     try {
-      await withAuditDeadline({
+      const result = await withAuditDeadline({
         page,
         context,
         timeoutMs: auditTimeoutMs,
@@ -1690,7 +1713,7 @@ async function auditPresentation({
             axeFindings.length === 0 &&
             !textSpacingLoss &&
             !horizontalOverflow;
-          results.push({
+          return {
             url,
             latinLeaks: leaks,
             axeFindings,
@@ -1699,9 +1722,10 @@ async function auditPresentation({
             textSpacingLoss,
             horizontalOverflow,
             status: passed ? "PASS" : "FAIL",
-          });
+          };
         },
       });
+      results.push(result);
     } catch (error) {
       finding(
         findings,

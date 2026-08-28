@@ -1152,6 +1152,92 @@ test("off-origin WebSockets are blocked before a local handshake", async () => {
   }
 });
 
+for (const [kind, path] of [
+  ["performance", "/"],
+  ["media", ARTICLE_PATHS[0]],
+] as const) {
+  test(`a delayed off-origin fetch fails the named ${kind} result without contact`, async () => {
+    let contacts = 0;
+    const destination = createServer((_request, response) => {
+      contacts += 1;
+      response.end("must not be contacted");
+    });
+    const port = await listen(destination);
+    const fixture = createFixture();
+    replaceResponse(fixture, path, (response) => ({
+      ...response,
+      body: response.body.replace(
+        "</body>",
+        `<script>setTimeout(()=>fetch("http://127.0.0.1:${port}/delayed"),${kind === "performance" ? 50 : 20})</script></body>`,
+      ),
+    }));
+    fixture.auditKinds = [kind];
+    if (kind === "performance") fixture.readerIdleMs = 200;
+    let report: VerificationReport | undefined;
+    try {
+      report = await runControlled(fixture);
+      assert.equal(contacts, 0);
+      assert.ok(
+        report.findings.some(
+          ({ code, detail }) =>
+            code === "BROWSER_ORIGIN_ESCAPE" && detail.includes("/delayed"),
+        ),
+        JSON.stringify(report.findings),
+      );
+      const result =
+        kind === "performance"
+          ? report.performance.find(({ url }) => url === absolute(path))
+          : report.media.find(({ url }) => url === absolute(path));
+      assert.equal(result?.status, "FAIL");
+      assert.equal(report.automatedGates[kind], "FAIL");
+    } finally {
+      await cleanupReport(report);
+      await closeServer(destination);
+    }
+  });
+}
+
+test("a delayed WebSocket fails presentation without a local handshake", async () => {
+  let handshakes = 0;
+  const destination = createServer();
+  destination.on("upgrade", (_request, socket) => {
+    handshakes += 1;
+    socket.destroy();
+  });
+  const port = await listen(destination);
+  const fixture = createFixture();
+  replaceResponse(fixture, "/", (response) => ({
+    ...response,
+    body: response.body.replace(
+      "</body>",
+      `<script>setTimeout(()=>new WebSocket("ws://127.0.0.1:${port}/delayed"),100)</script></body>`,
+    ),
+  }));
+  fixture.auditKinds = ["presentation"];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    assert.equal(handshakes, 0);
+    assert.ok(
+      report.findings.some(
+        ({ code, detail }) =>
+          code === "BROWSER_ORIGIN_ESCAPE" &&
+          detail.includes("WebSocket") &&
+          detail.includes("/delayed"),
+      ),
+      JSON.stringify(report.findings),
+    );
+    assert.equal(
+      report.presentation.find(({ url }) => url === absolute("/"))?.status,
+      "FAIL",
+    );
+    assert.equal(report.automatedGates.presentation, "FAIL");
+  } finally {
+    await cleanupReport(report);
+    await closeServer(destination);
+  }
+});
+
 test("WebRTC is disabled before page code can send a local UDP packet", async () => {
   const udp = createSocket("udp4");
   let packets = 0;
