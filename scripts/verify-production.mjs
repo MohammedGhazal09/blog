@@ -33,6 +33,7 @@ const BROWSER_CLOSE_TIMEOUT_MS = 5_000;
 const MEDIA_REGION_SELECTOR = "[data-video-region]";
 const MEDIA_ACTIVATE_SELECTOR = "[data-video-activate]";
 const MEDIA_DIRECT_SELECTOR = ".youtube-cta";
+const MEDIA_ACTIVATION_SETTLE_MS = 50;
 const PLAUSIBLE_LOADER =
   /^https:\/\/plausible\.io\/js\/pa-[A-Za-z0-9_-]+\.js$/u;
 const PLAUSIBLE_EVENT_ENDPOINT = "https://plausible.io/api/event";
@@ -1204,6 +1205,7 @@ async function activationObservation(
       } else {
         await trigger.click();
       }
+      await page.waitForTimeout(MEDIA_ACTIVATION_SETTLE_MS);
       const iframe = region.locator("iframe");
       await iframe
         .first()
@@ -1227,7 +1229,7 @@ async function activationObservation(
           .evaluate((node) => document.activeElement === node)
           .catch(() => false),
         geometryStable: geometryStable(before, after),
-        requests,
+        mediaRequests: requests,
       };
     },
   });
@@ -1244,6 +1246,7 @@ function failedMediaResult(url, youtubeId = "") {
       title: "",
       focused: false,
       geometryStable: false,
+      mediaRequests: [],
     },
     keyboard: {
       iframeCount: 0,
@@ -1251,6 +1254,7 @@ function failedMediaResult(url, youtubeId = "") {
       title: "",
       focused: false,
       geometryStable: false,
+      mediaRequests: [],
     },
     fallback: {
       href: "",
@@ -1258,6 +1262,7 @@ function failedMediaResult(url, youtubeId = "") {
       visible: false,
       focusable: false,
       sameTab: false,
+      mediaRequests: [],
     },
     status: "FAIL",
   };
@@ -1376,6 +1381,7 @@ async function auditMedia({
           });
           fallbackIntent.activate();
           await page.locator(MEDIA_ACTIVATE_SELECTOR).click();
+          await page.waitForTimeout(MEDIA_ACTIVATION_SETTLE_MS);
           const link = page.locator(MEDIA_DIRECT_SELECTOR);
           await link.focus().catch(() => {});
           return {
@@ -1388,12 +1394,20 @@ async function auditMedia({
               )
               .catch(() => false),
             sameTab: (await link.getAttribute("target")) === null,
+            mediaRequests: fallbackRequests,
           };
         },
       });
 
+      const hasOneExactMediaRequest = (observation) =>
+        observation.mediaRequests.length === 1 &&
+        observation.mediaRequests[0] === expectedSrc;
       const validActivation = (observation) => {
-        if (observation.iframeCount !== 1 || observation.src !== expectedSrc)
+        if (
+          observation.iframeCount !== 1 ||
+          observation.src !== expectedSrc ||
+          !hasOneExactMediaRequest(observation)
+        )
           return false;
         const parsed = new URL(observation.src);
         return (
@@ -1410,6 +1424,13 @@ async function auditMedia({
         preIntent.mediaRequests.length === 0 &&
         preIntent.geometry !== null &&
         Math.abs(preIntent.geometry.ratio - 16 / 9) <= 0.02;
+      const fallbackPassed =
+        fallback.href === expectedHref &&
+        ARABIC.test(fallback.label) &&
+        fallback.visible &&
+        fallback.focusable &&
+        fallback.sameTab &&
+        hasOneExactMediaRequest(fallback);
       if (!preIntentPassed) {
         finding(
           findings,
@@ -1436,13 +1457,7 @@ async function auditMedia({
           url,
         );
       }
-      if (
-        fallback.href !== expectedHref ||
-        !ARABIC.test(fallback.label) ||
-        !fallback.visible ||
-        !fallback.focusable ||
-        !fallback.sameTab
-      ) {
+      if (!fallbackPassed) {
         finding(
           findings,
           "MEDIA_FALLBACK",
@@ -1456,11 +1471,7 @@ async function auditMedia({
         validActivation(keyboard) &&
         pointer.geometryStable &&
         keyboard.geometryStable &&
-        fallback.href === expectedHref &&
-        ARABIC.test(fallback.label) &&
-        fallback.visible &&
-        fallback.focusable &&
-        fallback.sameTab;
+        fallbackPassed;
       results.push({
         url,
         youtubeId,
@@ -1471,6 +1482,7 @@ async function auditMedia({
           title: pointer.title,
           focused: pointer.focused,
           geometryStable: pointer.geometryStable,
+          mediaRequests: pointer.mediaRequests,
         },
         keyboard: {
           iframeCount: keyboard.iframeCount,
@@ -1478,6 +1490,7 @@ async function auditMedia({
           title: keyboard.title,
           focused: keyboard.focused,
           geometryStable: keyboard.geometryStable,
+          mediaRequests: keyboard.mediaRequests,
         },
         fallback,
         status: passed ? "PASS" : "FAIL",

@@ -169,6 +169,7 @@ type VerificationReport = {
       title: string;
       focused: boolean;
       geometryStable: boolean;
+      mediaRequests: string[];
     };
     keyboard: {
       iframeCount: number;
@@ -176,6 +177,7 @@ type VerificationReport = {
       title: string;
       focused: boolean;
       geometryStable: boolean;
+      mediaRequests: string[];
     };
     fallback: {
       href: string;
@@ -183,6 +185,7 @@ type VerificationReport = {
       visible: boolean;
       focusable: boolean;
       sameTab: boolean;
+      mediaRequests: string[];
     };
     status: "PASS" | "FAIL";
   }[];
@@ -610,6 +613,7 @@ test("controlled media audit covers every article intent path and direct fallbac
         assert.match(activation.title, /\p{Script=Arabic}/u);
         assert.equal(activation.focused, true);
         assert.equal(activation.geometryStable, true);
+        assert.deepEqual(activation.mediaRequests, [activation.src]);
       }
       assert.deepEqual(article.fallback, {
         href: `https://www.youtube.com/watch?v=${article.youtubeId}`,
@@ -617,10 +621,50 @@ test("controlled media audit covers every article intent path and direct fallbac
         visible: true,
         focusable: true,
         sameTab: true,
+        mediaRequests: [
+          `https://www.youtube-nocookie.com/embed/${article.youtubeId}?hl=ar`,
+        ],
       });
       assert.equal(article.status, "PASS");
     }
     assert.equal(report.automatedGates.media, "PASS");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+test("duplicate exact iframe navigations fail media even when one iframe is removed before observation", async () => {
+  const fixture = createFixture();
+  replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
+    ...response,
+    body: response.body.replace(
+      "button.replaceWith(iframe);iframe.focus()",
+      "button.replaceWith(iframe);const duplicate=iframe.cloneNode();region.append(duplicate);setTimeout(()=>duplicate.remove(),10);iframe.focus()",
+    ),
+  }));
+  fixture.auditKinds = ["media"];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    const article = report.media.find(
+      ({ url }) => url === absolute(ARTICLE_PATHS[0]),
+    );
+    assert.ok(article);
+    assert.ok(
+      report.findings.some(({ code }) => code === "MEDIA_ACTIVATION"),
+      JSON.stringify(report.findings),
+    );
+    const expectedSrc = `https://www.youtube-nocookie.com/embed/${article.youtubeId}?hl=ar`;
+    for (const activation of [article.pointer, article.keyboard]) {
+      assert.equal(activation.iframeCount, 1);
+      assert.deepEqual(activation.mediaRequests, [expectedSrc, expectedSrc]);
+    }
+    assert.deepEqual(article.fallback.mediaRequests, [
+      expectedSrc,
+      expectedSrc,
+    ]);
+    assert.equal(article.status, "FAIL");
+    assert.equal(report.automatedGates.media, "FAIL");
   } finally {
     await cleanupReport(report);
   }
