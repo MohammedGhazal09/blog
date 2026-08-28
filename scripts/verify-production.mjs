@@ -41,6 +41,7 @@ const MEDIA_PRE_INTENT_STABILITY_MS = 250;
 const MEDIA_POST_ACTIVATION_STABILITY_MS = 250;
 const PLAUSIBLE_LOADER =
   /^https:\/\/plausible\.io\/js\/pa-[A-Za-z0-9_-]+\.js$/u;
+const REPORT_URL = /\b(?:https?|wss?):\/\/[^\s"'<>]+/giu;
 const PAGE_TRANSPORT_MONITORS = new WeakMap();
 const PROFILE = {
   viewport: { width: 390, height: 844 },
@@ -101,6 +102,54 @@ function comparePublicUrls(first, second) {
   const firstPath = decodeURI(new URL(first).pathname);
   const secondPath = decodeURI(new URL(second).pathname);
   return firstPath < secondPath ? -1 : firstPath > secondPath ? 1 : 0;
+}
+
+function isPublicReportQueryValue(url, name, value) {
+  return (
+    (url.hostname === "www.youtube.com" &&
+      url.pathname === "/watch" &&
+      name === "v" &&
+      YOUTUBE_ID.test(value)) ||
+    (url.hostname === "www.youtube-nocookie.com" &&
+      /^\/embed\/[A-Za-z0-9_-]{11}$/u.test(url.pathname) &&
+      name === "hl" &&
+      value === "ar")
+  );
+}
+
+function reportSafeUrl(rawUrl) {
+  let url;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    return "[redacted-url]";
+  }
+  const redactQuery = [...url.searchParams].some(
+    ([name, value]) => !isPublicReportQueryValue(url, name, value),
+  );
+  if (
+    url.username === "" &&
+    url.password === "" &&
+    url.hash === "" &&
+    !redactQuery
+  )
+    return rawUrl;
+  url.username = "";
+  url.password = "";
+  const query = new URLSearchParams();
+  let redacted = false;
+  for (const [name, value] of url.searchParams) {
+    if (isPublicReportQueryValue(url, name, value)) query.append(name, value);
+    else redacted = true;
+  }
+  if (redacted) query.append("redacted", "[REDACTED]");
+  url.search = query.toString();
+  url.hash = "";
+  return url.href;
+}
+
+function reportSafeString(value) {
+  return value.replace(REPORT_URL, reportSafeUrl);
 }
 
 function finding(findings, code, detail, url) {
@@ -2053,8 +2102,15 @@ async function writeReport(report, scope, started) {
   await mkdir(runDirectory, { recursive: true });
   const artifactPath = join(runDirectory, "report.json");
   report.artifactPath = artifactPath;
-  await writeFile(artifactPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");
-  return report;
+  const serialized = JSON.stringify(
+    report,
+    (_key, value) =>
+      typeof value === "string" ? reportSafeString(value) : value,
+    2,
+  );
+  const safeReport = JSON.parse(serialized);
+  await writeFile(artifactPath, `${serialized}\n`, "utf8");
+  return safeReport;
 }
 
 export async function runProductionVerification(options = {}) {

@@ -1439,10 +1439,12 @@ for (const [name, requestUrl] of [
     let report: VerificationReport | undefined;
     try {
       report = await runControlled(fixture);
+      const parsedRequest = new URL(requestUrl);
       assert.ok(
         report.findings.some(
           ({ code, detail }) =>
-            code === "BROWSER_ORIGIN_ESCAPE" && detail.includes(requestUrl),
+            code === "BROWSER_ORIGIN_ESCAPE" &&
+            detail.includes(`${parsedRequest.origin}${parsedRequest.pathname}`),
         ),
         JSON.stringify(report.findings),
       );
@@ -2745,6 +2747,81 @@ test("controlled authority cannot be caller-promoted or redirected", async () =>
     ]) {
       assert.equal(serialized.includes(`\"${forbidden}\"`), false);
     }
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+test("report serialization removes URL credentials and sensitive values everywhere", async () => {
+  const fixture = createFixture();
+  const credentialUser = "report-user";
+  const credentialPassword = "report-password";
+  const queryNameSecret = "query-name-secret";
+  const querySecret = "query-secret";
+  const requestSecret = "request-secret";
+  const socketSecret = "socket-secret";
+  const errorSecret = "error-secret";
+  const fragmentSecret = "fragment-secret";
+  const externalUrl = `https://${credentialUser}:${credentialPassword}@outside-fixture.dev/private?${queryNameSecret}=${querySecret}#${fragmentSecret}`;
+  const requestUrl = `https://outside-fixture.dev/api?api_key=${requestSecret}`;
+  const socketUrl = `wss://outside-fixture.dev/socket?session=${socketSecret}`;
+  replaceResponse(fixture, "/", (response) => ({
+    ...response,
+    body: response.body.replace(
+      "</body>",
+      `<a href="${externalUrl}">رابط خارجي</a><script>fetch(${JSON.stringify(requestUrl)}).catch(()=>{});new WebSocket(${JSON.stringify(socketUrl)})</script></body>`,
+    ),
+  }));
+  fixture.auditKinds = ["presentation"];
+  const installBrowserRoutes = fixture.installBrowserRoutes;
+  let closeBrowser: (() => Promise<void>) | undefined;
+  fixture.installBrowserRoutes = async (page) => {
+    await installBrowserRoutes(page);
+    closeBrowser = async () => {
+      await page.context().browser()?.close();
+    };
+  };
+  fixture.beforeBrowserClose = async () => {
+    await closeBrowser?.();
+    throw new Error(
+      `cleanup failed at https://outside-fixture.dev/cleanup?token=${errorSecret}`,
+    );
+  };
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    const serialized = JSON.stringify(report);
+    const artifact = readFileSync(report.artifactPath, "utf8");
+    for (const secret of [
+      credentialUser,
+      credentialPassword,
+      queryNameSecret,
+      querySecret,
+      requestSecret,
+      socketSecret,
+      errorSecret,
+      fragmentSecret,
+    ]) {
+      assert.equal(serialized.includes(secret), false, secret);
+      assert.equal(artifact.includes(secret), false, secret);
+    }
+    const safeExternal = report.routeGraph.externalLinks.find((url) =>
+      url.includes("outside-fixture.dev/private"),
+    );
+    assert.ok(safeExternal);
+    const parsedExternal = new URL(safeExternal);
+    assert.equal(parsedExternal.username, "");
+    assert.equal(parsedExternal.password, "");
+    assert.deepEqual(
+      [...parsedExternal.searchParams],
+      [["redacted", "[REDACTED]"]],
+    );
+    assert.equal(parsedExternal.hash, "");
+    assert.ok(serialized.includes("%5BREDACTED%5D"));
+    assert.ok(
+      report.findings.some(({ code }) => code === "BROWSER_ORIGIN_ESCAPE"),
+    );
+    assert.ok(report.errors.some((error) => error.includes("%5BREDACTED%5D")));
   } finally {
     await cleanupReport(report);
   }
