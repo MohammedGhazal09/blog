@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-08-28T03:30:47.681Z"
+stopped_at: Phase 05 verification requires four owner-controlled service checks
+last_updated: "2026-08-28T04:03:05Z"
 last_activity: 2026-08-28
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 4
   total_plans: 16
   completed_plans: 16
   percent: 100
@@ -25,20 +25,20 @@ See: .planning/PROJECT.md (updated 2026-08-28)
 
 ## Current Position
 
-Phase: 05 (deployment-and-measurement) — EXECUTING
+Phase: 05 (deployment-and-measurement) — VERIFYING
 Plan: 2 of 2
-Status: Phase complete — ready for verification
+Status: Repository-controlled work passed — owner-controlled evidence pending
 Last activity: 2026-08-28
 
-Progress: [██████████] 100%
+Progress: [██████████] 100% of planned repository work
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 14
-- Average duration: 26.5 min
-- Total execution time: 291 min
+- Total plans completed: 16
+- Average duration: 23.4 min
+- Total execution time: 375 min
 
 **By Phase:**
 
@@ -47,12 +47,13 @@ Progress: [██████████] 100%
 | Phase 01-content-and-url-contract | 3 | 43 min | 14.3 min |
 | Phase 02-complete-arabic-article-journey | 4 | 117 min | 29.3 min |
 | Phase 03-real-content-and-section-discovery | 4 | 131 min | 32.8 min |
-| 04 | 3 | - | - |
+| Phase 04-search-discovery-integrity | 3 | 49 min | 16.3 min |
+| Phase 05-deployment-and-measurement | 2 | 35 min | 17.5 min |
 
 **Recent Trend:**
 
-- Last 3 plans: 17 min, 63 min, 29 min
-- Trend: mixed; Phase 03-03 carried the browser-oracle and evidence-matrix work
+- Last 3 plans: 29 min, 18 min, 17 min
+- Trend: improving; Phase 5 stayed focused on the launch boundary and evidence separation
 
 | Phase 01-content-and-url-contract P01 | 14min | 3 tasks | 14 files |
 | Phase 01-content-and-url-contract P02 | 17min | 3 tasks | 7 files |
@@ -126,6 +127,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 05-02]: Keep Cloudflare, DNS/TLS, Plausible, Search Console, indexing, and production-traffic evidence PENDING until direct owner-controlled proof is inspected.
 - [Phase 05-02]: Use the existing Arabic README as the only operating path instead of adding a parallel runbook hierarchy.
 - [Phase 05-02]: Restore the final ordinary build to http://127.0.0.1:4322 with zero analytics after every controlled launch verification.
+- [Phase 05 verification]: Keep the phase, SEO-06, MEAS-01, and MEAS-02 pending until direct owner-controlled Cloudflare, Search Console, and Plausible evidence closes all four human checks.
 
 ### Pending Todos
 
@@ -144,6 +146,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-28T03:30:47.662Z
-Stopped at: Completed 05-02-PLAN.md
-Resume file: None
+Last session: 2026-08-28T04:03:05Z
+Stopped at: Phase 05 repository verification complete; four external authority checks remain blocked
+Resume file: .planning/phases/05-deployment-and-measurement/05-HUMAN-UAT.md

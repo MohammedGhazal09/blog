@@ -10,7 +10,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 - [x] **Phase 2: Complete Arabic Article Journey** - A reader can consume one accessible RTL article and continue to its matching YouTube content. (completed 2026-08-26)
 - [x] **Phase 3: Real Content and Section Discovery** - Visitors can discover truthful launch content across the homepage and all three primary sections. (completed 2026-08-27)
 - [x] **Phase 4: Search Discovery Integrity** - Every public route presents one consistent, crawlable identity to readers and search engines. (completed 2026-08-27)
-- [x] **Phase 5: Deployment and Measurement** - The live site can be monitored for search discovery and outbound YouTube activation without profiling readers. (completed 2026-08-28)
+- [ ] **Phase 5: Deployment and Measurement** - Repository work is complete; owner-controlled production and measurement evidence remains pending.
 - [ ] **Phase 6: Production Launch Verification** - Production behavior is verified across crawlability, Arabic presentation, links, and performance.
 
 ## Phase Details
@@ -83,7 +83,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 
 ### Phase 5: Deployment and Measurement
 
-**Goal:** The owner can operate the canonical production site and measure the intended discovery-to-YouTube journey without identifying individual readers.
+**Goal:** As a site owner, I want to operate the canonical production site and measure the intended discovery-to-YouTube journey without identifying individual readers, so that I can confirm the real production and measurement path works as intended.
 **Mode:** mvp
 **Depends on:** Phase 4
 **Requirements:** SEO-06, MEAS-01, MEAS-02
@@ -120,5 +120,5 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 | 2. Complete Arabic Article Journey | 4/4 | Complete    | 2026-08-26 |
 | 3. Real Content and Section Discovery | 4/4 | Complete   | 2026-08-27 |
 | 4. Search Discovery Integrity | 3/3 | Complete    | 2026-08-28 |
-| 5. Deployment and Measurement | 2/2 | Complete    | 2026-08-28 |
+| 5. Deployment and Measurement | 2/2 | Verification pending | - |
 | 6. Production Launch Verification | 0/TBD | Not started | - |
