@@ -1402,20 +1402,13 @@ export async function runProductionVerification(options = {}) {
       findings,
     });
     if (robots !== undefined) {
-      const sitemapDirectives = robots
-        .split(/\r?\n/gu)
-        .filter((line) => /^Sitemap:\s*/iu.test(line))
-        .map((line) => line.replace(/^Sitemap:\s*/iu, "").trim());
-      if (
-        sitemapDirectives.length !== 1 ||
-        sitemapDirectives[0] !== sitemapIndexUrl ||
-        !/^User-agent:\s*\*$/imu.test(robots) ||
-        !/^Allow:\s*\/$/imu.test(robots)
-      ) {
+      const normalizedRobots = robots.replace(/\r\n?/gu, "\n");
+      const expectedRobots = `User-agent: *\nAllow: /\n\nSitemap: ${sitemapIndexUrl}\n`;
+      if (normalizedRobots !== expectedRobots) {
         finding(
           findings,
           "ROBOTS_SITEMAP",
-          "robots must allow the site and name the exact sitemap index",
+          "robots must exactly match the generated global-allow policy",
           robotsUrl,
         );
       }

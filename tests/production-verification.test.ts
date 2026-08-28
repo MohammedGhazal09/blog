@@ -952,6 +952,24 @@ const failureCases: readonly {
   mutate(fixture: ControlledFixture): void;
 }[] = [
   {
+    name: "Googlebot-specific disallow rule",
+    code: "ROBOTS_SITEMAP",
+    mutate: (fixture) =>
+      replaceResponse(fixture, "/robots.txt", (response) => ({
+        ...response,
+        body: `${response.body}\nUser-agent: Googlebot\nDisallow: /\n`,
+      })),
+  },
+  {
+    name: "Bingbot-specific disallow rule",
+    code: "ROBOTS_SITEMAP",
+    mutate: (fixture) =>
+      replaceResponse(fixture, "/robots.txt", (response) => ({
+        ...response,
+        body: `${response.body}\nUser-agent: Bingbot\nDisallow: /\n`,
+      })),
+  },
+  {
     name: "redirecting discovery response",
     code: "STATIC_REDIRECT",
     mutate: (fixture) =>
