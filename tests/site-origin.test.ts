@@ -4,15 +4,15 @@ import test from "node:test";
 import { productionSiteOrigin } from "../src/lib/site-origin.ts";
 
 const validOrigins = [
-  ["root HTTPS origin", "https://blog.ahmed-mangawy.org", "https://blog.ahmed-mangawy.org"],
-  ["trailing slash", "https://blog.ahmed-mangawy.org/", "https://blog.ahmed-mangawy.org"],
-  ["uppercase host", "https://BLOG.AHMED-MANGAWY.ORG", "https://blog.ahmed-mangawy.org"],
-  ["default HTTPS port", "https://blog.ahmed-mangawy.org:443", "https://blog.ahmed-mangawy.org"],
-  ["non-default HTTPS port", "https://blog.ahmed-mangawy.org:8443", "https://blog.ahmed-mangawy.org:8443"],
+  [
+    "root HTTPS origin",
+    "https://blog.ahmed-mangawy.org",
+    "https://blog.ahmed-mangawy.org",
+  ],
 ] as const;
 
 for (const [name, raw, expected] of validOrigins) {
-  test(`normalizes ${name}`, () => {
+  test(`accepts ${name}`, () => {
     assert.equal(productionSiteOrigin(raw), expected);
   });
 }
@@ -24,6 +24,10 @@ const invalidOrigins: readonly [string, unknown][] = [
   ["whitespace-only value", "   "],
   ["leading whitespace", " https://blog.ahmed-mangawy.org"],
   ["trailing whitespace", "https://blog.ahmed-mangawy.org "],
+  ["trailing slash", "https://blog.ahmed-mangawy.org/"],
+  ["uppercase host", "https://BLOG.AHMED-MANGAWY.ORG"],
+  ["default HTTPS port", "https://blog.ahmed-mangawy.org:443"],
+  ["non-default HTTPS port", "https://blog.ahmed-mangawy.org:8443"],
   ["HTTP scheme", "http://blog.ahmed-mangawy.org"],
   ["non-HTTPS scheme", "ftp://blog.ahmed-mangawy.org"],
   ["username", "https://user@blog.ahmed-mangawy.org"],
