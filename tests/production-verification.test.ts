@@ -808,7 +808,7 @@ for (const scenario of renderedAuditCases) {
   });
 }
 
-test("media hostname matching ignores substring spoofing", async () => {
+test("media hostname spoofing is blocked without intentional-media classification", async () => {
   const fixture = createFixture();
   fixture.auditKinds = ["media"];
   replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
@@ -821,11 +821,18 @@ test("media hostname matching ignores substring spoofing", async () => {
   let report: VerificationReport | undefined;
   try {
     report = await runControlled(fixture);
-    assert.deepEqual(report.media[0].preIntent.mediaRequests, []);
     assert.equal(
       report.findings.some(({ code }) => code === "MEDIA_PRE_INTENT"),
       false,
     );
+    assert.ok(
+      report.findings.some(({ code }) => code === "BROWSER_ORIGIN_ESCAPE"),
+    );
+    assert.equal(
+      fixture.browserRequests.some((url) => url.includes("youtube.evil.invalid")),
+      false,
+    );
+    assert.equal(report.automatedGates.media, "FAIL");
   } finally {
     await cleanupReport(report);
   }
