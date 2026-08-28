@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createServer, type Server } from "node:http";
 import { existsSync, readFileSync, statSync } from "node:fs";
-import { extname, resolve } from "node:path";
+import { extname, resolve, sep } from "node:path";
 import test from "node:test";
 
 import { chromium, type Browser, type Page } from "@playwright/test";
@@ -67,7 +67,7 @@ async function serveDist(): Promise<{ origin: string; server: Server }> {
       new URL(request.url ?? "/", "http://local").pathname,
     );
     let path = resolve(DIST_ROOT, `.${pathname}`);
-    if (!path.startsWith(`${DIST_ROOT}\\`) && path !== DIST_ROOT) {
+    if (!path.startsWith(`${DIST_ROOT}${sep}`) && path !== DIST_ROOT) {
       response.writeHead(400).end();
       return;
     }
