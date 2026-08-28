@@ -1018,6 +1018,24 @@ const failureCases: readonly {
   mutate(fixture: ControlledFixture): void;
 }[] = [
   {
+    name: "substring-only discovery content type",
+    code: "CONTENT_TYPE",
+    mutate: (fixture) =>
+      replaceResponse(fixture, "/sitemap-index.xml", (response) => ({
+        ...response,
+        contentType: "application/notxml",
+      })),
+  },
+  {
+    name: "substring-only HTML content type",
+    code: "CONTENT_TYPE",
+    mutate: (fixture) =>
+      replaceResponse(fixture, "/", (response) => ({
+        ...response,
+        contentType: "text/html-malformed",
+      })),
+  },
+  {
     name: "Googlebot-specific disallow rule",
     code: "ROBOTS_SITEMAP",
     mutate: (fixture) =>

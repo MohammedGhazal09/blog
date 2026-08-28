@@ -236,12 +236,13 @@ async function fetchStatic({
     );
     return undefined;
   }
-  const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
-  if (!expectedType.some((type) => contentType.includes(type))) {
+  const contentType = response.headers.get("content-type") ?? "";
+  const mediaType = contentType.split(";", 1)[0].trim().toLowerCase();
+  if (!expectedType.includes(mediaType)) {
     finding(
       findings,
       "CONTENT_TYPE",
-      `unexpected content type: ${contentType || "missing"}`,
+      `unexpected content type: ${contentType.toLowerCase() || "missing"}`,
       url,
     );
     return undefined;
@@ -1481,7 +1482,7 @@ export async function runProductionVerification(options = {}) {
     const sitemapIndex = await fetchStatic({
       url: sitemapIndexUrl,
       expectedStatus: 200,
-      expectedType: ["xml"],
+      expectedType: ["application/xml", "text/xml"],
       controlledFixture,
       findings,
     });
@@ -1520,7 +1521,7 @@ export async function runProductionVerification(options = {}) {
       const child = await fetchStatic({
         url: childUrl,
         expectedStatus: 200,
-        expectedType: ["xml"],
+        expectedType: ["application/xml", "text/xml"],
         controlledFixture,
         findings,
       });
