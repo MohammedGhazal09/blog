@@ -107,7 +107,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
   1. Representative production pages preserve good Core Web Vitals behavior and neither load nor shift the real YouTube iframe before reader activation.
   2. A production crawl confirms successful public routes, matching canonicals, unique Arabic metadata, working internal links, correct sitemap and robots output, and no accidental English reader-facing text.
 
-**Plans:** TBD
+**Plans:** 1/2 plans executed
 **UI hint:** yes
 
 ## Progress
@@ -121,4 +121,4 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 | 3. Real Content and Section Discovery | 4/4 | Complete   | 2026-08-27 |
 | 4. Search Discovery Integrity | 3/3 | Complete    | 2026-08-28 |
 | 5. Deployment and Measurement | 2/2 | Verification pending | - |
-| 6. Production Launch Verification | 0/TBD | Not started | - |
+| 6. Production Launch Verification | 1/2 | In Progress|  |
