@@ -1152,6 +1152,7 @@ async function activationObservation(
 ) {
   const requests = [];
   const intent = exactMediaIntent(expectedSrc, requests);
+  let invalidActivationFindingRecorded = false;
   return withAuditPage({
     browser,
     controlledFixture,
@@ -1166,6 +1167,21 @@ async function activationObservation(
         findings,
         browserTransport,
         intentionalBlockedRequest: intent.classify,
+        onUnexpectedRequest: (request) => {
+          if (
+            invalidActivationFindingRecorded ||
+            !request.isNavigationRequest() ||
+            request.resourceType() !== "document"
+          )
+            return;
+          invalidActivationFindingRecorded = true;
+          finding(
+            findings,
+            "MEDIA_ACTIVATION",
+            `activation requested a non-exact iframe URL: ${request.url()}`,
+            url,
+          );
+        },
       });
       const region = page.locator(MEDIA_REGION_SELECTOR);
       const trigger = region.locator(MEDIA_ACTIVATE_SELECTOR);
