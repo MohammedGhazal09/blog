@@ -2087,6 +2087,16 @@ const failureCases: readonly {
       })),
   },
   {
+    name: "unavailable child sitemap",
+    code: "HTTP_STATUS",
+    mutate: (fixture) =>
+      replaceResponse(fixture, "/sitemap-0.xml", (response) => ({
+        ...response,
+        status: 503,
+      })),
+    assertPlausibleLoaderNull: true,
+  },
+  {
     name: "malformed sitemap XML",
     code: "XML_MALFORMED",
     mutate: (fixture) =>
@@ -2094,6 +2104,7 @@ const failureCases: readonly {
         ...response,
         body: "<urlset><url><loc>broken",
       })),
+    assertPlausibleLoaderNull: true,
   },
   {
     name: "direct sitemap-index location outside an entry",
@@ -2278,6 +2289,19 @@ const failureCases: readonly {
           `<url><loc>${absolute(DRAFT_PATH)}</loc></url></urlset>`,
         ),
       })),
+  },
+  {
+    name: "404 role in sitemap",
+    code: "NOT_FOUND_CONTRACT",
+    mutate: (fixture) =>
+      replaceResponse(fixture, "/sitemap-0.xml", (response) => ({
+        ...response,
+        body: response.body.replace(
+          "</urlset>",
+          `<url><loc>${absolute(MISSING_PATH)}</loc></url></urlset>`,
+        ),
+      })),
+    assertPlausibleLoaderNull: true,
   },
   {
     name: "incorrect 404",

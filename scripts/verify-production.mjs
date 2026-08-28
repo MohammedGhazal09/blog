@@ -609,6 +609,7 @@ function validateSitemapCoverage(origin, urls, findings, sitemapIndexUrl) {
       sitemapIndexUrl,
     );
   }
+  return urls.length > 0 && missing.length === 0;
 }
 
 function validateArticle(document, url, origin, findings) {
@@ -2023,6 +2024,8 @@ export async function runProductionVerification(options = {}) {
       networkFetch,
       findings,
     });
+    let sitemapDiscoveryComplete = sitemapIndex !== undefined;
+    const indexFindingCount = findings.length;
     const childSitemaps = sitemapIndex
       ? await parseXml(
           page,
@@ -2032,11 +2035,17 @@ export async function runProductionVerification(options = {}) {
           findings,
         )
       : [];
+    if (findings.length !== indexFindingCount) sitemapDiscoveryComplete = false;
     const cleanChildren = childSitemaps
       .map((url) =>
         cleanSameOriginUrl(url, normalizedOrigin, findings, sitemapIndexUrl),
       )
       .filter(Boolean);
+    if (
+      cleanChildren.length === 0 ||
+      cleanChildren.length !== childSitemaps.length
+    )
+      sitemapDiscoveryComplete = false;
     if (cleanChildren.length === 0) {
       finding(
         findings,
@@ -2047,6 +2056,7 @@ export async function runProductionVerification(options = {}) {
     }
     for (const childUrl of cleanChildren) {
       if (!/^\/sitemap-[0-9]+\.xml$/u.test(new URL(childUrl).pathname)) {
+        sitemapDiscoveryComplete = false;
         finding(
           findings,
           "SITEMAP_PATH",
@@ -2063,7 +2073,11 @@ export async function runProductionVerification(options = {}) {
         networkFetch,
         findings,
       });
-      if (!child) continue;
+      if (!child) {
+        sitemapDiscoveryComplete = false;
+        continue;
+      }
+      const childFindingCount = findings.length;
       const locations = await parseXml(
         page,
         child,
@@ -2071,6 +2085,8 @@ export async function runProductionVerification(options = {}) {
         childUrl,
         findings,
       );
+      if (findings.length !== childFindingCount)
+        sitemapDiscoveryComplete = false;
       for (const raw of locations) {
         const clean = cleanSameOriginUrl(
           raw,
@@ -2079,11 +2095,13 @@ export async function runProductionVerification(options = {}) {
           childUrl,
         );
         if (clean) routeGraph.sitemapUrls.push(clean);
+        else sitemapDiscoveryComplete = false;
       }
     }
     if (
       new Set(routeGraph.sitemapUrls).size !== routeGraph.sitemapUrls.length
     ) {
+      sitemapDiscoveryComplete = false;
       finding(
         findings,
         "XML_DUPLICATE_LOCATION",
@@ -2092,7 +2110,7 @@ export async function runProductionVerification(options = {}) {
       );
       routeGraph.sitemapUrls = [...new Set(routeGraph.sitemapUrls)];
     }
-    validateSitemapCoverage(
+    const sitemapCoverageValid = validateSitemapCoverage(
       normalizedOrigin,
       routeGraph.sitemapUrls,
       findings,
@@ -2100,9 +2118,12 @@ export async function runProductionVerification(options = {}) {
     );
 
     const drafts = new Set(await repositoryDraftPaths());
+    const publicDocumentUrls = new Set();
+    let sitemapContainsIneligibleRole = false;
     for (const url of routeGraph.sitemapUrls) {
       const pathname = decodeURI(new URL(url).pathname);
       if (drafts.has(pathname)) {
+        sitemapContainsIneligibleRole = true;
         finding(
           findings,
           "DRAFT_LEAK",
@@ -2112,6 +2133,7 @@ export async function runProductionVerification(options = {}) {
         continue;
       }
       if (pathname === MISSING_PATH) {
+        sitemapContainsIneligibleRole = true;
         finding(
           findings,
           "NOT_FOUND_CONTRACT",
@@ -2132,6 +2154,7 @@ export async function runProductionVerification(options = {}) {
       routeGraph.crawledUrls.push(url);
       const document = await parseHtml(page, source, url, findings);
       documents.set(url, document);
+      publicDocumentUrls.add(url);
       const plausibleLoader = validatedPlausibleLoader(document, url, findings);
       if (plausibleLoader)
         browserTransport.plausibleLoaders.set(url, plausibleLoader);
@@ -2235,6 +2258,8 @@ export async function runProductionVerification(options = {}) {
     }
 
     const missingUrl = new URL(MISSING_PATH, normalizedOrigin).href;
+    const missingRoleDistinct = !routeGraph.sitemapUrls.includes(missingUrl);
+    let notFoundDocumentValid = false;
     const missing = await fetchStatic({
       url: missingUrl,
       expectedStatus: 404,
@@ -2254,7 +2279,7 @@ export async function runProductionVerification(options = {}) {
       );
       if (plausibleLoader)
         browserTransport.plausibleLoaders.set(missingUrl, plausibleLoader);
-      if (
+      const violatesNotFoundDocumentContract =
         document.lang !== "ar" ||
         document.dir !== "rtl" ||
         document.canonicals.length !== 0 ||
@@ -2262,15 +2287,15 @@ export async function runProductionVerification(options = {}) {
         !ARABIC.test(document.bodyText) ||
         !document.robots.some(
           (value) => value.toLowerCase() === "noindex,follow",
-        )
-      ) {
+        );
+      if (violatesNotFoundDocumentContract) {
         finding(
           findings,
           "NOT_FOUND_CONTRACT",
           "missing route must be an Arabic RTL noindex,follow 404 without canonical",
           missingUrl,
         );
-      }
+      } else notFoundDocumentValid = true;
     }
     const plausibleLoaderUrls = [...browserTransport.plausibleLoaders.values()];
     const uniquePlausibleLoaders = new Set(plausibleLoaderUrls);
@@ -2278,7 +2303,18 @@ export async function runProductionVerification(options = {}) {
       ...routeGraph.sitemapUrls,
       missingUrl,
     ]);
+    const publicDocumentsComplete =
+      publicDocumentUrls.size === routeGraph.sitemapUrls.length &&
+      routeGraph.sitemapUrls.every((url) => publicDocumentUrls.has(url));
+    const loaderAuthorityComplete =
+      sitemapDiscoveryComplete &&
+      sitemapCoverageValid &&
+      !sitemapContainsIneligibleRole &&
+      missingRoleDistinct &&
+      notFoundDocumentValid &&
+      publicDocumentsComplete;
     const hasExactPlausibleDocuments =
+      loaderAuthorityComplete &&
       documents.size === expectedPlausibleDocuments.size &&
       browserTransport.plausibleLoaders.size ===
         expectedPlausibleDocuments.size &&
