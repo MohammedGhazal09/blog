@@ -952,6 +952,43 @@ test("Chromium uses the pinned destination directly even when a proxy is configu
   }
 });
 
+test("off-origin WebSockets are blocked before a local handshake", async () => {
+  let handshakes = 0;
+  const destination = createServer();
+  destination.on("upgrade", (_request, socket) => {
+    handshakes += 1;
+    socket.destroy();
+  });
+  const destinationPort = await listen(destination);
+  const fixture = createFixture();
+  const homepage = fixture.responses.get(absolute("/"));
+  assert.ok(homepage);
+  fixture.browserOverrides.set(absolute("/"), {
+    ...homepage,
+    body: homepage.body.replace(
+      "</main>",
+      `<script>new WebSocket("ws://127.0.0.1:${destinationPort}/private")</script></main>`,
+    ),
+  });
+  fixture.auditKinds = ["presentation"];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    assert.ok(
+      report.findings.some(
+        ({ code, detail }) =>
+          code === "BROWSER_ORIGIN_ESCAPE" && detail.includes("WebSocket"),
+      ),
+      JSON.stringify(report.findings),
+    );
+    assert.equal(handshakes, 0);
+    assert.equal(report.automatedGates.presentation, "FAIL");
+  } finally {
+    await cleanupReport(report);
+    await closeServer(destination);
+  }
+});
+
 test("browser-only redirects are blocked before the destination is contacted", async () => {
   const fixture = createFixture();
   const outside = "https://outside-fixture.dev/redirect-target";

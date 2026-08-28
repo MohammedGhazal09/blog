@@ -747,6 +747,17 @@ async function navigateSameOrigin({
     }
     return route.abort("blockedbyclient");
   };
+  await page.context().routeWebSocket("**/*", async (webSocket) => {
+    const destination = webSocket.url();
+    unexpectedRequests.push(`websocket request: ${destination}`);
+    finding(
+      findings,
+      "BROWSER_ORIGIN_ESCAPE",
+      `blocked WebSocket request: ${destination}`,
+      url,
+    );
+    await webSocket.close({ code: 1008, reason: "WebSockets are not allowed" });
+  });
   await page.context().route("**/*", guard);
   await page.route("**/*", guard);
   page.on("response", responseListener);
