@@ -885,6 +885,43 @@ test("browser-only redirects are blocked before the destination is contacted", a
   }
 });
 
+test("every registered article route fails crawl and media when its media is absent", async () => {
+  const fixture = createFixture();
+  const missingMediaPath = "/الردود-والشبهات/مقال-بلا-وسائط/";
+  replaceResponse(fixture, "/sitemap-0.xml", (response) => ({
+    ...response,
+    body: response.body.replace(
+      "</urlset>",
+      `<url><loc>${absolute(missingMediaPath)}</loc></url></urlset>`,
+    ),
+  }));
+  fixture.responses.set(absolute(missingMediaPath), {
+    status: 200,
+    contentType: "text/html; charset=utf-8",
+    body: pageHtml({
+      path: missingMediaPath,
+      title: "مقال تجريبي بلا وسائط",
+      description: "وصف عربي لمقال تجريبي بلا وسائط",
+      links: [SECTION_PATHS[0], "/"],
+    }),
+  });
+  fixture.auditKinds = ["media"];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    expectFinding(report, "YOUTUBE_IDENTITY");
+    assert.ok(report.findings.some(({ code }) => code === "MEDIA_IDENTITY"));
+    assert.equal(report.media.length, ARTICLE_PATHS.length + 1);
+    assert.equal(
+      report.media.find(({ url }) => url === absolute(missingMediaPath))?.status,
+      "FAIL",
+    );
+    assert.equal(report.automatedGates.media, "FAIL");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
 const failureCases: readonly {
   name: string;
   code: string;

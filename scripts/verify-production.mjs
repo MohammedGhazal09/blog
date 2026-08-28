@@ -440,8 +440,25 @@ function validatePublicDocument({ document, url, origin, findings }) {
   return { title, description };
 }
 
-function validateArticle(document, url, findings) {
-  if (document.media.length === 0) return;
+const SECTION_SLUGS = new Set(
+  Object.values(sectionRegistry).map(({ slug }) => slug),
+);
+
+function isArticleUrl(url, origin) {
+  const parsed = new URL(url);
+  if (parsed.origin !== origin) return false;
+  const segments = decodeURI(parsed.pathname).split("/").filter(Boolean);
+  return segments.length === 2 && SECTION_SLUGS.has(segments[0]);
+}
+
+function articleUrls(origin, documents) {
+  return [...documents.keys()]
+    .filter((url) => isArticleUrl(url, origin))
+    .sort(comparePublicUrls);
+}
+
+function validateArticle(document, url, origin, findings) {
+  if (!isArticleUrl(url, origin)) return;
   if (document.media.length !== 1) {
     finding(
       findings,
@@ -469,10 +486,7 @@ function validateArticle(document, url, findings) {
 
 function selectPerformanceRoutes(origin, documents, findings) {
   const homepage = new URL("/", origin).href;
-  const articles = [...documents]
-    .filter(([, document]) => document.media.length === 1)
-    .map(([url]) => url)
-    .sort(comparePublicUrls);
+  const articles = articleUrls(origin, documents);
   const bySection = new Map();
   for (const articleUrl of articles) {
     const segments = decodeURI(new URL(articleUrl).pathname)
@@ -859,7 +873,43 @@ async function auditMedia({
 }) {
   const results = [];
   for (const url of articleUrls.sort(comparePublicUrls)) {
-    const articleIdentity = documents.get(url).media[0];
+    const articleIdentity = documents.get(url)?.media[0];
+    if (!articleIdentity) {
+      finding(
+        findings,
+        "MEDIA_IDENTITY",
+        "article cannot be rendered-audited without one media region",
+        url,
+      );
+      results.push({
+        url,
+        youtubeId: "",
+        preIntent: { iframeCount: 0, mediaRequests: [], geometry: null },
+        pointer: {
+          iframeCount: 0,
+          src: "",
+          title: "",
+          focused: false,
+          geometryStable: false,
+        },
+        keyboard: {
+          iframeCount: 0,
+          src: "",
+          title: "",
+          focused: false,
+          geometryStable: false,
+        },
+        fallback: {
+          href: "",
+          label: "",
+          visible: false,
+          focusable: false,
+          sameTab: false,
+        },
+        status: "FAIL",
+      });
+      continue;
+    }
     const youtubeId = articleIdentity.youtubeId;
     const expectedTitle = articleIdentity.iframeTitle;
     const expectedSrc = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(youtubeId)}?hl=ar`;
@@ -1471,7 +1521,7 @@ export async function runProductionVerification(options = {}) {
         origin: normalizedOrigin,
         findings,
       });
-      validateArticle(document, url, findings);
+      validateArticle(document, url, normalizedOrigin, findings);
     }
 
     const titleOwners = new Map();
@@ -1613,14 +1663,12 @@ export async function runProductionVerification(options = {}) {
         findings,
       });
     }
-    const articleUrls = [...documents]
-      .filter(([, document]) => document.media.length === 1)
-      .map(([url]) => url);
+    const discoveredArticleUrls = articleUrls(normalizedOrigin, documents);
     if (auditKinds.has("media")) {
       media = await auditMedia({
         browser,
         origin: normalizedOrigin,
-        articleUrls,
+        articleUrls: discoveredArticleUrls,
         documents,
         controlledFixture,
         findings,
