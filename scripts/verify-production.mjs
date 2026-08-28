@@ -743,7 +743,7 @@ async function navigateSameOrigin({
   timeout,
   findings,
   browserTransport,
-  intentionalBlockedRequest = () => false,
+  intentionalBlockedRequest = async () => false,
   onUnexpectedRequest = () => {},
 }) {
   const unexpectedRequests = [];
