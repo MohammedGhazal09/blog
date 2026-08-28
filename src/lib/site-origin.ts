@@ -34,6 +34,8 @@ export function productionSiteOrigin(raw: unknown): string {
     url.pathname !== "/" ||
     url.search !== "" ||
     url.hash !== "" ||
+    url.port !== "" ||
+    raw !== url.origin ||
     url.hostname.endsWith(".") ||
     isIP(hostname) !== 0 ||
     isReserved
