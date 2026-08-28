@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { globSync, readFileSync } from "node:fs";
 import test from "node:test";
 
 import { authorRegistry, sectionRegistry } from "../src/config/registries.ts";
@@ -22,9 +22,55 @@ import {
   approvedMdxComponentNames,
   assertAllowedMdxSource,
 } from "../src/lib/mdx-policy.ts";
+import { plausibleScriptSource } from "../src/lib/measurement.ts";
 import { LOCAL_SITE_ORIGIN } from "../src/lib/site-origin.ts";
 
 const fixedToday = "2026-08-26";
+const CONTROLLED_PLAUSIBLE_SCRIPT_SRC =
+  "https://plausible.io/js/pa-FAKE_TEST_FIXTURE_DO_NOT_DEPLOY.js";
+
+function emittedHtml(): ReadonlyMap<string, string> {
+  return new Map(
+    globSync("dist/**/*.html")
+      .sort()
+      .map((path) => [path, readFileSync(path, "utf8")]),
+  );
+}
+
+function htmlBody(source: string): string {
+  const body = /<body>[\s\S]*<\/body>/u.exec(source)?.[0];
+  assert.ok(body, "emitted HTML must contain one body");
+  return body;
+}
+
+test("accepts only the exact current Plausible asset shape", () => {
+  assert.equal(
+    plausibleScriptSource(CONTROLLED_PLAUSIBLE_SCRIPT_SRC),
+    CONTROLLED_PLAUSIBLE_SCRIPT_SRC,
+  );
+
+  const invalidSources: readonly [string, unknown][] = [
+    ["missing", undefined],
+    ["non-string", 42],
+    ["empty", ""],
+    ["padded", ` ${CONTROLLED_PLAUSIBLE_SCRIPT_SRC}`],
+    ["HTTP", CONTROLLED_PLAUSIBLE_SCRIPT_SRC.replace("https:", "http:")],
+    ["credentials", "https://user@plausible.io/js/pa-token.js"],
+    ["alternate host", "https://analytics.example.com/js/pa-token.js"],
+    ["explicit port", "https://plausible.io:443/js/pa-token.js"],
+    ["query", "https://plausible.io/js/pa-token.js?cache=1"],
+    ["fragment", "https://plausible.io/js/pa-token.js#fragment"],
+    ["legacy outbound script", "https://plausible.io/js/script.outbound-links.js"],
+    ["generic script", "https://plausible.io/js/script.js"],
+    ["missing pa token", "https://plausible.io/js/pa-.js"],
+    ["encoded path", "https://plausible.io/js/%70a-token.js"],
+    ["non-js", "https://plausible.io/js/pa-token.css"],
+  ];
+
+  for (const [name, raw] of invalidSources) {
+    assert.throws(() => plausibleScriptSource(raw), undefined, name);
+  }
+});
 
 test("publication date uses Riyadh civil day when UTC is still yesterday", () => {
   const instant = new Date("2026-08-26T21:30:00.000Z");
@@ -481,7 +527,7 @@ test("duplicate articles in one section cannot satisfy another section", () => {
   );
 });
 
-test("launch readiness wires coverage mode and controlled discovery identity", () => {
+test("launch readiness wires controlled identity and analytics without changing bodies", () => {
   const npmCli = process.env.npm_execpath;
   assert.ok(npmCli, "npm_execpath must identify the pinned npm CLI");
   const controlledOrigin = "https://blog.ahmed-mangawy.org";
@@ -493,20 +539,93 @@ test("launch readiness wires coverage mode and controlled discovery identity", (
     launchScript,
     /build\(\{\s*site,\s*mode:\s*["']launch-readiness["']\s*\}\)/u,
   );
+  assert.match(
+    launchScript,
+    /plausibleScriptSource\(process\.env\.PLAUSIBLE_SCRIPT_SRC\)/u,
+  );
+
+  const layoutSource = readFileSync(
+    new URL("../src/layouts/SiteLayout.astro", import.meta.url),
+    "utf8",
+  );
+  assert.match(
+    layoutSource,
+    /import\.meta\.env\.MODE\s*===\s*["']launch-readiness["']/u,
+  );
+  assert.match(layoutSource, /<script\s+is:inline\s+defer\s+src=/u);
+
+  const playerSource = readFileSync(
+    new URL("../src/components/YouTubePlayer.astro", import.meta.url),
+    "utf8",
+  );
+  assert.doesNotMatch(
+    playerSource,
+    /plausible|Outbound Link: Click|onclick|preventDefault|data-(?:analytics|track)/iu,
+  );
+
+  const applicationSource = globSync("src/**/*.{astro,ts}")
+    .map((path) => readFileSync(path, "utf8"))
+    .join("\n");
+  assert.doesNotMatch(
+    applicationSource,
+    /Outbound Link: Click|plausible\s*\(|data-(?:analytics|track)/iu,
+  );
 
   try {
+    const ordinaryResult = spawnSync(
+      process.execPath,
+      [npmCli, "run", "build"],
+      {
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          PLAUSIBLE_SCRIPT_SRC: CONTROLLED_PLAUSIBLE_SCRIPT_SRC,
+        },
+      },
+    );
+    const ordinaryOutput = `${ordinaryResult.stdout ?? ""}\n${ordinaryResult.stderr ?? ""}`;
+    assert.equal(ordinaryResult.status, 0, ordinaryOutput);
+    const ordinaryHtml = emittedHtml();
+    assert.ok(ordinaryHtml.has("dist/404.html"));
+    for (const [path, source] of ordinaryHtml) {
+      assert.doesNotMatch(source, /plausible\.io/iu, path);
+    }
+
     const result = spawnSync(
       process.execPath,
       [npmCli, "run", "launch:ready"],
       {
         encoding: "utf8",
-        env: { ...process.env, SITE_ORIGIN: controlledOrigin },
+        env: {
+          ...process.env,
+          SITE_ORIGIN: controlledOrigin,
+          PLAUSIBLE_SCRIPT_SRC: CONTROLLED_PLAUSIBLE_SCRIPT_SRC,
+        },
       },
     );
     const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
 
     assert.equal(result.status, 0, output);
     assert.doesNotMatch(output, /Missing script/iu);
+
+    const launchHtml = emittedHtml();
+    assert.deepEqual([...launchHtml.keys()], [...ordinaryHtml.keys()]);
+    for (const [path, source] of launchHtml) {
+      const loaders = source.match(
+        /<script\b(?=[^>]*\bdefer\b)(?=[^>]*\bsrc="https:\/\/plausible\.io\/js\/pa-[A-Za-z0-9_-]+\.js")[^>]*><\/script>/gu,
+      );
+      assert.equal(loaders?.length, 1, `${path}: one deferred loader`);
+      assert.ok(
+        loaders?.[0].includes(`src="${CONTROLLED_PLAUSIBLE_SCRIPT_SRC}"`),
+        `${path}: controlled fixture source`,
+      );
+      assert.doesNotMatch(source, /script\.outbound-links\.js/iu, path);
+      assert.equal(
+        htmlBody(source),
+        htmlBody(ordinaryHtml.get(path) ?? ""),
+        `${path}: body must remain byte-identical`,
+      );
+    }
 
     const generated = {
       home: readFileSync(
@@ -562,6 +681,7 @@ test("launch readiness wires coverage mode and controlled discovery identity", (
   } finally {
     const ordinaryEnv = { ...process.env };
     delete ordinaryEnv.SITE_ORIGIN;
+    delete ordinaryEnv.PLAUSIBLE_SCRIPT_SRC;
     const restored = spawnSync(process.execPath, [npmCli, "run", "build"], {
       encoding: "utf8",
       env: ordinaryEnv,
@@ -575,6 +695,9 @@ test("launch readiness wires coverage mode and controlled discovery identity", (
         "utf8",
       ).includes(`<link rel="canonical" href="${LOCAL_SITE_ORIGIN}/">`),
     );
+    for (const [path, source] of emittedHtml()) {
+      assert.doesNotMatch(source, /plausible\.io/iu, path);
+    }
   }
 });
 
