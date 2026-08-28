@@ -36,7 +36,6 @@ const MEDIA_DIRECT_SELECTOR = ".youtube-cta";
 const MEDIA_ACTIVATION_SETTLE_MS = 50;
 const PLAUSIBLE_LOADER =
   /^https:\/\/plausible\.io\/js\/pa-[A-Za-z0-9_-]+\.js$/u;
-const PLAUSIBLE_EVENT_ENDPOINT = "https://plausible.io/api/event";
 const PAGE_TRANSPORT_MONITORS = new WeakMap();
 const PROFILE = {
   viewport: { width: 390, height: 844 },
@@ -448,12 +447,9 @@ function validatedPlausibleLoader(document, url, findings) {
 function isApprovedPlausibleRequest(request, loader) {
   if (!loader) return false;
   return (
-    (request.url() === loader &&
-      request.method() === "GET" &&
-      request.resourceType() === "script") ||
-    (request.url() === PLAUSIBLE_EVENT_ENDPOINT &&
-      request.method() === "POST" &&
-      ["fetch", "xhr"].includes(request.resourceType()))
+    request.url() === loader &&
+    request.method() === "GET" &&
+    request.resourceType() === "script"
   );
 }
 

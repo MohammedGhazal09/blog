@@ -14,6 +14,7 @@ import { chromium, type Page } from "@playwright/test";
 const CONTROLLED_ORIGIN = "https://controlled-mangawy-fixture.dev";
 const CONTROLLED_PLAUSIBLE_SCRIPT_SRC =
   "https://plausible.io/js/pa-FAKE_TEST_FIXTURE_DO_NOT_DEPLOY.js";
+const PLAUSIBLE_EVENT_ENDPOINT = "https://plausible.io/api/event";
 const ARTIFACT_ROOT = resolve(".artifacts/phase-06");
 const MISSING_PATH = "/مسار-مفقود-للتحقق/";
 const DRAFT_PATH = "/القضايا-العامة/اختبار-عقد-المحتوى/";
@@ -1069,6 +1070,40 @@ test("the exact Plausible loader is statically validated and contained without t
     );
     assert.equal(report.plausibleLoader, CONTROLLED_PLAUSIBLE_SCRIPT_SRC);
     assert.equal(report.automatedGates.presentation, "PASS");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+test("a manual Plausible event POST is blocked, reported, and fails its presentation gate", async () => {
+  const fixture = createFixture();
+  const homepage = fixture.responses.get(absolute("/"));
+  assert.ok(homepage);
+  fixture.browserOverrides.set(absolute("/"), {
+    ...homepage,
+    body: homepage.body.replace(
+      "</body>",
+      `<script>fetch(${JSON.stringify(PLAUSIBLE_EVENT_ENDPOINT)},{method:"POST",body:"{}"}).catch(()=>{})</script></body>`,
+    ),
+  });
+  fixture.auditKinds = ["presentation"];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    assert.ok(
+      report.findings.some(
+        ({ code, detail, url }) =>
+          code === "BROWSER_ORIGIN_ESCAPE" &&
+          detail.includes(PLAUSIBLE_EVENT_ENDPOINT) &&
+          url === absolute("/"),
+      ),
+      JSON.stringify(report.findings),
+    );
+    assert.equal(
+      fixture.browserRequests.includes(PLAUSIBLE_EVENT_ENDPOINT),
+      false,
+    );
+    assert.equal(report.automatedGates.presentation, "FAIL");
   } finally {
     await cleanupReport(report);
   }
