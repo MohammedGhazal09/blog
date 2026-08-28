@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Final milestone audit refreshed; five external-evidence requirements remain
-last_updated: "2026-08-28T14:50:27Z"
+stopped_at: Pinned local gate revalidated; current session lacks an approved origin and provider access
+last_updated: "2026-08-28T15:08:43Z"
 last_activity: 2026-08-28
 progress:
   total_phases: 6
@@ -141,6 +141,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Planning reconciliation]: Phase 6 has 2/2 plans executed and remains verification pending; its roadmap goal now uses the approved release-operator story.
 - [Phase 02 UI reconciliation]: The UI contract is approved by the final 24/24 review and completed 9/9 UAT.
 - [Final v1.0 integration audit]: Reconfirmed 13/13 repository connections wired, 9/13 fully verified, 1/5 flows fully verified, no broken repository wiring, and no orphaned requirement.
+- [External access preflight]: Current checkout has no Git remote or matching GitHub repository; Wrangler and provider dashboards are unauthenticated; the controlled test hostname is NXDOMAIN. Keep all five external requirements pending until the owner supplies a different approved origin and direct service authority.
 
 ### Pending Todos
 
@@ -151,6 +152,7 @@ None yet.
 - [Phase 05] Final canonical domain and hostname require owner-controlled deployment and DNS evidence before the live property can be certified.
 - [Phase 05] Analytics account configuration and Search Console ownership are external authority boundaries; local code and verification must be completed first without fabricating service evidence.
 - [Phase 06] Ten owner-controlled production UAT checks remain blocked: exact origin, production crawl, LCP/CLS/media, native zoom, field INP, Cloudflare/DNS/TLS, Search Console, Plausible, QUAL-05, and QUAL-06.
+- [External authority] This session cannot deploy or inspect the intended production property: no approved origin, Git remote, Cloudflare authentication, Plausible property access, or Search Console property access is available.
 
 ## Deferred Items
 
@@ -160,6 +162,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-28T14:50:27Z
-Stopped at: Final milestone audit refreshed; five external-evidence requirements remain
+Last session: 2026-08-28T15:08:43Z
+Stopped at: Pinned local gate revalidated; current session lacks an approved origin and provider access
 Resume file: None

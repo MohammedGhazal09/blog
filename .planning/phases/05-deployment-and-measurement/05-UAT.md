@@ -5,14 +5,14 @@ source:
   - 05-01-SUMMARY.md
   - 05-02-SUMMARY.md
 started: 2026-08-28T04:03:05Z
-updated: 2026-08-28T04:03:05Z
+updated: 2026-08-28T15:08:43Z
 execution_mode: agent-executed-local-evidence-with-external-authority-boundaries
 human_signoff_claimed: false
 ---
 
 ## Current Test
 
-[testing paused — owner-controlled service evidence required]
+[testing blocked — exact production origin and owner-controlled service access required]
 
 ## Tests
 
@@ -103,17 +103,18 @@ reason: A real production click and the owner Plausible dashboard are required t
 ### 10. Production and measurement outcome is delivered
 
 expected: The owner can operate the real canonical property and confirm aggregate traffic plus the discovery-to-YouTube link journey without identifying readers.
-result: [pending]
-note: Repository readiness is complete, but the outcome remains unverified until Tests 6-9 receive direct owner-controlled evidence.
+result: blocked
+blocked_by: third-party
+reason: Repository readiness is complete, but the outcome cannot be tested until Tests 6-9 receive direct owner-controlled deployment, Search Console, and Plausible evidence.
 
 ## Summary
 
 total: 10
 passed: 5
 issues: 0
-pending: 1
+pending: 0
 skipped: 0
-blocked: 4
+blocked: 5
 
 ## Gaps
 
@@ -123,5 +124,6 @@ blocked: 4
 
 - This is agent-executed acceptance using fresh runtime/browser checks and inspected Phase 5 evidence; it does not claim owner approval or provider-account inspection.
 - Fixtures, controlled hostnames, localhost output, source inspection, intercepted requests, and screenshots prove local readiness only.
-- The four blocked tests map directly to the manual-only checks in `05-VALIDATION.md` and the external `PENDING` rows in `05-LAUNCH-EVIDENCE.md`.
+- Tests 6-9 map directly to the manual-only checks in `05-VALIDATION.md` and the external `PENDING` rows in `05-LAUNCH-EVIDENCE.md`; Test 10 remains blocked on their combined outcome.
 - `SEO-06`, live `MEAS-01`, and live `MEAS-02` remain pending.
+- The 2026-08-28 access preflight found no Git remote or matching repository in the authenticated GitHub account, no Wrangler authentication, signed-out Cloudflare/Plausible/Search Console browser sessions, and NXDOMAIN for the controlled test hostname. These facts prove only that this session lacks the required authority; they do not claim that owner accounts or a different final domain do not exist.
