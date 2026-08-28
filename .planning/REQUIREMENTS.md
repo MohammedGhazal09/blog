@@ -152,13 +152,23 @@ Explicit exclusions prevent scope creep during v1.
 | QUAL-04 | Phase 2 | Complete |
 | QUAL-05 | Phase 6 | Pending |
 | QUAL-06 | Phase 6 | Pending |
+| DISC-01 | v2 | Deferred |
+| DISC-02 | v2 | Deferred |
+| READ-01 | v2 | Deferred |
+| READ-02 | v2 | Deferred |
+| VID-01 | v2 | Deferred |
+| LEARN-01 | v2 | Deferred |
+| SEO-07 | v2 | Deferred |
+| CONT-04 | v2 | Deferred |
+| WATCH-01 | v2 | Deferred |
 
 **Coverage:**
 
 - v1 requirements: 36 total
 - Mapped to phases: 36
 - Unmapped: 0 ✓
+- v2 requirements: 9 total, all explicitly deferred
 
 ---
 *Requirements defined: 2026-08-26*
-*Last updated: 2026-08-27 after the owner authorized autonomous source-backed launch content*
+*Last updated: 2026-08-28 after Phase 4 transition and traceability reconciliation*

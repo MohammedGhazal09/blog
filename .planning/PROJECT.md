@@ -16,19 +16,16 @@ Arabic search users can find a useful, relevant article on Google and continue d
 - ✓ Give every published article an explicit, stable, clean Arabic URL identity that does not change with its title — Phase 1
 - ✓ Let future primary sections reuse the central registry and content contract without an application or article-model rewrite — Phase 1
 - ✓ Deliver a complete accessible Arabic RTL article journey that remains readable and actionable without JavaScript or embedded media, with an intent-gated privacy-enhanced player and a permanent direct YouTube action — Phase 2
+- ✓ Present the public website entirely in Arabic with correct right-to-left semantics and no English-facing interface — Phase 2
+- ✓ Give every article an intent-gated YouTube embed and a prominent permanent direct-video action — Phase 2
+- ✓ Keep the visual design simple, responsive, readable, accessible, and lightweight — Phases 2–4
+- ✓ Provide the three primary sections, with القسم العلمي defined as structured Islamic scholarship, plus a homepage, section indexes, and reusable article layout — Phase 3
+- ✓ Launch with one substantive, source-backed real article and matching YouTube video in every primary section — Phase 3
+- ✓ Publish unique Arabic metadata, crawlable discovery links, canonical URLs, sitemap output, and matching robots directives for every public route — Phase 4
 
 ### Active
 
-- [ ] Present the entire public website in Arabic with a correct right-to-left reading experience and no English-facing interface.
-- [ ] Provide three primary sections: الردود والشبهات, القضايا العامة, and القسم العلمي.
-- [ ] Use القسم العلمي for structured Islamic scholarship and religious lessons, not natural-science content.
-- [ ] Give every article a corresponding YouTube embed and a prominent direct link to the video or channel.
-- [ ] Provide page-specific SEO metadata and crawlable discovery links so public pages can be indexed correctly by Google.
-- [ ] Ship a production-ready homepage, section indexes, and reusable article page layout.
-- [ ] Keep the visual design extremely simple, responsive, readable, and lightweight.
-- [ ] Include search-engine discovery foundations such as canonical URLs, sitemap output, and robots directives.
 - [ ] Include privacy-conscious analytics suitable for measuring organic discovery and outbound YouTube engagement.
-- [ ] Launch with at least one real article in each of the three primary sections.
 
 ### Out of Scope
 
@@ -98,4 +95,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-27 during Phase 3 autonomous content completion*
+*Last updated: 2026-08-28 after Phase 4 search-discovery verification*

@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 04-03-PLAN.md; Phase 04 ready for verification
-last_updated: "2026-08-27T23:51:17.970Z"
-last_activity: 2026-08-27
+status: ready_to_plan
+stopped_at: Phase 04 complete; ready to discuss and plan Phase 05
+last_updated: "2026-08-28T01:05:50.317Z"
+last_activity: 2026-08-28
 progress:
   total_phases: 6
   completed_phases: 4
@@ -18,25 +18,25 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-08-26)
+See: .planning/PROJECT.md (updated 2026-08-28)
 
 **Core value:** Arabic search users can find a useful, relevant article on Google and continue directly to the matching content on Ahmed El-Mangawy's YouTube channel.
-**Current focus:** Phase 04 — search-discovery-integrity
+**Current focus:** Phase 05 — deployment-and-measurement
 
 ## Current Position
 
-Phase: 04 (search-discovery-integrity) — EXECUTING
-Plan: 3 of 3
-Status: Phase complete — ready for verification
-Last activity: 2026-08-27
+Phase: 05 (deployment-and-measurement) — PLANNING
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-08-28
 
-Progress: [███████░░░] 67%
+Progress: [████████████████████] 14/14 plans (100%)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 11
+- Total plans completed: 14
 - Average duration: 26.5 min
 - Total execution time: 291 min
 
@@ -47,6 +47,7 @@ Progress: [███████░░░] 67%
 | Phase 01-content-and-url-contract | 3 | 43 min | 14.3 min |
 | Phase 02-complete-arabic-article-journey | 4 | 117 min | 29.3 min |
 | Phase 03-real-content-and-section-discovery | 4 | 131 min | 32.8 min |
+| 04 | 3 | - | - |
 
 **Recent Trend:**
 
@@ -124,8 +125,8 @@ None yet.
 
 ### Blockers/Concerns
 
-- Final canonical domain and hostname must be chosen before search-discovery and deployment work is completed.
-- Analytics governance and the exact outbound-click metric must be confirmed before production measurement is enabled.
+- [Phase 05] Final canonical domain and hostname require owner-controlled deployment and DNS evidence before the live property can be certified.
+- [Phase 05] Analytics account configuration and Search Console ownership are external authority boundaries; local code and verification must be completed first without fabricating service evidence.
 
 ## Deferred Items
 
@@ -135,6 +136,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-27T23:50:19.109Z
-Stopped at: Completed 04-03-PLAN.md; Phase 04 ready for verification
+Last session: 2026-08-28T01:05:50.317Z
+Stopped at: Phase 04 complete, ready to discuss and plan Phase 05
 Resume file: None
