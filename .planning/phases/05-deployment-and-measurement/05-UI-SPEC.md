@@ -142,7 +142,7 @@ Do not add `Analytics`, `Plausible`, `Tracked`, `Cookie`, `Consent`, `Search Con
 - `SiteLayout.astro` remains the sole document-head integration point.
 - Launch-readiness output contains exactly one maintained Plausible automatic-outbound loader per HTML document.
 - Ordinary development and deterministic local production output contain no Plausible script, analytics markup, or analytics network request.
-- The loader derives its public hostname from the already validated `Astro.site`; there is no page-level analytics prop, second domain input, visible host string, or reader-selectable state.
+- The loader uses the explicitly supplied, validated current Plausible `https://plausible.io/js/pa-….js` asset. The canonical hostname still comes only from `Astro.site`; there is no page-level analytics prop, second canonical origin, visible host string, or reader-selectable state.
 - Preserve deferred/non-render-blocking loading. Article content, navigation, and direct links are present in static HTML before and without the script.
 - The script must not write visible nodes, inject CSS, reserve dimensions, move focus, announce status, alter document language/direction, or delay access to content.
 
@@ -205,7 +205,7 @@ Do not add `Analytics`, `Plausible`, `Tracked`, `Cookie`, `Consent`, `Search Con
 | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | Ordinary development page               | Existing Arabic/RTL body and head identity; no analytics markup or request                                                         |
 | Ordinary deterministic production build | Existing body unchanged; no analytics markup or request                                                                            |
-| Controlled launch-readiness page        | Existing body unchanged; exactly one non-rendering Plausible outbound loader configured from the canonical hostname                |
+| Controlled launch-readiness page        | Existing body unchanged; exactly one non-rendering current Plausible `pa-….js` loader supplied through validated public build configuration |
 | Launch script loads successfully        | No visible, layout, focus, accessible-tree, or interaction change                                                                  |
 | Analytics vendor blocked/offline        | No visible error; content and direct YouTube navigation remain complete                                                            |
 | JavaScript disabled                     | No analytics; static Arabic content and permanent direct link remain usable                                                        |
@@ -243,7 +243,7 @@ All screenshots, traces, accessibility reports, network captures, and browser ar
 | Existing-body invariance  | All emitted public HTML routes including 404                        | Same body HTML/text, landmark/heading/list/link order, computed typography/color/measure/padding, dimensions, scroll width, and zero controlled screenshot diff |
 | Arabic/RTL preservation   | Representative homepage, section, article, author, and 404          | `lang=ar`, `dir=rtl`; no new visible or accessible English/service text                                                                                         |
 | Ordinary-build omission   | All ordinary HTML output                                            | Zero Plausible script tags, analytics attributes, and analytics network requests                                                                                |
-| Launch-only inclusion     | All controlled launch HTML output                                   | Exactly one official maintained outbound loader per document; canonical hostname derives from the same validated site origin                                    |
+| Launch-only inclusion     | All controlled launch HTML output                                   | Exactly one current official site-specific `pa-….js` loader per document; canonical hostname remains derived from the validated site origin                  |
 | Non-rendering integration | Representative launch routes before/after loader completion/failure | No body mutation, accessible-tree addition, focus movement, layout shift, size change, or style change                                                          |
 | Direct-link integrity     | Every published article                                             | One permanent same-tab `youtube.com/watch` anchor outside the player region with exact Arabic name and unchanged `href`                                         |
 | Single project wiring     | One representative direct-link activation                           | At most one analytics event attempt; no project listener/custom call/duplicate anchor; evidence labelled as wiring only                                         |

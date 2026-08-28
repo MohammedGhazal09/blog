@@ -51,14 +51,14 @@ Downstream agents MUST read `05-SPEC.md` before planning or implementing. Requir
 
 - **D-05:** Use Plausible Cloud through its maintained direct browser script; add no analytics npm package, wrapper, tag manager, server endpoint, or custom collection system.
 - **D-06:** Include analytics only when Astro is building in the explicit `launch-readiness` mode already used by `scripts/launch-ready.mjs`. Development and ordinary deterministic production builds stay analytics-free and retain their zero-unexpected-remote-request contract.
-- **D-07:** Render the loader once through `SiteLayout.astro`, the sole shared document-head boundary. Derive its configured public hostname from the already validated `Astro.site`; do not introduce a second domain/origin input or page-level override.
-- **D-08:** Use the official current Plausible outbound-link extension identified by Phase 5 research. Preserve `defer`, keep the markup invisible, and do not add reader-facing English, a consent banner, or a visible analytics state.
+- **D-07:** Render the loader once through `SiteLayout.astro`, the sole shared document-head boundary. Accept the current owner-generated public `https://plausible.io/js/pa-….js` asset as explicit build input `PLAUSIBLE_SCRIPT_SRC`; validate its exact HTTPS host/path shape and never commit the real production value. This is not a second canonical origin.
+- **D-08:** Use Plausible's current site-specific snippet model identified by Phase 5 research, with **Outbound links** enabled in the Plausible dashboard. Do not use the legacy `script.outbound-links.js` extension. Preserve deferred loading, keep the markup invisible, and add no reader-facing English, consent banner, or visible analytics state.
 
 ### Outbound YouTube Metric
 
 - **D-09:** Define the metric as Plausible's automatic outbound-link click event for the permanent static YouTube anchor. The event represents a link action only; documentation and evidence must never call it a video play, view, watch, completion, or iframe interaction.
 - **D-10:** Retain the existing same-tab direct anchor, exact generated `youtube.com/watch` destination, Arabic accessible name, and position outside the replaceable player region. Do not add custom click listeners, `onclick`, bespoke data attributes, or calls from the iframe activation button.
-- **D-11:** Configure/filter the Plausible property for YouTube-family outbound destinations in the service console using the exact event and property names confirmed by official research. One physical direct-link activation must not be double-counted by project code.
+- **D-11:** Enable Plausible's **Outbound links** default tracking and filter the exact automatic goal `Outbound Link: Click` by destination property `url` for YouTube-family links. One physical direct-link activation must not be double-counted by project code.
 
 ### Search Console and External Evidence
 
@@ -71,7 +71,7 @@ Downstream agents MUST read `05-SPEC.md` before planning or implementing. Requir
 
 - **D-16:** Extend the existing native/build/browser verification stack. Prove one launch-only loader, canonical-host configuration, ordinary-build omission, unchanged Arabic/RTL output, permanent direct-link integrity, and no duplicate project wiring; keep all artifacts under `.artifacts/`.
 - **D-17:** Keep vendor behavior and account proof distinct from project wiring. Deterministic tests may prove the markup and browser integration seam, but must not present a mock/stub as proof that Plausible received or reported a real event.
-- **D-18:** Scan source and built output for tokens, credentials, verification artifacts, secret loaders, session replay, fingerprinting, cookies, tag managers, and per-reader identifiers. Never read or create `.env` files.
+- **D-18:** Scan source and built output for tokens, credentials, verification artifacts, secret loaders, session replay, fingerprinting, cookies, tag managers, and per-reader identifiers. The owner-generated `pa-…` asset key is public but remains provider-supplied and uncommitted; controlled tests use an unmistakable fake fixture. Never read or create `.env` files.
 - **D-19:** Preserve every prior phase gate: public/draft separation, canonical/sitemap/robots agreement, text-first Arabic reader behavior, no eager YouTube request, exact static link topology, accessibility, responsive layout, and zero framework/runtime expansion.
 
 ### the agent's Discretion
@@ -79,7 +79,7 @@ Downstream agents MUST read `05-SPEC.md` before planning or implementing. Requir
 - Exact internal helper names and whether launch-mode detection is kept inline in `SiteLayout.astro` or exposed through one tiny existing-boundary helper, provided there is no second origin source or speculative abstraction.
 - Exact deterministic browser seam for proving one project-side outbound attempt, provided it is labelled as wiring evidence and never as real Plausible ingestion/reporting.
 - Exact structure of the Phase 5 evidence table and README headings, provided local and external statuses cannot be confused and owner steps remain concise and executable.
-- Exact safe fallback if official Plausible script naming has changed since project research, provided the current official no-package automatic outbound-link integration is used and its source is recorded.
+- Exact helper/module name for validating `PLAUSIBLE_SCRIPT_SRC`, provided it accepts only the current official `https://plausible.io/js/pa-….js` shape and rejects legacy/generic or alternate-host inputs.
 
 </decisions>
 
@@ -145,7 +145,7 @@ Downstream agents MUST read `05-SPEC.md` before planning or implementing. Requir
 
 ### Integration Points
 
-- Add one build-mode-guarded Plausible loader to the existing shared head.
+- Add one build-mode-guarded, explicitly supplied current Plausible `pa-….js` loader to the existing shared head.
 - Extend native and browser checks to compare ordinary and launch output without weakening prior network assertions.
 - Extend the Arabic README with the Cloudflare Pages, Search Console, Plausible, rollback, and evidence workflow.
 - Record external statuses in Phase 5 verification/UAT artifacts, not in runtime source or a fake deployment fixture.
@@ -155,7 +155,7 @@ Downstream agents MUST read `05-SPEC.md` before planning or implementing. Requir
 <specifics>
 ## Specific Ideas
 
-- Cloudflare Pages settings remain deliberately boring: `main`, Node `24.19.0`, npm `11.17.0`, `npm ci`, `npm run check && npm run launch:ready`, and `dist`.
+- Cloudflare Pages settings remain deliberately boring: `main`, preview branch control `None`, Node `24.19.0`, npm `11.17.0`, `SKIP_DEPENDENCY_INSTALL=1`, `npm ci && npm run check && npm run launch:ready`, `dist`, public `SITE_ORIGIN`, and public `PLAUSIBLE_SCRIPT_SRC`.
 - The one reportable journey is `Google result → Arabic article pageview → Outbound Link: Click to YouTube`; the final step is not evidence of playback.
 - Search Console submits the canonical `/sitemap-index.xml`, not an alternate hand-maintained route list.
 - A controlled launch build can prove markup and identity, while live dashboards alone can prove account setup and real event reporting.

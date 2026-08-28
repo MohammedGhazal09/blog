@@ -26,8 +26,8 @@ The repository already produces deterministic static output, validates an explic
 
 3. **Aggregate privacy-conscious traffic measurement**: Production pages load Plausible Cloud once per document for aggregate pageview measurement without adding session replay, fingerprinting, cookies, advertising tags, a tag manager, or per-reader profiles.
    - Current: No analytics markup, dependency, account configuration, or traffic evidence exists.
-   - Target: Launch-readiness output includes one maintained Plausible script configured for the canonical hostname, while ordinary development and deterministic local builds contain no analytics script or remote analytics request.
-   - Acceptance: Static-output tests prove exact script count, vendor origin, canonical-host configuration, and local-build omission; real aggregate pageview evidence is recorded only after the owner configures the production Plausible property.
+   - Target: Launch-readiness output includes the current owner-generated Plausible `https://plausible.io/js/pa-….js` asset supplied explicitly as the public `PLAUSIBLE_SCRIPT_SRC` build value, while ordinary development and deterministic local builds contain no analytics script or remote analytics request.
+   - Acceptance: Static-output tests prove exact script count, current vendor URL validation, launch-only inclusion, and local-build omission; real aggregate pageview evidence is recorded only after the owner supplies the generated asset for the canonical Plausible property.
 
 4. **Exact outbound YouTube metric**: The measurement definition is Plausible's automatic outbound-link click event filtered to direct `youtube.com`/`youtu.be` destinations; it is reported as a link click, never as a play, view, watch-time, or iframe interaction.
    - Current: Every article has a permanent direct YouTube anchor, but no analytics script or metric definition exists.
@@ -36,8 +36,8 @@ The repository already produces deterministic static output, validates an explic
 
 5. **Credential-free repository boundary**: Hosting, analytics, and Search Console credentials remain outside the repository and browser output.
    - Current: The repository has no service credentials or environment files.
-   - Target: Production configuration accepts only the existing public `SITE_ORIGIN` build value; provider authentication, Search Console verification, and Plausible account setup remain owner-controlled console operations.
-   - Acceptance: Source, built output, history diff, and dependency audit contain no token, secret, verification credential, account identifier beyond the public hostname, environment file, or new secret-loading mechanism.
+   - Target: Production configuration accepts the public `SITE_ORIGIN` plus the non-secret owner-generated `PLAUSIBLE_SCRIPT_SRC`; provider authentication, Search Console verification, the Plausible property, and the dashboard tracking toggle remain owner-controlled console operations.
+   - Acceptance: Source, built output, history diff, and dependency audit contain no token, secret, verification credential, real production `pa-…` value, environment file, or secret-loading mechanism; a clearly labelled fake `pa-…` test fixture may exercise validation without claiming an account.
 
 6. **Evidence-separated launch status**: Local readiness, provider deployment, Search Console, and analytics results are recorded as separate pass/fail/pending facts so local success cannot be mistaken for production completion.
    - Current: Phase 4 reports clearly distinguish controlled output from a real launch, but no Phase 5 operating/evidence record exists.
@@ -68,7 +68,7 @@ The repository already produces deterministic static output, validates an explic
 - Use Node `24.19.0`, npm `11.17.0`, `npm ci`, the committed lockfile, and `dist/` as the portable output.
 - Never read or create `.env` files. The public production origin is supplied explicitly to the launch process.
 - Ordinary local builds must remain deterministic at `http://127.0.0.1:4322` and must not load analytics.
-- Launch builds must fail closed for missing or unsafe origins and derive analytics hostname identity from the same validated site origin used by canonicals, sitemap, and robots.
+- Launch builds must fail closed for a missing/unsafe origin or a missing/unsafe current Plausible asset URL. The script URL is an explicit public build value, not a second canonical origin or a credential.
 - All reader-facing output remains Arabic/RTL; analytics and deployment additions must create no visible English UI.
 - Browser-test artifacts remain only under ignored `.artifacts/` paths.
 
@@ -76,7 +76,7 @@ The repository already produces deterministic static output, validates an explic
 
 - [ ] A clean pinned-runtime deployment simulation runs checks and creates static `dist/` output through the explicit launch-readiness path.
 - [ ] The deployment runbook names Cloudflare Pages settings, rollback/redeploy checks, external ownership steps, and the no-environment-file boundary without embedding a domain or credential.
-- [ ] Controlled launch output contains exactly one Plausible outbound-link script per rendered document, configured from the validated canonical hostname.
+- [ ] Controlled launch output contains exactly one current site-specific Plausible `pa-….js` script per rendered document, sourced from a validated public fixture while the real owner-generated value remains uncommitted.
 - [ ] Ordinary development/local production output contains no Plausible markup or analytics network request.
 - [ ] One direct YouTube link action produces one outbound-link event attempt, with no duplicate listener/event and no claim that the click is a video view.
 - [ ] Repository and built-output scans find no analytics/hosting/Search Console secret, environment file, session replay, fingerprinting, tag manager, or per-reader identifier.
@@ -101,7 +101,7 @@ The repository already produces deterministic static output, validates an explic
 | 2 | Simplifier | What is the smallest complete production measurement path? | Cloudflare Pages plus one production-only Plausible outbound-link script; no adapter, package, dashboard, or custom event code. |
 | 3 | Boundary Keeper | What may local work claim without owner service access? | Only readiness; live deployment, domain, Search Console, and analytics evidence require real owner-controlled proof. |
 | 4 | Failure Analyst | Which false-green outcomes must be rejected? | Controlled hostnames cannot prove ownership/deployment; page clicks cannot be called video views; local build success cannot pass external gates. |
-| 5 | Seed Closer | How is analytics identity selected? | Derive it from the same validated `Astro.site` hostname only in launch-readiness mode; ordinary builds remain analytics-free. |
+| 5 | Seed Closer | How is analytics identity selected? | Use the current owner-generated public `pa-….js` asset URL only in launch-readiness mode; ordinary builds remain analytics-free and the canonical origin remains `Astro.site`. |
 
 ---
 
