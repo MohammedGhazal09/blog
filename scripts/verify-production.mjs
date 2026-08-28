@@ -1079,9 +1079,15 @@ async function auditMedia({
 
 function isAllowedLatinValue(value) {
   const trimmed = value.trim();
-  return (
-    trimmed === "" || /^https?:\/\//u.test(trimmed) || YOUTUBE_ID.test(trimmed)
-  );
+  if (trimmed === "" || YOUTUBE_ID.test(trimmed)) return true;
+  try {
+    const url = new URL(trimmed);
+    return (
+      ["http:", "https:"].includes(url.protocol) && url.href === trimmed
+    );
+  } catch {
+    return false;
+  }
 }
 
 async function latinLeaks(page, context) {

@@ -700,6 +700,30 @@ const renderedAuditCases: readonly {
       })),
   },
   {
+    name: "URL-prefixed visible English leakage",
+    code: "PRESENTATION_LATIN",
+    mutate: (fixture) =>
+      replaceResponse(fixture, "/", (response) => ({
+        ...response,
+        body: response.body.replace(
+          "</main>",
+          "<p>https://example.com/ English settings</p></main>",
+        ),
+      })),
+  },
+  {
+    name: "URL-prefixed accessible English leakage",
+    code: "PRESENTATION_LATIN",
+    mutate: (fixture) =>
+      replaceResponse(fixture, "/", (response) => ({
+        ...response,
+        body: response.body.replace(
+          "<main>",
+          '<main aria-label="https://example.com/ English settings">',
+        ),
+      })),
+  },
+  {
     name: "accessibility missing landmark and heading sequence",
     code: "PRESENTATION_SEMANTICS",
     mutate: (fixture) =>
