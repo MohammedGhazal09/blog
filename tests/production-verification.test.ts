@@ -742,6 +742,37 @@ test("duplicate exact iframe navigations fail media even when one iframe is remo
   }
 });
 
+test("a synchronously appended and removed iframe is retained in the reported maximum", async () => {
+  const fixture = createFixture();
+  const articleUrl = absolute(ARTICLE_PATHS[0]);
+  replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
+    ...response,
+    body: response.body.replace(
+      "button.replaceWith(iframe);iframe.focus()",
+      "button.replaceWith(iframe);const duplicate=iframe.cloneNode();region.append(duplicate);duplicate.remove();iframe.focus()",
+    ),
+  }));
+  fixture.auditKinds = ["media"];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    const article = report.media.find(({ url }) => url === articleUrl);
+    assert.ok(article);
+    assert.ok(
+      report.findings.some(
+        ({ code, url }) => code === "MEDIA_ACTIVATION" && url === articleUrl,
+      ),
+      JSON.stringify({ findings: report.findings, article }),
+    );
+    assert.equal(article.pointer.iframeCount, 1);
+    assert.equal(article.pointer.maxIframeCount, 2);
+    assert.equal(article.status, "FAIL");
+    assert.equal(report.automatedGates.media, "FAIL");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
 for (const [name, auditLabel, resultKey, findingCode] of [
   ["pointer", "media pointer pass", "pointer", "MEDIA_ACTIVATION"],
   ["Enter", "media keyboard pass", "keyboard", "MEDIA_ACTIVATION"],

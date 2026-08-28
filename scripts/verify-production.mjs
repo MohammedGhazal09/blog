@@ -1163,21 +1163,44 @@ async function mediaGeometry(region) {
 async function startMediaStabilityObservation(region) {
   await region.evaluate((node) => {
     const key = Symbol.for("mangawy.production.media-stability");
+    const countIframes = (candidate) => {
+      if (candidate.nodeType !== Node.ELEMENT_NODE) return 0;
+      return (
+        Number(candidate.matches("iframe")) +
+        candidate.querySelectorAll("iframe").length
+      );
+    };
     const state = {
+      currentIframeCount: node.querySelectorAll("iframe").length,
       maxIframeCount: node.querySelectorAll("iframe").length,
       mutationCount: 0,
       observer: undefined,
       sample: undefined,
     };
     state.sample = () => {
+      state.currentIframeCount = node.querySelectorAll("iframe").length;
       state.maxIframeCount = Math.max(
         state.maxIframeCount,
-        node.querySelectorAll("iframe").length,
+        state.currentIframeCount,
       );
     };
-    state.observer = new MutationObserver(() => {
-      state.mutationCount += 1;
-      state.sample();
+    state.observer = new MutationObserver((records) => {
+      for (const record of records) {
+        state.mutationCount += 1;
+        if (record.type !== "childList") continue;
+        for (const removed of record.removedNodes)
+          state.currentIframeCount = Math.max(
+            0,
+            state.currentIframeCount - countIframes(removed),
+          );
+        for (const added of record.addedNodes) {
+          state.currentIframeCount += countIframes(added);
+          state.maxIframeCount = Math.max(
+            state.maxIframeCount,
+            state.currentIframeCount,
+          );
+        }
+      }
     });
     state.observer.observe(node, {
       attributes: true,
