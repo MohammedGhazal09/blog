@@ -384,6 +384,9 @@ async function parseHtml(page, source, url, findings) {
         scripts: [...document.querySelectorAll("script[src]")].map((node) => ({
           src: node.getAttribute("src")?.trim() ?? "",
           defer: node.hasAttribute("defer"),
+          async: node.hasAttribute("async"),
+          nomodule: node.hasAttribute("nomodule"),
+          type: node.getAttribute("type")?.trim() ?? "",
         })),
         anchors: attributeValues("a[href]", "href"),
         h1: [...document.querySelectorAll("main h1")].map(
@@ -415,6 +418,15 @@ function validatedPlausibleLoader(document, url, findings) {
   if (
     loaders.length !== 1 ||
     !loaders[0].defer ||
+    loaders[0].async ||
+    loaders[0].nomodule ||
+    ![
+      "",
+      "text/javascript",
+      "application/javascript",
+      "text/ecmascript",
+      "application/ecmascript",
+    ].includes(loaders[0].type.split(";", 1)[0].trim().toLowerCase()) ||
     document.scripts.some(
       ({ src }) =>
         new URL(src, url).origin === "https://plausible.io" &&
@@ -424,7 +436,7 @@ function validatedPlausibleLoader(document, url, findings) {
     finding(
       findings,
       "PLAUSIBLE_LOADER",
-      "page must contain one exact deferred Plausible property loader",
+      "page must contain one exact deferred classic Plausible property loader without async or nomodule",
       url,
     );
     return undefined;
@@ -774,9 +786,8 @@ async function navigateSameOrigin({
     const request = route.request();
     const destination = new URL(request.url());
     if (destination.origin === origin) return route.fallback();
-    const plausibleLoader = browserTransport.plausibleLoaders.get(url);
     if (
-      !isApprovedPlausibleRequest(request, plausibleLoader) &&
+      !isApprovedPlausibleRequest(request, browserTransport.plausibleLoader) &&
       !intentionalBlockedRequest(request)
     ) {
       unexpectedRequests.push(destination.href);
@@ -1873,6 +1884,7 @@ export async function runProductionVerification(options = {}) {
     remoteAddresses: new Set(),
     requireRemoteAddress: !controlledFixture,
     plausibleLoaders: new Map(),
+    plausibleLoader: undefined,
   };
 
   try {
@@ -2180,6 +2192,24 @@ export async function runProductionVerification(options = {}) {
         );
       }
     }
+    const plausibleLoaderUrls = [...browserTransport.plausibleLoaders.values()];
+    const uniquePlausibleLoaders = new Set(plausibleLoaderUrls);
+    if (
+      browserTransport.plausibleLoaders.size === documents.size &&
+      uniquePlausibleLoaders.size === 1
+    ) {
+      browserTransport.plausibleLoader = plausibleLoaderUrls[0];
+    } else if (
+      browserTransport.plausibleLoaders.size === documents.size &&
+      uniquePlausibleLoaders.size > 1
+    ) {
+      finding(
+        findings,
+        "PLAUSIBLE_LOADER",
+        "every public sitemap document and the 404 must use one common exact Plausible property loader",
+        normalizedOrigin,
+      );
+    }
     await withHardDeadline({
       timeoutMs: runnerSetupTimeoutMs,
       label: "crawl browser cleanup",
@@ -2273,6 +2303,7 @@ export async function runProductionVerification(options = {}) {
     transport,
     inputOrigin,
     normalizedOrigin,
+    plausibleLoader: browserTransport.plausibleLoader ?? null,
     startedAt: started.toISOString(),
     completedAt,
     runtime: {

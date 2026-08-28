@@ -105,6 +105,7 @@ type VerificationReport = {
   transport: string;
   inputOrigin: string;
   normalizedOrigin: string;
+  plausibleLoader: string | null;
   startedAt: string;
   completedAt: string;
   runtime: { node: string; playwright: string; chromium: string };
@@ -1022,7 +1023,56 @@ test("the exact Plausible loader is statically validated and contained without t
       ),
       false,
     );
+    assert.equal(report.plausibleLoader, CONTROLLED_PLAUSIBLE_SCRIPT_SRC);
     assert.equal(report.automatedGates.presentation, "PASS");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+for (const [name, attributes] of [
+  ["an inert type", 'defer type="application/json"'],
+  ["nomodule", "defer nomodule"],
+  ["async plus defer", "async defer"],
+] as const) {
+  test(`a Plausible loader with ${name} fails the executable analytics contract`, async () => {
+    const fixture = createFixture();
+    replaceResponse(fixture, "/", (response) => ({
+      ...response,
+      body: response.body.replace(
+        `<script defer src="${CONTROLLED_PLAUSIBLE_SCRIPT_SRC}"></script>`,
+        `<script ${attributes} src="${CONTROLLED_PLAUSIBLE_SCRIPT_SRC}"></script>`,
+      ),
+    }));
+    fixture.auditKinds = [];
+    let report: VerificationReport | undefined;
+    try {
+      report = await runControlled(fixture);
+      expectFinding(report, "PLAUSIBLE_LOADER");
+      assert.equal(report.plausibleLoader, null);
+    } finally {
+      await cleanupReport(report);
+    }
+  });
+}
+
+test("mixed exact Plausible loader tokens across routes fail the common-loader contract", async () => {
+  const fixture = createFixture();
+  const alternateLoader =
+    "https://plausible.io/js/pa-OTHER_TEST_FIXTURE_DO_NOT_DEPLOY.js";
+  replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
+    ...response,
+    body: response.body.replace(
+      CONTROLLED_PLAUSIBLE_SCRIPT_SRC,
+      alternateLoader,
+    ),
+  }));
+  fixture.auditKinds = [];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    expectFinding(report, "PLAUSIBLE_LOADER");
+    assert.equal(report.plausibleLoader, null);
   } finally {
     await cleanupReport(report);
   }
