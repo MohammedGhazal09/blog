@@ -7,7 +7,7 @@ import { chromium } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
 import { sectionRegistry } from "../src/config/registries.ts";
-import { productionSiteOrigin } from "../src/lib/site-origin.ts";
+import { verifiedProductionSiteOrigin } from "../src/lib/site-origin.ts";
 
 const MAX_BODY_BYTES = 5 * 1024 * 1024;
 const FETCH_TIMEOUT_MS = 20_000;
@@ -479,7 +479,10 @@ function validateSitemapCoverage(origin, urls, findings, sitemapIndexUrl) {
     if (
       !urls.some((url) => {
         if (!isArticleUrl(url, origin)) return false;
-        return decodeURI(new URL(url).pathname).split("/").filter(Boolean)[0] === slug;
+        return (
+          decodeURI(new URL(url).pathname).split("/").filter(Boolean)[0] ===
+          slug
+        );
       })
     ) {
       missing.push(`article:${slug}`);
@@ -638,7 +641,8 @@ async function navigateSameOrigin({ page, url, origin, timeout, findings }) {
     return route.abort("blockedbyclient");
   });
   await page.goto(url, { waitUntil: "load", timeout });
-  if (escapedUrl) throw new Error(`blocked off-origin navigation: ${escapedUrl}`);
+  if (escapedUrl)
+    throw new Error(`blocked off-origin navigation: ${escapedUrl}`);
   if (page.url() !== url) {
     finding(
       findings,
@@ -686,9 +690,7 @@ async function waitForFontReadiness(page, timeoutMs) {
       new Promise((_, reject) => {
         timer = setTimeout(
           () =>
-            reject(
-              new Error(`font readiness timed out after ${timeoutMs} ms`),
-            ),
+            reject(new Error(`font readiness timed out after ${timeoutMs} ms`)),
           timeoutMs,
         );
       }),
@@ -1141,9 +1143,7 @@ function isAllowedLatinValue(value) {
   if (trimmed === "" || YOUTUBE_ID.test(trimmed)) return true;
   try {
     const url = new URL(trimmed);
-    return (
-      ["http:", "https:"].includes(url.protocol) && url.href === trimmed
-    );
+    return ["http:", "https:"].includes(url.protocol) && url.href === trimmed;
   } catch {
     return false;
   }
@@ -1410,7 +1410,7 @@ async function writeReport(report, scope, started) {
 
 export async function runProductionVerification(options = {}) {
   const controlledFixture = options.controlledFixture;
-  const normalizedOrigin = await productionSiteOrigin(
+  const normalizedOrigin = await verifiedProductionSiteOrigin(
     process.env.SITE_ORIGIN,
     controlledFixture?.resolveHostname,
   );

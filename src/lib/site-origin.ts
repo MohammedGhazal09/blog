@@ -61,10 +61,7 @@ type ResolveHostname = (
   options: { all: true; verbatim: true },
 ) => Promise<readonly { address: string; family: number }[]>;
 
-export async function productionSiteOrigin(
-  raw: unknown,
-  resolveHostname: ResolveHostname = lookup,
-): Promise<string> {
+export function productionSiteOrigin(raw: unknown): string {
   if (typeof raw !== "string" || raw.length === 0 || raw !== raw.trim()) {
     throw new Error("SITE_ORIGIN must be an explicit clean HTTPS origin");
   }
@@ -99,6 +96,15 @@ export async function productionSiteOrigin(
     throw new Error("SITE_ORIGIN is not a safe production origin");
   }
 
+  return url.origin;
+}
+
+export async function verifiedProductionSiteOrigin(
+  raw: unknown,
+  resolveHostname: ResolveHostname = lookup,
+): Promise<string> {
+  const origin = productionSiteOrigin(raw);
+  const hostname = new URL(origin).hostname;
   const addresses = await resolveHostname(hostname, {
     all: true,
     verbatim: true,
@@ -118,8 +124,10 @@ export async function productionSiteOrigin(
       );
     })
   ) {
-    throw new Error("SITE_ORIGIN does not resolve exclusively to global addresses");
+    throw new Error(
+      "SITE_ORIGIN does not resolve exclusively to global addresses",
+    );
   }
 
-  return url.origin;
+  return origin;
 }

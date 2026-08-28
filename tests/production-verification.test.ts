@@ -870,9 +870,7 @@ test("invalid or absent origin fails before fixture, browser, or artifact I/O", 
 
 test("private DNS answers fail before fixture, browser, artifact, or route I/O", async () => {
   const fixture = createFixture();
-  fixture.resolveHostname = async () => [
-    { address: "192.168.1.1", family: 4 },
-  ];
+  fixture.resolveHostname = async () => [{ address: "192.168.1.1", family: 4 }];
   const before = existsSync(ARTIFACT_ROOT) ? await readdir(ARTIFACT_ROOT) : [];
   await assert.rejects(() => runControlled(fixture));
   assert.deepEqual(fixture.requests, []);
@@ -940,7 +938,8 @@ test("every registered article route fails crawl and media when its media is abs
     assert.ok(report.findings.some(({ code }) => code === "MEDIA_IDENTITY"));
     assert.equal(report.media.length, ARTICLE_PATHS.length + 1);
     assert.equal(
-      report.media.find(({ url }) => url === absolute(missingMediaPath))?.status,
+      report.media.find(({ url }) => url === absolute(missingMediaPath))
+        ?.status,
       "FAIL",
     );
     assert.equal(report.automatedGates.media, "FAIL");
@@ -1326,13 +1325,19 @@ test("source wiring keeps production verification isolated and dependency-free",
     ["[data-video-activate]", "data-video-activate"],
     [".youtube-cta", 'class="youtube-cta"'],
   ]) {
-    assert.ok(runner.includes(selector), `runner selector missing: ${selector}`);
+    assert.ok(
+      runner.includes(selector),
+      `runner selector missing: ${selector}`,
+    );
     assert.ok(
       player.includes(componentMarker),
       `component contract missing: ${componentMarker}`,
     );
   }
-  assert.match(runner, /productionSiteOrigin\(process\.env\.SITE_ORIGIN\)/u);
+  assert.match(
+    runner,
+    /verifiedProductionSiteOrigin\(\s*process\.env\.SITE_ORIGIN/u,
+  );
   assert.match(runner, /redirect:\s*["']manual["']/u);
   assert.doesNotMatch(
     runner,

@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { productionSiteOrigin } from "../src/lib/site-origin.ts";
+import {
+  productionSiteOrigin,
+  verifiedProductionSiteOrigin,
+} from "../src/lib/site-origin.ts";
 
-const publicResolver = async () => [
-  { address: "93.184.216.34", family: 4 },
-];
+const publicResolver = async () => [{ address: "93.184.216.34", family: 4 }];
 
 const validOrigins = [
   [
@@ -16,8 +17,8 @@ const validOrigins = [
 ] as const;
 
 for (const [name, raw, expected] of validOrigins) {
-  test(`accepts ${name}`, async () => {
-    assert.equal(await productionSiteOrigin(raw, publicResolver), expected);
+  test(`accepts ${name}`, () => {
+    assert.equal(productionSiteOrigin(raw), expected);
   });
 }
 
@@ -72,8 +73,8 @@ const invalidOrigins: readonly [string, unknown][] = [
 ];
 
 for (const [name, raw] of invalidOrigins) {
-  test(`rejects ${name}`, async () => {
-    await assert.rejects(() => productionSiteOrigin(raw, publicResolver));
+  test(`rejects ${name}`, () => {
+    assert.throws(() => productionSiteOrigin(raw));
   });
 }
 
@@ -87,9 +88,10 @@ for (const [name, address, family] of [
 ] as const) {
   test(`rejects ${name}`, async () => {
     await assert.rejects(() =>
-      productionSiteOrigin("https://blog.ahmed-mangawy.org", async () => [
-        { address, family },
-      ]),
+      verifiedProductionSiteOrigin(
+        "https://blog.ahmed-mangawy.org",
+        async () => [{ address, family }],
+      ),
     );
   });
 }
