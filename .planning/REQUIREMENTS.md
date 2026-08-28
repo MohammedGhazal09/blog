@@ -52,8 +52,8 @@ Requirements for the first production release. Each requirement will map to exac
 
 ### Measurement
 
-- [ ] **MEAS-01**: The owner can view privacy-conscious aggregate page traffic without session replay, fingerprinting, or per-reader profiles.
-- [ ] **MEAS-02**: The owner can measure one clearly defined outbound YouTube activation per user action, reported as a link click rather than a video view.
+- [x] **MEAS-01**: The owner can view privacy-conscious aggregate page traffic without session replay, fingerprinting, or per-reader profiles.
+- [x] **MEAS-02**: The owner can measure one clearly defined outbound YouTube activation per user action, reported as a link click rather than a video view.
 
 ### Accessibility and Production Quality
 
@@ -144,8 +144,8 @@ Explicit exclusions prevent scope creep during v1.
 | CONT-01 | Phase 3 | Complete |
 | CONT-02 | Phase 3 | Complete |
 | CONT-03 | Phase 3 | Complete |
-| MEAS-01 | Phase 5 | Pending |
-| MEAS-02 | Phase 5 | Pending |
+| MEAS-01 | Phase 5 | Complete |
+| MEAS-02 | Phase 5 | Complete |
 | QUAL-01 | Phase 2 | Complete |
 | QUAL-02 | Phase 2 | Complete |
 | QUAL-03 | Phase 2 | Complete |

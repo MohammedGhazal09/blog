@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 05 UI-SPEC approved
-last_updated: "2026-08-28T02:23:32.819Z"
-last_activity: 2026-08-28 -- Phase 05 planning complete
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-08-28T02:59:45.868Z"
+last_activity: 2026-08-28
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 14
-  completed_plans: 14
-  percent: 67
+  total_plans: 16
+  completed_plans: 15
+  percent: 94
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-08-28)
 
 ## Current Position
 
-Phase: 05 (deployment-and-measurement) — PLANNING
-Plan: Not started
+Phase: 05 (deployment-and-measurement) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-08-28 -- Phase 05 planning complete
+Last activity: 2026-08-28
 
-Progress: [████████████████████] 14/14 plans (100%)
+Progress: [█████████░] 94%
 
 ## Performance Metrics
 
@@ -68,6 +68,7 @@ Progress: [████████████████████] 14/14 p
 | Phase 04 P01 | 8m | 2 tasks | 8 files |
 | Phase 04 P02 | 12min | 3 tasks | 9 files |
 | Phase 04 P03 | 29min | 2 tasks | 2 files |
+| Phase 05 P01 | 18min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -118,6 +119,9 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 04]: Separate declared absolute site identity from localhost browser transport. — This proves controlled launch canonical and discovery output while keeping all browser traffic local and deterministic.
 - [Phase 04]: Lock Phase 3 body output through text, DOM order, computed tokens, focus, and containment. — Deterministic assertions catch visible regressions without treating screenshots as the only oracle.
 - [Phase 04]: Classify deliberate 404 console noise only through an independent exact-URL HTTP response ledger. — Generic Chromium console echoes alone cannot prove that an error belongs to an intentional missing-route request.
+- [Phase 05-01]: Accept only exact clean Plausible pa-*.js assets — Fail before the launch build on normalization, authority, credential, port, query, fragment, encoding, or path differences.
+- [Phase 05-01]: Keep launch-readiness mode as the sole analytics gate — Ordinary builds, body output, native YouTube navigation, canonical authority, and YouTubePlayer.astro remain unchanged.
+- [Phase 05-01]: Treat controlled interception as local wiring evidence only — Real Plausible receipt and dashboard reporting remain external Plan 05-02 facts.
 
 ### Pending Todos
 
@@ -136,6 +140,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-28T01:23:44.353Z
-Stopped at: Phase 05 UI-SPEC approved
-Resume file: .planning/phases/05-deployment-and-measurement/05-UI-SPEC.md
+Last session: 2026-08-28T02:59:45.845Z
+Stopped at: Completed 05-01-PLAN.md
+Resume file: None
