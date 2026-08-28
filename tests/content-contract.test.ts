@@ -180,10 +180,72 @@ test("launch evidence separates local readiness from real external authority", (
   assertLaunchEvidence(evidence);
 
   const fabricatedExternalPass = evidence.replace(
-    /\| خارجي \|([^\n|]+)\| PENDING \|/u,
+    /\|\s*خارجي\s*\|([^\n|]+)\|\s*PENDING\s*\|/u,
     "| خارجي |$1| PASS |",
   );
   assert.throws(() => assertLaunchEvidence(fabricatedExternalPass));
+});
+
+test("deployment footprint stays static, credential-free, and free of custom trackers", () => {
+  const tracked = spawnSync("git", ["ls-files", "-z"], { encoding: "utf8" });
+  assert.equal(tracked.status, 0, tracked.stderr);
+  const trackedPaths = tracked.stdout.split("\0").filter(Boolean);
+  const environmentNamed = /(?:^|\/)\.env(?:\.|$)/u;
+  const deploymentPaths = trackedPaths.filter(
+    (path) =>
+      !environmentNamed.test(path) &&
+      (/^(?:src|scripts|public)\//u.test(path) ||
+        /^(?:README\.md|package(?:-lock)?\.json|astro\.config\.mjs)$/u.test(
+          path,
+        )),
+  );
+  const deploymentSource = deploymentPaths
+    .map((path) => readFileSync(path, "utf8"))
+    .join("\n");
+  const builtSource = globSync("dist/**/*.{html,js,json,txt,xml,css}")
+    .filter((path) => !environmentNamed.test(path.replaceAll("\\", "/")))
+    .map((path) => readFileSync(path, "utf8"))
+    .join("\n");
+  const inspected = `${deploymentSource}\n${builtSource}`;
+
+  assert.doesNotMatch(inspected, /script\.outbound-links\.js/iu);
+  assert.doesNotMatch(
+    inspected,
+    /googletagmanager\.com|google-analytics\.com|\bGTM-[A-Z0-9]+\b|\bG-[A-Z0-9]{6,}\b/iu,
+  );
+  assert.doesNotMatch(
+    inspected,
+    /sessionStorage|localStorage|document\.cookie|fingerprint|session\s*replay/iu,
+  );
+  assert.doesNotMatch(inspected, /\bplausible\s*\(/iu);
+  assert.doesNotMatch(inspected, /(?:^|["'])dotenv(?:["'/]|$)/imu);
+  assert.doesNotMatch(
+    inspected,
+    /\b(?:ghp_[A-Za-z0-9]{20,}|AIza[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9_-]{20,})\b/u,
+  );
+  assert.doesNotMatch(
+    inspected,
+    /https:\/\/plausible\.io\/js\/pa-(?!FAKE_TEST_FIXTURE_DO_NOT_DEPLOY)[A-Za-z0-9_-]+\.js/u,
+  );
+  assert.doesNotMatch(
+    inspected,
+    /<meta\s+name=["']google-site-verification["']\s+content=["'][^"']{8,}["']/iu,
+  );
+  assert.equal(
+    trackedPaths.some((path) =>
+      /^(?:wrangler\.toml|functions\/|\.github\/workflows\/.*deploy)/iu.test(
+        path,
+      ),
+    ),
+    false,
+  );
+
+  const readme = readFileSync(new URL("../README.md", import.meta.url), "utf8");
+  assert.doesNotMatch(readme, /SITE_ORIGIN\s*=\s*https:\/\//u);
+  assert.doesNotMatch(
+    readme,
+    /PLAUSIBLE_SCRIPT_SRC\s*=\s*https:\/\/plausible\.io\/js\/pa-[A-Za-z0-9_-]+\.js/u,
+  );
 });
 
 test("accepts only the exact current Plausible asset shape", () => {
