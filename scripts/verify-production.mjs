@@ -1245,7 +1245,7 @@ async function startMediaStabilityObservation(region) {
         node.querySelectorAll("iframe").length,
       );
     };
-    const instrument = (prototype, method) => {
+    const instrumentMethod = (prototype, method) => {
       const descriptor = Object.getOwnPropertyDescriptor(prototype, method);
       if (!descriptor || typeof descriptor.value !== "function") return;
       Object.defineProperty(prototype, method, {
@@ -1262,24 +1262,60 @@ async function startMediaStabilityObservation(region) {
         Object.defineProperty(prototype, method, descriptor),
       );
     };
+    const instrumentSetter = (prototype, property) => {
+      const descriptor = Object.getOwnPropertyDescriptor(prototype, property);
+      if (!descriptor || typeof descriptor.set !== "function") return;
+      Object.defineProperty(prototype, property, {
+        ...descriptor,
+        set(value) {
+          try {
+            return Reflect.apply(descriptor.set, this, [value]);
+          } finally {
+            state.sample();
+          }
+        },
+      });
+      state.restorers.push(() =>
+        Object.defineProperty(prototype, property, descriptor),
+      );
+    };
     for (const method of [
       "appendChild",
       "insertBefore",
       "removeChild",
       "replaceChild",
     ])
-      instrument(Node.prototype, method);
-    for (const method of [
-      "append",
-      "prepend",
-      "replaceChildren",
-      "before",
-      "after",
-      "replaceWith",
-      "remove",
-      "insertAdjacentElement",
+      instrumentMethod(Node.prototype, method);
+    for (const prototype of [
+      Document.prototype,
+      DocumentFragment.prototype,
+      Element.prototype,
     ])
-      instrument(Element.prototype, method);
+      for (const method of ["append", "prepend", "replaceChildren"])
+        instrumentMethod(prototype, method);
+    for (const prototype of [
+      CharacterData.prototype,
+      DocumentType.prototype,
+      Element.prototype,
+    ])
+      for (const method of ["before", "after", "replaceWith", "remove"])
+        instrumentMethod(prototype, method);
+    for (const method of [
+      "insertAdjacentElement",
+      "insertAdjacentHTML",
+      "setHTML",
+      "setHTMLUnsafe",
+    ])
+      instrumentMethod(Element.prototype, method);
+    for (const property of ["innerHTML", "outerHTML"])
+      instrumentSetter(Element.prototype, property);
+    for (const method of [
+      "deleteContents",
+      "extractContents",
+      "insertNode",
+      "surroundContents",
+    ])
+      instrumentMethod(Range.prototype, method);
     state.observer = new MutationObserver((records) => {
       state.mutationCount += records.length;
     });
@@ -1297,16 +1333,27 @@ async function completeMediaStabilityObservation(region) {
   return region.evaluate(async (node, durationMs) => {
     const key = Symbol.for("mangawy.production.media-stability");
     const state = node[key];
-    await new Promise((resolveWait) => setTimeout(resolveWait, durationMs));
-    state.sample();
-    state.observer.disconnect();
-    for (const restore of state.restorers.reverse()) restore();
-    delete node[key];
-    return {
-      iframeCount: node.querySelectorAll("iframe").length,
-      maxIframeCount: state.maxIframeCount,
-      mutationCount: state.mutationCount,
-    };
+    try {
+      await new Promise((resolveWait) => setTimeout(resolveWait, durationMs));
+      state.sample();
+      return {
+        iframeCount: node.querySelectorAll("iframe").length,
+        maxIframeCount: state.maxIframeCount,
+        mutationCount: state.mutationCount,
+      };
+    } finally {
+      state.observer.disconnect();
+      let restorationFailure;
+      for (const restore of state.restorers.reverse()) {
+        try {
+          restore();
+        } catch (error) {
+          restorationFailure ??= error;
+        }
+      }
+      delete node[key];
+      if (restorationFailure) throw restorationFailure;
+    }
   }, MEDIA_POST_ACTIVATION_STABILITY_MS);
 }
 
