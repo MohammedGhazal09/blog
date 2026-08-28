@@ -564,6 +564,40 @@ async function installControlledRoutes(page, controlledFixture) {
   if (controlledFixture) await controlledFixture.installBrowserRoutes(page);
 }
 
+async function navigateSameOrigin({ page, url, origin, timeout, findings }) {
+  let escapedUrl;
+  await page.route("**/*", async (route) => {
+    const request = route.request();
+    if (
+      !request.isNavigationRequest() ||
+      request.frame() !== page.mainFrame()
+    ) {
+      return route.fallback();
+    }
+    const destination = new URL(request.url());
+    if (destination.origin === origin) return route.fallback();
+    escapedUrl = destination.href;
+    finding(
+      findings,
+      "BROWSER_ORIGIN_ESCAPE",
+      `browser navigation left the verified origin: ${destination.origin}`,
+      url,
+    );
+    return route.abort("blockedbyclient");
+  });
+  await page.goto(url, { waitUntil: "load", timeout });
+  if (escapedUrl) throw new Error(`blocked off-origin navigation: ${escapedUrl}`);
+  if (page.url() !== url) {
+    finding(
+      findings,
+      "BROWSER_DESTINATION",
+      `browser finished at ${page.url()}`,
+      url,
+    );
+    throw new Error(`browser did not finish at the requested URL: ${url}`);
+  }
+}
+
 async function applyPerformanceProfile(context, page, controlled) {
   if (controlled) return;
   const cdp = await context.newCDPSession(page);
@@ -594,6 +628,7 @@ async function applyPerformanceProfile(context, page, controlled) {
 
 async function auditPerformance({
   browser,
+  origin,
   selectedRoutes,
   controlledFixture,
   readerIdleMs,
@@ -620,9 +655,12 @@ async function auditPerformance({
           page,
           Boolean(controlledFixture),
         );
-        await page.goto(url, {
-          waitUntil: "load",
+        await navigateSameOrigin({
+          page,
+          url,
+          origin,
           timeout: PERFORMANCE_NAVIGATION_TIMEOUT_MS,
+          findings,
         });
         await page.evaluate(() => document.fonts?.ready);
         await page.waitForTimeout(readerIdleMs);
@@ -753,14 +791,24 @@ function geometryStable(before, after) {
   );
 }
 
-async function activationObservation(browser, controlledFixture, url, key) {
+async function activationObservation(
+  browser,
+  controlledFixture,
+  origin,
+  url,
+  key,
+  findings,
+) {
   const requests = [];
   const { context, page } = await newAuditPage(browser, controlledFixture);
   try {
     await installMediaBlock(page, requests);
-    await page.goto(url, {
-      waitUntil: "load",
+    await navigateSameOrigin({
+      page,
+      url,
+      origin,
       timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
+      findings,
     });
     const region = page.locator(MEDIA_REGION_SELECTOR);
     const trigger = region.locator(MEDIA_ACTIVATE_SELECTOR);
@@ -803,6 +851,7 @@ async function activationObservation(browser, controlledFixture, url, key) {
 
 async function auditMedia({
   browser,
+  origin,
   articleUrls,
   documents,
   controlledFixture,
@@ -820,9 +869,12 @@ async function auditMedia({
     let preIntent;
     try {
       await installMediaBlock(pre.page, preRequests);
-      await pre.page.goto(url, {
-        waitUntil: "load",
+      await navigateSameOrigin({
+        page: pre.page,
+        url,
+        origin,
         timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
+        findings,
       });
       const region = pre.page.locator(MEDIA_REGION_SELECTOR);
       preIntent = {
@@ -837,14 +889,18 @@ async function auditMedia({
     const pointer = await activationObservation(
       browser,
       controlledFixture,
+      origin,
       url,
       undefined,
+      findings,
     );
     const keyboard = await activationObservation(
       browser,
       controlledFixture,
+      origin,
       url,
       "Enter",
+      findings,
     );
 
     const fallbackPage = await newAuditPage(browser, controlledFixture);
@@ -852,9 +908,12 @@ async function auditMedia({
     let fallback;
     try {
       await installMediaBlock(fallbackPage.page, fallbackRequests);
-      await fallbackPage.page.goto(url, {
-        waitUntil: "load",
+      await navigateSameOrigin({
+        page: fallbackPage.page,
+        url,
+        origin,
         timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
+        findings,
       });
       await fallbackPage.page.locator(MEDIA_ACTIVATE_SELECTOR).click();
       const link = fallbackPage.page.locator(MEDIA_DIRECT_SELECTOR);
@@ -1017,6 +1076,7 @@ async function latinLeaks(page, context) {
 
 async function auditPresentation({
   browser,
+  origin,
   urls,
   controlledFixture,
   findings,
@@ -1028,9 +1088,12 @@ async function auditPresentation({
       height: 844,
     });
     try {
-      await page.goto(url, {
-        waitUntil: "load",
+      await navigateSameOrigin({
+        page,
+        url,
+        origin,
         timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
+        findings,
       });
       const identity = await page.locator("html").evaluate((node) => ({
         lang: node.getAttribute("lang"),
@@ -1543,6 +1606,7 @@ export async function runProductionVerification(options = {}) {
     ) {
       performance = await auditPerformance({
         browser,
+        origin: normalizedOrigin,
         selectedRoutes: selectedPerformanceRoutes,
         controlledFixture,
         readerIdleMs,
@@ -1555,6 +1619,7 @@ export async function runProductionVerification(options = {}) {
     if (auditKinds.has("media")) {
       media = await auditMedia({
         browser,
+        origin: normalizedOrigin,
         articleUrls,
         documents,
         controlledFixture,
@@ -1564,6 +1629,7 @@ export async function runProductionVerification(options = {}) {
     if (auditKinds.has("presentation")) {
       presentation = await auditPresentation({
         browser,
+        origin: normalizedOrigin,
         urls: [...routeGraph.sitemapUrls, missingUrl].sort(comparePublicUrls),
         controlledFixture,
         findings,

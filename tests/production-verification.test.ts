@@ -37,7 +37,9 @@ type FixtureResponse = {
 
 type ControlledFixture = {
   responses: Map<string, FixtureResponse>;
+  browserOverrides: Map<string, FixtureResponse>;
   requests: string[];
+  browserRequests: string[];
   browserRouteInstalled: boolean;
   browserRouteInstallCount: number;
   readerIdleMs: number;
@@ -270,7 +272,9 @@ function createFixture(): ControlledFixture {
 
   const fixture: ControlledFixture = {
     responses,
+    browserOverrides: new Map(),
     requests: [],
+    browserRequests: [],
     browserRouteInstalled: false,
     browserRouteInstallCount: 0,
     readerIdleMs: 10,
@@ -300,7 +304,10 @@ function createFixture(): ControlledFixture {
       fixture.browserRouteInstalled = true;
       fixture.browserRouteInstallCount += 1;
       await page.route("**/*", async (route) => {
-        const response = responses.get(route.request().url());
+        fixture.browserRequests.push(route.request().url());
+        const response =
+          fixture.browserOverrides.get(route.request().url()) ??
+          responses.get(route.request().url());
         if (!response) return route.abort("blockedbyclient");
         return route.fulfill({
           status: response.status,
@@ -845,6 +852,37 @@ test("private DNS answers fail before fixture, browser, artifact, or route I/O",
   assert.equal(fixture.browserRouteInstalled, false);
   const after = existsSync(ARTIFACT_ROOT) ? await readdir(ARTIFACT_ROOT) : [];
   assert.deepEqual(after, before);
+});
+
+test("browser-only redirects are blocked before the destination is contacted", async () => {
+  const fixture = createFixture();
+  const outside = "https://outside-fixture.dev/redirect-target";
+  const original = fixture.responses.get(absolute("/"));
+  assert.ok(original);
+  fixture.browserOverrides.set(absolute("/"), {
+    ...original,
+    body: original.body.replace(
+      "</head>",
+      `<meta http-equiv="refresh" content="0;url=${outside}"></head>`,
+    ),
+  });
+  fixture.auditKinds = ["presentation"];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    assert.ok(
+      report.findings.some(({ code }) => code === "BROWSER_ORIGIN_ESCAPE"),
+      JSON.stringify({
+        findings: report.findings,
+        errors: report.errors,
+        browserRequests: fixture.browserRequests,
+      }),
+    );
+    assert.equal(fixture.browserRequests.includes(outside), false);
+    assert.equal(report.automatedGates.presentation, "FAIL");
+  } finally {
+    await cleanupReport(report);
+  }
 });
 
 const failureCases: readonly {
