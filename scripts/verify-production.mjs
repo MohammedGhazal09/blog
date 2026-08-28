@@ -263,15 +263,39 @@ async function parseXml(page, source, rootName, url, findings) {
   const parsed = await page.evaluate(
     ({ xml, expectedRoot }) => {
       const document = new DOMParser().parseFromString(xml, "application/xml");
+      const root = document.documentElement;
+      const expectedEntry = expectedRoot === "sitemapindex" ? "sitemap" : "url";
+      const hasNonWhitespaceText = (node) =>
+        [...node.childNodes].some(
+          (child) =>
+            child.nodeType === Node.TEXT_NODE &&
+            (child.textContent?.trim() ?? "") !== "",
+        );
+      const entries = [...root.children];
+      const structureValid =
+        root.namespaceURI === "http://www.sitemaps.org/schemas/sitemap/0.9" &&
+        !hasNonWhitespaceText(root) &&
+        entries.every((entry) => {
+          const children = [...entry.children];
+          const location = children[0];
+          return (
+            entry.localName === expectedEntry &&
+            entry.namespaceURI === root.namespaceURI &&
+            !hasNonWhitespaceText(entry) &&
+            children.length === 1 &&
+            location.localName === "loc" &&
+            location.namespaceURI === root.namespaceURI &&
+            location.children.length === 0 &&
+            (location.textContent?.trim() ?? "") !== ""
+          );
+        });
       return {
         parserError: Boolean(document.querySelector("parsererror")),
-        root: document.documentElement.localName,
-        locations: [...document.querySelectorAll("loc")].map(
-          (node) => node.textContent?.trim() ?? "",
-        ),
-        unexpectedLocations: [...document.querySelectorAll("loc")].filter(
-          (node) => node.children.length > 0,
-        ).length,
+        root: root.localName,
+        structureValid,
+        locations: structureValid
+          ? entries.map((entry) => entry.children[0].textContent.trim())
+          : [],
         expectedRoot,
       };
     },
@@ -280,8 +304,7 @@ async function parseXml(page, source, rootName, url, findings) {
   if (
     parsed.parserError ||
     parsed.root !== rootName ||
-    parsed.unexpectedLocations > 0 ||
-    parsed.locations.some((location) => location === "")
+    !parsed.structureValid
   ) {
     finding(findings, "XML_MALFORMED", `invalid ${rootName} document`, url);
     return [];

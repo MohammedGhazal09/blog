@@ -1095,6 +1095,54 @@ const failureCases: readonly {
       })),
   },
   {
+    name: "direct sitemap-index location outside an entry",
+    code: "XML_MALFORMED",
+    mutate: (fixture) =>
+      replaceResponse(fixture, "/sitemap-index.xml", (response) => ({
+        ...response,
+        body: response.body.replace(
+          /<sitemap><loc>([^<]+)<\/loc><\/sitemap>/u,
+          "<loc>$1</loc>",
+        ),
+      })),
+  },
+  {
+    name: "direct sitemap location outside an entry",
+    code: "XML_MALFORMED",
+    mutate: (fixture) =>
+      replaceResponse(fixture, "/sitemap-0.xml", (response) => ({
+        ...response,
+        body: response.body.replace(
+          /<url><loc>([^<]+)<\/loc><\/url>/u,
+          "<loc>$1</loc>",
+        ),
+      })),
+  },
+  {
+    name: "duplicate locations inside one sitemap entry",
+    code: "XML_MALFORMED",
+    mutate: (fixture) =>
+      replaceResponse(fixture, "/sitemap-0.xml", (response) => ({
+        ...response,
+        body: response.body.replace(
+          /<url><loc>([^<]+)<\/loc><\/url>/u,
+          "<url><loc>$1</loc><loc>$1</loc></url>",
+        ),
+      })),
+  },
+  {
+    name: "unexpected sitemap entry wrapper",
+    code: "XML_MALFORMED",
+    mutate: (fixture) =>
+      replaceResponse(fixture, "/sitemap-0.xml", (response) => ({
+        ...response,
+        body: response.body.replace(
+          /<url><loc>([^<]+)<\/loc><\/url>/u,
+          "<wrapper><url><loc>$1</loc></url></wrapper>",
+        ),
+      })),
+  },
+  {
     name: "duplicate sitemap location",
     code: "XML_DUPLICATE_LOCATION",
     mutate: (fixture) =>
