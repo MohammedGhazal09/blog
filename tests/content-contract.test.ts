@@ -43,6 +43,149 @@ function htmlBody(source: string): string {
   return body;
 }
 
+type LaunchEvidenceRow = Readonly<{
+  scope: string;
+  gate: string;
+  status: string;
+  authority: string;
+  observed: string;
+  realServiceEvidence: string;
+  nextAction: string;
+}>;
+
+function launchEvidenceRows(markdown: string): readonly LaunchEvidenceRow[] {
+  return markdown
+    .split("\n")
+    .filter((line) => /^\|\s*(?:محلي|خارجي)\s*\|/u.test(line))
+    .map((line) => {
+      const [
+        scope,
+        gate,
+        status,
+        authority,
+        observed,
+        realServiceEvidence,
+        nextAction,
+      ] = line
+        .split("|")
+        .slice(1, -1)
+        .map((cell) => cell.trim());
+      assert.ok(
+        nextAction,
+        `launch evidence row must have seven cells: ${line}`,
+      );
+      return {
+        scope,
+        gate,
+        status,
+        authority,
+        observed,
+        realServiceEvidence,
+        nextAction,
+      };
+    });
+}
+
+function assertLaunchEvidence(markdown: string): void {
+  const rows = launchEvidenceRows(markdown);
+  assert.equal(
+    rows.length,
+    14,
+    "launch ledger must contain every required gate",
+  );
+
+  const requiredGates = [
+    "تثبيت وبناء وفحص الإطلاق المحلي",
+    "فحص بيانات الاعتماد في المستودع والمخرجات",
+    "ثبات القياس دون تغيير مرئي",
+    "إعداد مشروع Cloudflare Pages",
+    "نشر الإنتاج وإتاحته",
+    "النطاق وDNS وTLS",
+    "خاصية Plausible والمقتطف الحالي",
+    "مشاهدات الصفحات المجمعة",
+    "تفعيل Outbound links والهدف",
+    "حدث رابط يوتيوب الحقيقي",
+    "خاصية Search Console ذات بادئة URL",
+    "إرسال خريطة الموقع",
+    "الفهرسة",
+    "زيارات الإنتاج",
+  ];
+  assert.deepEqual(
+    rows.map(({ gate }) => gate),
+    requiredGates,
+  );
+
+  for (const row of rows) {
+    assert.match(row.status, /^(?:PASS|FAIL|PENDING|BLOCKED)$/u, row.gate);
+    assert.ok(row.authority, `${row.gate}: authority/evidence source required`);
+    assert.ok(row.observed, `${row.gate}: observed date/value required`);
+    assert.ok(row.nextAction, `${row.gate}: notes/next action required`);
+
+    if (row.status === "PASS") {
+      assert.match(row.observed, /\b20\d{2}-\d{2}-\d{2}\b/u, row.gate);
+    }
+
+    if (row.scope === "خارجي" && row.status === "PASS") {
+      assert.notEqual(row.realServiceEvidence, "—", row.gate);
+      assert.doesNotMatch(
+        row.realServiceEvidence,
+        /fixture|localhost|127\.0\.0\.1|blog\.ahmed-mangawy\.org|source inspection|اعتراض محلي|مصدر محلي/iu,
+        row.gate,
+      );
+    }
+  }
+}
+
+test("Arabic owner runbook locks the exact deployment and measurement path", () => {
+  const readme = readFileSync(new URL("../README.md", import.meta.url), "utf8");
+
+  for (const exact of [
+    "main",
+    "None",
+    "24.19.0",
+    "11.17.0",
+    "SKIP_DEPENDENCY_INSTALL=1",
+    "npm ci && npm run check && npm run launch:ready",
+    "dist",
+    "SITE_ORIGIN",
+    "PLAUSIBLE_SCRIPT_SRC",
+    "Outbound links",
+    "Outbound Link: Click",
+    "url",
+    "/sitemap-index.xml",
+  ]) {
+    assert.ok(readme.includes(exact), `README must include ${exact}`);
+  }
+
+  assert.match(readme, /خاصية[^\n]*بادئة URL/u);
+  assert.match(readme, /إعادة نشر|التراجع/u);
+  assert.match(readme, /لا[^\n]*(?:فهرسة|الفهرسة)/u);
+  assert.match(readme, /نقرة[^\n]*رابط/u);
+  assert.doesNotMatch(readme, /مشاهدة فيديو|تشغيل فيديو|وقت المشاهدة/u);
+  assert.doesNotMatch(
+    readme,
+    /script\.outbound-links\.js|wrangler|GitHub Actions/iu,
+  );
+  assert.doesNotMatch(readme, /(?:أنشئ|اقرأ|افتح)[^\n]{0,40}\.env/iu);
+});
+
+test("launch evidence separates local readiness from real external authority", () => {
+  const evidence = readFileSync(
+    new URL(
+      "../.planning/phases/05-deployment-and-measurement/05-LAUNCH-EVIDENCE.md",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  assertLaunchEvidence(evidence);
+
+  const fabricatedExternalPass = evidence.replace(
+    /\| خارجي \|([^\n|]+)\| PENDING \|/u,
+    "| خارجي |$1| PASS |",
+  );
+  assert.throws(() => assertLaunchEvidence(fabricatedExternalPass));
+});
+
 test("accepts only the exact current Plausible asset shape", () => {
   assert.equal(
     plausibleScriptSource(CONTROLLED_PLAUSIBLE_SCRIPT_SRC),
@@ -60,7 +203,10 @@ test("accepts only the exact current Plausible asset shape", () => {
     ["explicit port", "https://plausible.io:443/js/pa-token.js"],
     ["query", "https://plausible.io/js/pa-token.js?cache=1"],
     ["fragment", "https://plausible.io/js/pa-token.js#fragment"],
-    ["legacy outbound script", "https://plausible.io/js/script.outbound-links.js"],
+    [
+      "legacy outbound script",
+      "https://plausible.io/js/script.outbound-links.js",
+    ],
     ["generic script", "https://plausible.io/js/script.js"],
     ["missing pa token", "https://plausible.io/js/pa-.js"],
     ["encoded path", "https://plausible.io/js/%70a-token.js"],
@@ -203,7 +349,8 @@ for (const field of ["title", "description", "summary"] as const) {
     );
 
     assertDiagnostic(
-      () => validateArticleData(invalid.data, invalid.id, { today: fixedToday }),
+      () =>
+        validateArticleData(invalid.data, invalid.id, { today: fixedToday }),
       [`article:Latin-${field}\\.${field}`, "Arabic-facing"],
     );
   });
@@ -361,7 +508,10 @@ for (const [name, entry] of [
   ["array", []],
 ] as const) {
   test(`rejects ${name} reference entries with source and index diagnostics`, () => {
-    const data = { ...validData, references: [entry] } as unknown as ArticleData;
+    const data = {
+      ...validData,
+      references: [entry],
+    } as unknown as ArticleData;
     assertDiagnostic(
       () =>
         validateArticleData(data, `article:${name}-reference`, {
@@ -398,8 +548,7 @@ for (const [name, reference, field, rule] of [
       references: [reference],
     } as unknown as ArticleData;
     assertDiagnostic(
-      () =>
-        validateArticleData(data, `article:${name}`, { today: fixedToday }),
+      () => validateArticleData(data, `article:${name}`, { today: fixedToday }),
       [`article:${name}\\.references\\.0\\.${field}`, rule],
     );
   });
@@ -485,17 +634,19 @@ for (const missingKey of Object.keys(sectionRegistry)) {
     const entries = Object.keys(sectionRegistry)
       .filter((key) => key !== missingKey)
       .map((key, index) => coverageArticle(key, String(index + 1)));
-    assertDiagnostic(() => assertLaunchSectionCoverage(entries), [
-      missingKey,
-      sectionRegistry[missingKey as keyof typeof sectionRegistry].label,
-    ]);
+    assertDiagnostic(
+      () => assertLaunchSectionCoverage(entries),
+      [
+        missingKey,
+        sectionRegistry[missingKey as keyof typeof sectionRegistry].label,
+      ],
+    );
   });
 }
 
 test("launch coverage aggregates multiple missing sections in registry order", () => {
   assert.throws(
-    () =>
-      assertLaunchSectionCoverage([coverageArticle("scholarship", "٣")]),
+    () => assertLaunchSectionCoverage([coverageArticle("scholarship", "٣")]),
     (error: unknown) => {
       assert.ok(error instanceof Error);
       const first = error.message.indexOf("refutations");
@@ -825,9 +976,6 @@ export const example = true
 `;
 
   assert.doesNotThrow(() =>
-    assertAllowedMdxSource(
-      source,
-      "code-examples.mdx",
-    ),
+    assertAllowedMdxSource(source, "code-examples.mdx"),
   );
 });
