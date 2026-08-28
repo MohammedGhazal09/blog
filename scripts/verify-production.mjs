@@ -31,6 +31,9 @@ const AUDIT_CLOSE_TIMEOUT_MS = 1_000;
 const MEDIA_REGION_SELECTOR = "[data-video-region]";
 const MEDIA_ACTIVATE_SELECTOR = "[data-video-activate]";
 const MEDIA_DIRECT_SELECTOR = ".youtube-cta";
+const PLAUSIBLE_LOADER =
+  /^https:\/\/plausible\.io\/js\/pa-[A-Za-z0-9_-]+\.js$/u;
+const PLAUSIBLE_EVENT_ENDPOINT = "https://plausible.io/api/event";
 const MEDIA_HOST_SUFFIXES = [
   "youtube.com",
   "youtube-nocookie.com",
@@ -390,6 +393,10 @@ async function parseHtml(page, source, url, findings) {
         descriptions: attributeValues('meta[name="description"]', "content"),
         canonicals: attributeValues('link[rel~="canonical"]', "href"),
         robots: attributeValues('meta[name="robots"]', "content"),
+        scripts: [...document.querySelectorAll("script[src]")].map((node) => ({
+          src: node.getAttribute("src")?.trim() ?? "",
+          defer: node.hasAttribute("defer"),
+        })),
         anchors: attributeValues("a[href]", "href"),
         h1: [...document.querySelectorAll("main h1")].map(
           (node) => node.textContent?.trim() ?? "",
@@ -411,6 +418,42 @@ async function parseHtml(page, source, url, findings) {
     finding(findings, "HTML_MALFORMED", "HTML body is empty", url);
   }
   return parsed;
+}
+
+function validatedPlausibleLoader(document, url, findings) {
+  const loaders = document.scripts.filter(({ src }) =>
+    PLAUSIBLE_LOADER.test(src),
+  );
+  if (
+    loaders.length !== 1 ||
+    !loaders[0].defer ||
+    document.scripts.some(
+      ({ src }) =>
+        new URL(src, url).origin === "https://plausible.io" &&
+        !PLAUSIBLE_LOADER.test(src),
+    )
+  ) {
+    finding(
+      findings,
+      "PLAUSIBLE_LOADER",
+      "page must contain one exact deferred Plausible property loader",
+      url,
+    );
+    return undefined;
+  }
+  return loaders[0].src;
+}
+
+function isApprovedPlausibleRequest(request, loader) {
+  if (!loader) return false;
+  return (
+    (request.url() === loader &&
+      request.method() === "GET" &&
+      request.resourceType() === "script") ||
+    (request.url() === PLAUSIBLE_EVENT_ENDPOINT &&
+      request.method() === "POST" &&
+      ["fetch", "xhr"].includes(request.resourceType()))
+  );
 }
 
 async function walkArticleSources(directory) {
@@ -742,7 +785,11 @@ async function navigateSameOrigin({
     const request = route.request();
     const destination = new URL(request.url());
     if (destination.origin === origin) return route.fallback();
-    if (!intentionalBlockedUrl(destination.href)) {
+    const plausibleLoader = browserTransport.plausibleLoaders.get(url);
+    if (
+      !isApprovedPlausibleRequest(request, plausibleLoader) &&
+      !intentionalBlockedUrl(destination.href)
+    ) {
       unexpectedRequests.push(destination.href);
       finding(
         findings,
@@ -1754,6 +1801,7 @@ export async function runProductionVerification(options = {}) {
     ),
     remoteAddresses: new Set(),
     requireRemoteAddress: !controlledFixture,
+    plausibleLoaders: new Map(),
   };
 
   try {
@@ -1907,6 +1955,9 @@ export async function runProductionVerification(options = {}) {
       routeGraph.crawledUrls.push(url);
       const document = await parseHtml(page, source, url, findings);
       documents.set(url, document);
+      const plausibleLoader = validatedPlausibleLoader(document, url, findings);
+      if (plausibleLoader)
+        browserTransport.plausibleLoaders.set(url, plausibleLoader);
       validatePublicDocument({
         document,
         url,
@@ -2018,6 +2069,14 @@ export async function runProductionVerification(options = {}) {
     });
     if (missing !== undefined) {
       const document = await parseHtml(page, missing, missingUrl, findings);
+      documents.set(missingUrl, document);
+      const plausibleLoader = validatedPlausibleLoader(
+        document,
+        missingUrl,
+        findings,
+      );
+      if (plausibleLoader)
+        browserTransport.plausibleLoaders.set(missingUrl, plausibleLoader);
       if (
         document.lang !== "ar" ||
         document.dir !== "rtl" ||

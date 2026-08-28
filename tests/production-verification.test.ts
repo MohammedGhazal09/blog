@@ -11,6 +11,8 @@ import { pathToFileURL } from "node:url";
 import { chromium, type Page } from "@playwright/test";
 
 const CONTROLLED_ORIGIN = "https://controlled-mangawy-fixture.dev";
+const CONTROLLED_PLAUSIBLE_SCRIPT_SRC =
+  "https://plausible.io/js/pa-FAKE_TEST_FIXTURE_DO_NOT_DEPLOY.js";
 const ARTIFACT_ROOT = resolve(".artifacts/phase-06");
 const MISSING_PATH = "/مسار-مفقود-للتحقق/";
 const DRAFT_PATH = "/القضايا-العامة/اختبار-عقد-المحتوى/";
@@ -211,11 +213,11 @@ function pageHtml({
   const media = youtubeId
     ? `<section class="media-continuation"><h2>الفيديو المرتبط بالمقال</h2><div class="video-region" data-video-region data-youtube-id="${youtubeId}" data-iframe-title="فيديو المقال: ${title}"><button type="button" data-video-activate>تشغيل الفيديو هنا</button><p role="status" hidden data-video-error>تعذر تشغيل الفيديو هنا. يمكنك مشاهدة الفيديو مباشرة على يوتيوب.</p></div><a class="youtube-cta" href="https://www.youtube.com/watch?v=${youtubeId}">مشاهدة الفيديو على يوتيوب</a></section>`
     : "";
-  return `<!doctype html><html lang="ar" dir="rtl"><head><title>${title}</title><meta name="description" content="${description}"><link rel="canonical" href="${absolute(path)}"><style>*{box-sizing:border-box}body{margin:0;font:18px/1.7 sans-serif}header,main{max-inline-size:70ch;margin-inline:auto;padding:1rem}a,button{min-inline-size:44px;min-block-size:44px}a:focus-visible,button:focus-visible,[data-video-region]:focus-within{outline:3px solid #166534;outline-offset:3px}[data-video-region]{aspect-ratio:16/9;inline-size:100%;display:grid;place-items:center;background:#eee}[data-video-region] iframe{border:0;inline-size:100%;block-size:100%}</style></head><body><header><a href="/">مدونة أحمد المنجاوي</a></header><main><h1>${title}</h1>${links.map((href) => `<a href="${href}">رابط عربي</a>`).join("")}${media}</main><script>for(const region of document.querySelectorAll('[data-video-region]')){const button=region.querySelector('[data-video-activate]');button?.addEventListener('click',()=>{if(region.querySelector('iframe'))return;try{const id=region.getAttribute('data-youtube-id');const title=region.getAttribute('data-iframe-title');const iframe=document.createElement('iframe');iframe.title=title;iframe.src='https://www.youtube-nocookie.com/embed/'+encodeURIComponent(id)+'?hl=ar';button.replaceWith(iframe);iframe.focus()}catch{button.hidden=true;region.querySelector('[data-video-error]').hidden=false}},{once:true})}</script></body></html>`;
+  return `<!doctype html><html lang="ar" dir="rtl"><head><title>${title}</title><meta name="description" content="${description}"><link rel="canonical" href="${absolute(path)}"><style>*{box-sizing:border-box}body{margin:0;font:18px/1.7 sans-serif}header,main{max-inline-size:70ch;margin-inline:auto;padding:1rem}a,button{min-inline-size:44px;min-block-size:44px}a:focus-visible,button:focus-visible,[data-video-region]:focus-within{outline:3px solid #166534;outline-offset:3px}[data-video-region]{aspect-ratio:16/9;inline-size:100%;display:grid;place-items:center;background:#eee}[data-video-region] iframe{border:0;inline-size:100%;block-size:100%}</style><script defer src="${CONTROLLED_PLAUSIBLE_SCRIPT_SRC}"></script></head><body><header><a href="/">مدونة أحمد المنجاوي</a></header><main><h1>${title}</h1>${links.map((href) => `<a href="${href}">رابط عربي</a>`).join("")}${media}</main><script>for(const region of document.querySelectorAll('[data-video-region]')){const button=region.querySelector('[data-video-activate]');button?.addEventListener('click',()=>{if(region.querySelector('iframe'))return;try{const id=region.getAttribute('data-youtube-id');const title=region.getAttribute('data-iframe-title');const iframe=document.createElement('iframe');iframe.title=title;iframe.src='https://www.youtube-nocookie.com/embed/'+encodeURIComponent(id)+'?hl=ar';button.replaceWith(iframe);iframe.focus()}catch{button.hidden=true;region.querySelector('[data-video-error]').hidden=false}},{once:true})}</script></body></html>`;
 }
 
 function notFoundHtml(): string {
-  return `<!doctype html><html lang="ar" dir="rtl"><head><title>الصفحة غير موجودة</title><meta name="description" content="تعذر العثور على الصفحة المطلوبة"><meta name="robots" content="noindex,follow"></head><body><main><h1>الصفحة غير موجودة</h1><a href="/">العودة إلى الصفحة الرئيسية</a></main></body></html>`;
+  return `<!doctype html><html lang="ar" dir="rtl"><head><title>الصفحة غير موجودة</title><meta name="description" content="تعذر العثور على الصفحة المطلوبة"><meta name="robots" content="noindex,follow"><script defer src="${CONTROLLED_PLAUSIBLE_SCRIPT_SRC}"></script></head><body><main><h1>الصفحة غير موجودة</h1><a href="/">العودة إلى الصفحة الرئيسية</a></main></body></html>`;
 }
 
 function createFixture(): ControlledFixture {
@@ -942,6 +944,85 @@ test("media hostname spoofing is blocked without intentional-media classificatio
       false,
     );
     assert.equal(report.automatedGates.media, "FAIL");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+test("the exact Plausible loader is statically validated and contained without third-party contact", async () => {
+  const fixture = createFixture();
+  fixture.auditKinds = ["presentation"];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    assert.equal(
+      report.findings.some(
+        ({ code }) =>
+          code === "PLAUSIBLE_LOADER" || code === "BROWSER_ORIGIN_ESCAPE",
+      ),
+      false,
+      JSON.stringify(report.findings),
+    );
+    assert.equal(
+      fixture.browserRequests.some(
+        (url) => new URL(url).origin === "https://plausible.io",
+      ),
+      false,
+    );
+    assert.equal(report.automatedGates.presentation, "PASS");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+test("an unrelated off-origin script fails without reaching the controlled transport", async () => {
+  const fixture = createFixture();
+  replaceResponse(fixture, "/", (response) => ({
+    ...response,
+    body: response.body.replace(
+      "</head>",
+      '<script src="https://scripts.evil.invalid/unrelated.js"></script></head>',
+    ),
+  }));
+  fixture.auditKinds = ["presentation"];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    assert.ok(
+      report.findings.some(
+        ({ code, detail }) =>
+          code === "BROWSER_ORIGIN_ESCAPE" &&
+          detail.includes("scripts.evil.invalid"),
+      ),
+      JSON.stringify(report.findings),
+    );
+    assert.equal(
+      fixture.browserRequests.some((url) =>
+        url.includes("scripts.evil.invalid"),
+      ),
+      false,
+    );
+    assert.equal(report.automatedGates.presentation, "FAIL");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+test("a non-exact Plausible loader fails the static analytics contract", async () => {
+  const fixture = createFixture();
+  replaceResponse(fixture, "/", (response) => ({
+    ...response,
+    body: response.body.replace(
+      CONTROLLED_PLAUSIBLE_SCRIPT_SRC,
+      "https://plausible.io/js/script.js",
+    ),
+  }));
+  fixture.auditKinds = [];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    expectFinding(report, "PLAUSIBLE_LOADER");
+    assert.equal(report.automatedGates.crawl, "FAIL");
   } finally {
     await cleanupReport(report);
   }
