@@ -1134,20 +1134,29 @@ async function withAuditPage({
 }
 
 function exactMediaIntent(expectedSrc, requests) {
-  let readEventSequence = async () => 0;
+  let consumeEventAuthorization = async () => false;
+  let pendingEventAuthorization;
+  let trustedEventBoundaryReached = false;
   let preActivationRequestCount = 0;
   return {
-    bindEventSequenceReader(reader) {
-      readEventSequence = reader;
+    bindEventAuthorizationConsumer(consumer) {
+      consumeEventAuthorization = consumer;
     },
     async classify(request) {
       if (request.url() !== expectedSrc) return false;
       requests.push(request.url());
-      const eventSequence = await readEventSequence().catch(() => 0);
-      const eventBoundaryReached = eventSequence > 0;
-      if (!eventBoundaryReached) preActivationRequestCount += 1;
+      if (!trustedEventBoundaryReached) {
+        pendingEventAuthorization ??= consumeEventAuthorization().catch(
+          () => false,
+        );
+        const consumed = await pendingEventAuthorization;
+        pendingEventAuthorization = undefined;
+        if (consumed) trustedEventBoundaryReached = true;
+      }
+      const eventAuthorized = trustedEventBoundaryReached;
+      if (!eventAuthorized) preActivationRequestCount += 1;
       const approved =
-        eventBoundaryReached &&
+        eventAuthorized &&
         request.method() === "GET" &&
         request.resourceType() === "document" &&
         request.isNavigationRequest();
@@ -1163,23 +1172,52 @@ async function bindExactMediaEventIntent(intent, page, trigger, type, key) {
   await trigger.evaluate(
     (node, eventContract) => {
       const marker = Symbol.for("mangawy.production.media-intent-event");
-      const state = { sequence: 0 };
+      const state = {
+        expectedSequence: 1,
+        sequence: 0,
+        consumedSequence: 0,
+        type: eventContract.type,
+        key: eventContract.key ?? null,
+        target: node,
+        eventTarget: null,
+      };
       document[marker] = state;
       node.addEventListener(
         eventContract.type,
         (event) => {
-          if (eventContract.key && event.key !== eventContract.key) return;
-          state.sequence += 1;
+          if (
+            !event.isTrusted ||
+            event.type !== eventContract.type ||
+            event.target !== node ||
+            state.sequence !== state.expectedSequence - 1
+          )
+            return;
+          if (
+            eventContract.key &&
+            (event.key !== eventContract.key || event.repeat)
+          )
+            return;
+          state.eventTarget = event.target;
+          state.sequence = state.expectedSequence;
         },
         { capture: true },
       );
     },
     { type, key },
   );
-  intent.bindEventSequenceReader(() =>
+  intent.bindEventAuthorizationConsumer(() =>
     page.evaluate(() => {
       const marker = Symbol.for("mangawy.production.media-intent-event");
-      return document[marker]?.sequence ?? 0;
+      const state = document[marker];
+      if (
+        !state ||
+        state.sequence !== state.expectedSequence ||
+        state.consumedSequence !== state.expectedSequence - 1 ||
+        state.eventTarget !== state.target
+      )
+        return false;
+      state.consumedSequence = state.expectedSequence;
+      return true;
     }),
   );
 }

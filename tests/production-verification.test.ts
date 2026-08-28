@@ -741,6 +741,76 @@ test("hover-only media activation is not relabeled as click intent", async () =>
   }
 });
 
+test("a synthetic click during pointer movement cannot authorize media", async () => {
+  const fixture = createFixture();
+  const articleUrl = absolute(ARTICLE_PATHS[0]);
+  const articleResponse = fixture.responses.get(articleUrl);
+  assert.ok(articleResponse);
+  const syntheticClick = `<script>document.querySelector('[data-video-activate]').addEventListener('pointermove',(event)=>event.currentTarget.click(),{once:true})</script>`;
+  const mutatedResponse = {
+    ...articleResponse,
+    body: articleResponse.body.replace("</body>", `${syntheticClick}</body>`),
+  };
+  fixture.beforeAuditPageSetup = async (label) => {
+    if (label === "media pointer pass")
+      fixture.browserOverrides.set(articleUrl, mutatedResponse);
+    else fixture.browserOverrides.delete(articleUrl);
+  };
+  fixture.auditKinds = ["media"];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    const article = report.media.find(({ url }) => url === articleUrl);
+    assert.ok(article);
+    assert.ok(
+      report.findings.some(
+        ({ code, url }) => code === "MEDIA_ACTIVATION" && url === articleUrl,
+      ),
+      JSON.stringify({ findings: report.findings, article }),
+    );
+    assert.equal(article.pointer.intentBoundaryClean, false);
+    assert.equal(article.status, "FAIL");
+    assert.equal(report.automatedGates.media, "FAIL");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+test("a synthetic Enter from focus cannot authorize media", async () => {
+  const fixture = createFixture();
+  const articleUrl = absolute(ARTICLE_PATHS[0]);
+  const articleResponse = fixture.responses.get(articleUrl);
+  assert.ok(articleResponse);
+  const syntheticEnter = `<script>{const region=document.querySelector('[data-video-region]');const button=region.querySelector('[data-video-activate]');button.addEventListener('keydown',(event)=>{if(event.key!=='Enter'||region.querySelector('iframe'))return;const iframe=document.createElement('iframe');iframe.title=region.getAttribute('data-iframe-title');iframe.src='https://www.youtube-nocookie.com/embed/'+encodeURIComponent(region.getAttribute('data-youtube-id'))+'?hl=ar';button.replaceWith(iframe);iframe.focus()});button.addEventListener('focus',()=>button.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true})),{once:true})}</script>`;
+  const mutatedResponse = {
+    ...articleResponse,
+    body: articleResponse.body.replace("</body>", `${syntheticEnter}</body>`),
+  };
+  fixture.beforeAuditPageSetup = async (label) => {
+    if (label === "media keyboard pass")
+      fixture.browserOverrides.set(articleUrl, mutatedResponse);
+    else fixture.browserOverrides.delete(articleUrl);
+  };
+  fixture.auditKinds = ["media"];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    const article = report.media.find(({ url }) => url === articleUrl);
+    assert.ok(article);
+    assert.ok(
+      report.findings.some(
+        ({ code, url }) => code === "MEDIA_ACTIVATION" && url === articleUrl,
+      ),
+      JSON.stringify({ findings: report.findings, article }),
+    );
+    assert.equal(article.keyboard.intentBoundaryClean, false);
+    assert.equal(article.status, "FAIL");
+    assert.equal(report.automatedGates.media, "FAIL");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
 test("duplicate exact iframe navigations fail media even when one iframe is removed before observation", async () => {
   const fixture = createFixture();
   replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
