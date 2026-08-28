@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { authorRegistry, sectionRegistry } from "../src/config/registries.ts";
@@ -21,6 +22,7 @@ import {
   approvedMdxComponentNames,
   assertAllowedMdxSource,
 } from "../src/lib/mdx-policy.ts";
+import { LOCAL_SITE_ORIGIN } from "../src/lib/site-origin.ts";
 
 const fixedToday = "2026-08-26";
 
@@ -479,21 +481,101 @@ test("duplicate articles in one section cannot satisfy another section", () => {
   );
 });
 
-test("launch readiness exits zero with an explicit safe production origin", () => {
+test("launch readiness wires coverage mode and controlled discovery identity", () => {
   const npmCli = process.env.npm_execpath;
   assert.ok(npmCli, "npm_execpath must identify the pinned npm CLI");
-  const result = spawnSync(
-    process.execPath,
-    [npmCli, "run", "launch:ready"],
-    {
-      encoding: "utf8",
-      env: { ...process.env, SITE_ORIGIN: "https://blog.ahmed-mangawy.org" },
-    },
+  const controlledOrigin = "https://blog.ahmed-mangawy.org";
+  const launchScript = readFileSync(
+    new URL("../scripts/launch-ready.mjs", import.meta.url),
+    "utf8",
   );
-  const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
+  assert.match(
+    launchScript,
+    /build\(\{\s*site,\s*mode:\s*["']launch-readiness["']\s*\}\)/u,
+  );
 
-  assert.equal(result.status, 0, output);
-  assert.doesNotMatch(output, /Missing script/iu);
+  try {
+    const result = spawnSync(
+      process.execPath,
+      [npmCli, "run", "launch:ready"],
+      {
+        encoding: "utf8",
+        env: { ...process.env, SITE_ORIGIN: controlledOrigin },
+      },
+    );
+    const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
+
+    assert.equal(result.status, 0, output);
+    assert.doesNotMatch(output, /Missing script/iu);
+
+    const generated = {
+      home: readFileSync(
+        new URL("../dist/index.html", import.meta.url),
+        "utf8",
+      ),
+      sitemapIndex: readFileSync(
+        new URL("../dist/sitemap-index.xml", import.meta.url),
+        "utf8",
+      ),
+      sitemap: readFileSync(
+        new URL("../dist/sitemap-0.xml", import.meta.url),
+        "utf8",
+      ),
+      robots: readFileSync(
+        new URL("../dist/robots.txt", import.meta.url),
+        "utf8",
+      ),
+    };
+
+    assert.ok(
+      generated.home.includes(
+        `<link rel="canonical" href="${controlledOrigin}/">`,
+      ),
+    );
+    assert.ok(
+      generated.home.includes(
+        `<meta property="og:url" content="${controlledOrigin}/">`,
+      ),
+    );
+    assert.ok(
+      generated.sitemapIndex.includes(
+        `<loc>${controlledOrigin}/sitemap-0.xml</loc>`,
+      ),
+    );
+    assert.ok(generated.sitemap.includes(`<loc>${controlledOrigin}/</loc>`));
+    assert.equal(
+      generated.robots,
+      `User-agent: *\nAllow: /\n\nSitemap: ${controlledOrigin}/sitemap-index.xml\n`,
+    );
+
+    for (const [name, body] of Object.entries(generated)) {
+      assert.ok(
+        body.includes(controlledOrigin),
+        `${name} must use launch origin`,
+      );
+      assert.equal(
+        body.includes(LOCAL_SITE_ORIGIN),
+        false,
+        `${name} must not retain the local origin`,
+      );
+    }
+  } finally {
+    const ordinaryEnv = { ...process.env };
+    delete ordinaryEnv.SITE_ORIGIN;
+    const restored = spawnSync(process.execPath, [npmCli, "run", "build"], {
+      encoding: "utf8",
+      env: ordinaryEnv,
+    });
+    const restoreOutput = `${restored.stdout ?? ""}\n${restored.stderr ?? ""}`;
+
+    assert.equal(restored.status, 0, restoreOutput);
+    assert.ok(
+      readFileSync(
+        new URL("../dist/index.html", import.meta.url),
+        "utf8",
+      ).includes(`<link rel="canonical" href="${LOCAL_SITE_ORIGIN}/">`),
+    );
+  }
 });
 
 test("the authoritative registries validate all three canonical sections", () => {
