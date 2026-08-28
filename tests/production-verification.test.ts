@@ -950,6 +950,49 @@ test("media hostname spoofing is blocked without intentional-media classificatio
   }
 });
 
+for (const [name, requestUrl] of [
+  [
+    "wrong-video Google media",
+    "https://i.ytimg.com/vi/WRONG_VIDEO_ID/default.jpg",
+  ],
+  ["unrelated Google API", "https://fonts.googleapis.com/css2?family=Roboto"],
+] as const) {
+  test(`${name} after activation fails media without transport contact`, async () => {
+    const fixture = createFixture();
+    replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
+      ...response,
+      body: response.body.replace(
+        "</body>",
+        `<script>document.querySelector('[data-video-activate]').addEventListener('click',()=>fetch(${JSON.stringify(requestUrl)}))</script></body>`,
+      ),
+    }));
+    fixture.auditKinds = ["media"];
+    let report: VerificationReport | undefined;
+    try {
+      report = await runControlled(fixture);
+      assert.ok(
+        report.findings.some(
+          ({ code, detail }) =>
+            code === "BROWSER_ORIGIN_ESCAPE" && detail.includes(requestUrl),
+        ),
+        JSON.stringify(report.findings),
+      );
+      assert.equal(
+        fixture.browserRequests.some((url) => url === requestUrl),
+        false,
+      );
+      assert.equal(
+        report.media.find(({ url }) => url === absolute(ARTICLE_PATHS[0]))
+          ?.status,
+        "FAIL",
+      );
+      assert.equal(report.automatedGates.media, "FAIL");
+    } finally {
+      await cleanupReport(report);
+    }
+  });
+}
+
 test("the exact Plausible loader is statically validated and contained without third-party contact", async () => {
   const fixture = createFixture();
   fixture.auditKinds = ["presentation"];

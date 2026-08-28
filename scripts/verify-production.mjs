@@ -34,19 +34,6 @@ const MEDIA_DIRECT_SELECTOR = ".youtube-cta";
 const PLAUSIBLE_LOADER =
   /^https:\/\/plausible\.io\/js\/pa-[A-Za-z0-9_-]+\.js$/u;
 const PLAUSIBLE_EVENT_ENDPOINT = "https://plausible.io/api/event";
-const MEDIA_HOST_SUFFIXES = [
-  "youtube.com",
-  "youtube-nocookie.com",
-  "youtu.be",
-  "ytimg.com",
-  "googlevideo.com",
-  "ggpht.com",
-  "googleapis.com",
-  "gstatic.com",
-  "googleusercontent.com",
-  "doubleclick.net",
-  "googlesyndication.com",
-];
 const PAGE_TRANSPORT_MONITORS = new WeakMap();
 const PROFILE = {
   viewport: { width: 390, height: 844 },
@@ -69,21 +56,6 @@ const PROFILE = {
     "Emulation.setCPUThrottlingRate",
   ],
 };
-
-function belongsToHostSuffix(hostname, suffix) {
-  return hostname === suffix || hostname.endsWith(`.${suffix}`);
-}
-
-function isMediaUrl(rawUrl) {
-  try {
-    const hostname = new URL(rawUrl).hostname.toLowerCase();
-    return MEDIA_HOST_SUFFIXES.some((suffix) =>
-      belongsToHostSuffix(hostname, suffix),
-    );
-  } catch {
-    return false;
-  }
-}
 
 export function maximumSessionWindowCls(shifts) {
   let maximum = 0;
@@ -756,7 +728,8 @@ async function navigateSameOrigin({
   timeout,
   findings,
   browserTransport,
-  intentionalBlockedUrl = () => false,
+  intentionalBlockedRequest = () => false,
+  onUnexpectedRequest = () => {},
 }) {
   const unexpectedRequests = [];
   const responseChecks = [];
@@ -800,9 +773,10 @@ async function navigateSameOrigin({
     const plausibleLoader = browserTransport.plausibleLoaders.get(url);
     if (
       !isApprovedPlausibleRequest(request, plausibleLoader) &&
-      !intentionalBlockedUrl(destination.href)
+      !intentionalBlockedRequest(request)
     ) {
       unexpectedRequests.push(destination.href);
+      onUnexpectedRequest(request);
       finding(
         findings,
         "BROWSER_ORIGIN_ESCAPE",
@@ -1109,15 +1083,23 @@ async function withAuditDeadline({ page, context, timeoutMs, label, task }) {
   }
 }
 
-async function installMediaBlock(page, requests) {
-  page.on("request", (request) => {
-    if (isMediaUrl(request.url())) requests.push(request.url());
-  });
-  await page.route("**/*", (route) =>
-    isMediaUrl(route.request().url())
-      ? route.abort("blockedbyclient")
-      : route.fallback(),
-  );
+function exactMediaIntent(expectedSrc, requests) {
+  let active = false;
+  return {
+    activate() {
+      active = true;
+    },
+    classify(request) {
+      if (request.url() !== expectedSrc) return false;
+      requests.push(request.url());
+      return (
+        active &&
+        request.method() === "GET" &&
+        request.resourceType() === "document" &&
+        request.isNavigationRequest()
+      );
+    },
+  };
 }
 
 async function mediaGeometry(region) {
@@ -1147,8 +1129,10 @@ async function activationObservation(
   findings,
   browserTransport,
   auditTimeoutMs,
+  expectedSrc,
 ) {
   const requests = [];
+  const intent = exactMediaIntent(expectedSrc, requests);
   const { context, page } = await newAuditPage(browser, controlledFixture);
   try {
     return await withAuditDeadline({
@@ -1157,7 +1141,6 @@ async function activationObservation(
       timeoutMs: auditTimeoutMs,
       label: `media ${key ? "keyboard" : "pointer"} pass`,
       task: async () => {
-        await installMediaBlock(page, requests);
         await navigateSameOrigin({
           page,
           url,
@@ -1165,11 +1148,12 @@ async function activationObservation(
           timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
           findings,
           browserTransport,
-          intentionalBlockedUrl: isMediaUrl,
+          intentionalBlockedRequest: intent.classify,
         });
         const region = page.locator(MEDIA_REGION_SELECTOR);
         const trigger = region.locator(MEDIA_ACTIVATE_SELECTOR);
         const before = await mediaGeometry(region);
+        intent.activate();
         if (key) {
           await trigger.focus();
           await page.keyboard.press(key);
@@ -1267,6 +1251,12 @@ async function auditMedia({
       const expectedSrc = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(youtubeId)}?hl=ar`;
       const expectedHref = `https://www.youtube.com/watch?v=${encodeURIComponent(youtubeId)}`;
       const preRequests = [];
+      const preIntentClassifier = exactMediaIntent(expectedSrc, preRequests);
+      const expectedPreIntentUrls = new Set([
+        expectedSrc,
+        `https://i.ytimg.com/vi/${encodeURIComponent(youtubeId)}/default.jpg`,
+      ]);
+      let eagerMediaFindingRecorded = false;
       const pre = await newAuditPage(browser, controlledFixture);
       let preIntent;
       try {
@@ -1276,7 +1266,6 @@ async function auditMedia({
           timeoutMs: auditTimeoutMs,
           label: "media pre-intent pass",
           task: async () => {
-            await installMediaBlock(pre.page, preRequests);
             await navigateSameOrigin({
               page: pre.page,
               url,
@@ -1284,7 +1273,19 @@ async function auditMedia({
               timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
               findings,
               browserTransport,
-              intentionalBlockedUrl: isMediaUrl,
+              intentionalBlockedRequest: preIntentClassifier.classify,
+              onUnexpectedRequest: (request) => {
+                if (!expectedPreIntentUrls.has(request.url())) return;
+                preRequests.push(request.url());
+                if (eagerMediaFindingRecorded) return;
+                eagerMediaFindingRecorded = true;
+                finding(
+                  findings,
+                  "MEDIA_PRE_INTENT",
+                  "article made an off-origin request before media intent",
+                  url,
+                );
+              },
             });
             const region = pre.page.locator(MEDIA_REGION_SELECTOR);
             return {
@@ -1307,6 +1308,7 @@ async function auditMedia({
         findings,
         browserTransport,
         auditTimeoutMs,
+        expectedSrc,
       );
       const keyboard = await activationObservation(
         browser,
@@ -1317,10 +1319,12 @@ async function auditMedia({
         findings,
         browserTransport,
         auditTimeoutMs,
+        expectedSrc,
       );
 
       const fallbackPage = await newAuditPage(browser, controlledFixture);
       const fallbackRequests = [];
+      const fallbackIntent = exactMediaIntent(expectedSrc, fallbackRequests);
       let fallback;
       try {
         fallback = await withAuditDeadline({
@@ -1329,7 +1333,6 @@ async function auditMedia({
           timeoutMs: auditTimeoutMs,
           label: "media fallback pass",
           task: async () => {
-            await installMediaBlock(fallbackPage.page, fallbackRequests);
             await navigateSameOrigin({
               page: fallbackPage.page,
               url,
@@ -1337,8 +1340,9 @@ async function auditMedia({
               timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
               findings,
               browserTransport,
-              intentionalBlockedUrl: isMediaUrl,
+              intentionalBlockedRequest: fallbackIntent.classify,
             });
+            fallbackIntent.activate();
             await fallbackPage.page.locator(MEDIA_ACTIVATE_SELECTOR).click();
             const link = fallbackPage.page.locator(MEDIA_DIRECT_SELECTOR);
             await link.focus().catch(() => {});
