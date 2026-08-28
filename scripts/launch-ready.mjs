@@ -4,4 +4,4 @@ import { productionSiteOrigin } from "../src/lib/site-origin.ts";
 
 const site = productionSiteOrigin(process.env.SITE_ORIGIN);
 
-await build({ site });
+await build({ site, mode: "launch-readiness" });
