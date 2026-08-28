@@ -1140,7 +1140,7 @@ async function auditMedia({
 
 function isAllowedLatinValue(value) {
   const trimmed = value.trim();
-  if (trimmed === "" || YOUTUBE_ID.test(trimmed)) return true;
+  if (trimmed === "") return true;
   try {
     const url = new URL(trimmed);
     return ["http:", "https:"].includes(url.protocol) && url.href === trimmed;

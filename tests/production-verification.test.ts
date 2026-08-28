@@ -682,23 +682,23 @@ const renderedAuditCases: readonly {
       })),
   },
   {
-    name: "Arabic visible Latin leakage",
+    name: "eleven-character visible Latin leakage",
     code: "PRESENTATION_LATIN",
     mutate: (fixture) =>
       replaceResponse(fixture, "/", (response) => ({
         ...response,
-        body: response.body.replace("</main>", "<p>English leak</p></main>"),
+        body: response.body.replace("</main>", "<p>EnglishText</p></main>"),
       })),
   },
   {
-    name: "accessibility tree Latin leakage",
+    name: "eleven-character accessibility tree Latin leakage",
     code: "PRESENTATION_LATIN",
     mutate: (fixture) =>
       replaceResponse(fixture, "/", (response) => ({
         ...response,
         body: response.body.replace(
           "<main>",
-          '<main aria-label="English main">',
+          '<main aria-label="SettingsNow">',
         ),
       })),
   },
