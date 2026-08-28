@@ -67,6 +67,8 @@ type ControlledFixture = {
   browserRouteInstallCount: number;
   readerIdleMs: number;
   fontReadyTimeoutMs?: number;
+  performanceAuditTimeoutMs?: number;
+  renderedAuditTimeoutMs?: number;
   dnsResolutionTimeoutMs?: number;
   resolveHostname(
     hostname: string,
@@ -118,6 +120,8 @@ type VerificationReport = {
     performanceNavigationTimeoutMs: number;
     renderedNavigationTimeoutMs: number;
     fontReadyTimeoutMs: number;
+    performanceAuditTimeoutMs: number;
+    renderedAuditTimeoutMs: number;
     readerIdleMs: number;
     commands: string[];
   };
@@ -520,6 +524,8 @@ test("controlled performance profile selects five roles and preserves fifteen co
       performanceNavigationTimeoutMs: 45_000,
       renderedNavigationTimeoutMs: 30_000,
       fontReadyTimeoutMs: 10_000,
+      performanceAuditTimeoutMs: 65_000,
+      renderedAuditTimeoutMs: 45_000,
       readerIdleMs: 10,
       commands: [
         "Network.emulateNetworkConditionsByRule",
@@ -1325,6 +1331,123 @@ test("stalled font readiness returns a failed performance report within its boun
       ),
     );
     assert.equal(report.automatedGates.performance, "FAIL");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+test("a non-terminating rendered page task returns a failed report within the audit deadline", async () => {
+  const fixture = createFixture();
+  const homepage = fixture.responses.get(absolute("/"));
+  assert.ok(homepage);
+  fixture.browserOverrides.set(absolute("/"), {
+    ...homepage,
+    body: homepage.body.replace(
+      "</body>",
+      "<script>addEventListener('load',()=>{document.querySelectorAll=()=>{for(;;){}}})</script></body>",
+    ),
+  });
+  fixture.auditKinds = ["presentation"];
+  fixture.renderedAuditTimeoutMs = 100;
+  const started = Date.now();
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    assert.ok(Date.now() - started < 8_000);
+    assert.ok(
+      report.findings.some(
+        ({ code, detail, url }) =>
+          code === "PRESENTATION_NAVIGATION" &&
+          url === absolute("/") &&
+          detail.includes("presentation page audit timed out after 100 ms"),
+      ),
+      JSON.stringify({ findings: report.findings, errors: report.errors }),
+    );
+    assert.equal(
+      report.presentation.find(({ url }) => url === absolute("/"))?.status,
+      "FAIL",
+    );
+    assert.equal(report.errors.length, 0);
+    assert.equal(report.automatedGates.presentation, "FAIL");
+    assert.equal(existsSync(report.artifactPath), true);
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+test("a non-terminating performance task fails its run within the audit deadline", async () => {
+  const fixture = createFixture();
+  const homepage = fixture.responses.get(absolute("/"));
+  assert.ok(homepage);
+  fixture.browserOverrides.set(absolute("/"), {
+    ...homepage,
+    body: homepage.body.replace(
+      "</body>",
+      "<script>addEventListener('load',()=>{Object.defineProperty(globalThis,'__phase6Vitals',{get(){for(;;){}}})})</script></body>",
+    ),
+  });
+  fixture.performanceSamples.delete(absolute("/"));
+  fixture.auditKinds = ["performance"];
+  fixture.performanceAuditTimeoutMs = 100;
+  const started = Date.now();
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    assert.ok(Date.now() - started < 8_000);
+    assert.ok(
+      report.findings.some(
+        ({ code, detail, url }) =>
+          code === "PERFORMANCE_NAVIGATION" &&
+          url === absolute("/") &&
+          detail.includes("performance run") &&
+          detail.includes("timed out after 100 ms"),
+      ),
+      JSON.stringify({ findings: report.findings, errors: report.errors }),
+    );
+    assert.equal(
+      report.performance.find(({ url }) => url === absolute("/"))?.status,
+      "FAIL",
+    );
+    assert.equal(report.automatedGates.performance, "FAIL");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+test("a non-terminating media task fails its article within the audit deadline", async () => {
+  const fixture = createFixture();
+  const articleUrl = absolute(ARTICLE_PATHS[0]);
+  const article = fixture.responses.get(articleUrl);
+  assert.ok(article);
+  fixture.browserOverrides.set(articleUrl, {
+    ...article,
+    body: article.body.replace(
+      "</body>",
+      "<script>addEventListener('load',()=>{document.querySelectorAll=()=>{for(;;){}}})</script></body>",
+    ),
+  });
+  fixture.auditKinds = ["media"];
+  fixture.renderedAuditTimeoutMs = 100;
+  const started = Date.now();
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    assert.ok(Date.now() - started < 8_000);
+    assert.ok(
+      report.findings.some(
+        ({ code, detail, url }) =>
+          code === "MEDIA_NAVIGATION" &&
+          url === articleUrl &&
+          detail.includes("timed out after 100 ms"),
+      ),
+      JSON.stringify({ findings: report.findings, errors: report.errors }),
+    );
+    assert.equal(
+      report.media.find(({ url }) => url === articleUrl)?.status,
+      "FAIL",
+    );
+    assert.equal(report.errors.length, 0);
+    assert.equal(report.automatedGates.media, "FAIL");
   } finally {
     await cleanupReport(report);
   }

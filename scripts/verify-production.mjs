@@ -25,6 +25,9 @@ const FINAL_READER_IDLE_MS = 5_000;
 const PERFORMANCE_NAVIGATION_TIMEOUT_MS = 45_000;
 const RENDERED_NAVIGATION_TIMEOUT_MS = 30_000;
 const FONT_READY_TIMEOUT_MS = 10_000;
+const PERFORMANCE_AUDIT_TIMEOUT_MS = 65_000;
+const RENDERED_AUDIT_TIMEOUT_MS = 45_000;
+const AUDIT_CLOSE_TIMEOUT_MS = 1_000;
 const MEDIA_REGION_SELECTOR = "[data-video-region]";
 const MEDIA_ACTIVATE_SELECTOR = "[data-video-activate]";
 const MEDIA_DIRECT_SELECTOR = ".youtube-cta";
@@ -54,6 +57,8 @@ const PROFILE = {
   performanceNavigationTimeoutMs: PERFORMANCE_NAVIGATION_TIMEOUT_MS,
   renderedNavigationTimeoutMs: RENDERED_NAVIGATION_TIMEOUT_MS,
   fontReadyTimeoutMs: FONT_READY_TIMEOUT_MS,
+  performanceAuditTimeoutMs: PERFORMANCE_AUDIT_TIMEOUT_MS,
+  renderedAuditTimeoutMs: RENDERED_AUDIT_TIMEOUT_MS,
   commands: [
     "Network.emulateNetworkConditionsByRule",
     "Network.overrideNetworkState",
@@ -841,6 +846,7 @@ async function auditPerformance({
   controlledFixture,
   readerIdleMs,
   fontReadyTimeoutMs,
+  auditTimeoutMs,
   findings,
   browserTransport,
 }) {
@@ -857,62 +863,70 @@ async function auditPerformance({
         hasTouch: PROFILE.hasTouch,
         serviceWorkers: "block",
       });
+      await context.addInitScript(installVitalsObserver);
+      const page = await context.newPage();
       try {
-        await context.addInitScript(installVitalsObserver);
-        const page = await context.newPage();
-        await installControlledRoutes(page, controlledFixture);
-        await applyPerformanceProfile(
+        await withAuditDeadline({
+          page,
           context,
-          page,
-          Boolean(controlledFixture),
-        );
-        await navigateSameOrigin({
-          page,
-          url,
-          origin,
-          timeout: PERFORMANCE_NAVIGATION_TIMEOUT_MS,
-          findings,
-          browserTransport,
-        });
-        await waitForFontReadiness(page, fontReadyTimeoutMs);
-        await page.waitForTimeout(readerIdleMs);
-        const controlledSample =
-          controlledFixture?.performanceSamples?.get(url)?.[iteration];
-        const observed = controlledSample
-          ? {
-              lcp: controlledSample.lcp,
-              cls: maximumSessionWindowCls(controlledSample.shifts),
-              supported: [...controlledSample.supported],
+          timeoutMs: auditTimeoutMs,
+          label: `performance run ${iteration + 1}`,
+          task: async () => {
+            await installControlledRoutes(page, controlledFixture);
+            await applyPerformanceProfile(
+              context,
+              page,
+              Boolean(controlledFixture),
+            );
+            await navigateSameOrigin({
+              page,
+              url,
+              origin,
+              timeout: PERFORMANCE_NAVIGATION_TIMEOUT_MS,
+              findings,
+              browserTransport,
+            });
+            await waitForFontReadiness(page, fontReadyTimeoutMs);
+            await page.waitForTimeout(readerIdleMs);
+            const controlledSample =
+              controlledFixture?.performanceSamples?.get(url)?.[iteration];
+            const observed = controlledSample
+              ? {
+                  lcp: controlledSample.lcp,
+                  cls: maximumSessionWindowCls(controlledSample.shifts),
+                  supported: [...controlledSample.supported],
+                }
+              : await page.evaluate(() => globalThis.__phase6Vitals);
+            const observerSupport = observed?.supported ?? [];
+            const lcpMs = Number.isFinite(observed?.lcp) ? observed.lcp : null;
+            const cls = Number.isFinite(observed?.cls) ? observed.cls : null;
+            if (
+              !observerSupport.includes("largest-contentful-paint") ||
+              !observerSupport.includes("layout-shift")
+            ) {
+              finding(
+                findings,
+                "PERFORMANCE_OBSERVER",
+                `run ${iteration + 1} lacks required observer support`,
+                url,
+              );
             }
-          : await page.evaluate(() => globalThis.__phase6Vitals);
-        const observerSupport = observed?.supported ?? [];
-        const lcpMs = Number.isFinite(observed?.lcp) ? observed.lcp : null;
-        const cls = Number.isFinite(observed?.cls) ? observed.cls : null;
-        if (
-          !observerSupport.includes("largest-contentful-paint") ||
-          !observerSupport.includes("layout-shift")
-        ) {
-          finding(
-            findings,
-            "PERFORMANCE_OBSERVER",
-            `run ${iteration + 1} lacks required observer support`,
-            url,
-          );
-        }
-        if (lcpMs === null || cls === null) {
-          finding(
-            findings,
-            "PERFORMANCE_METRIC",
-            `run ${iteration + 1} has a missing or non-finite metric`,
-            url,
-          );
-        }
-        runs.push({
-          iteration: iteration + 1,
-          contextSequence,
-          lcpMs,
-          cls,
-          observerSupport,
+            if (lcpMs === null || cls === null) {
+              finding(
+                findings,
+                "PERFORMANCE_METRIC",
+                `run ${iteration + 1} has a missing or non-finite metric`,
+                url,
+              );
+            }
+            runs.push({
+              iteration: iteration + 1,
+              contextSequence,
+              lcpMs,
+              cls,
+              observerSupport,
+            });
+          },
         });
       } catch (error) {
         finding(
@@ -929,7 +943,7 @@ async function auditPerformance({
           observerSupport: [],
         });
       } finally {
-        await context.close();
+        await closeAuditPage(page, context);
       }
     }
     const medianLcpMs = median(runs.map(({ lcpMs }) => lcpMs));
@@ -977,6 +991,41 @@ async function newAuditPage(
   return { context, page };
 }
 
+async function closeAuditPage(page, context) {
+  const closing = Promise.allSettled([
+    page.close({ runBeforeUnload: false }),
+    context.close(),
+  ]);
+  let timer;
+  try {
+    await Promise.race([
+      closing,
+      new Promise((resolveClose) => {
+        timer = setTimeout(resolveClose, AUDIT_CLOSE_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function withAuditDeadline({ page, context, timeoutMs, label, task }) {
+  let timer;
+  try {
+    return await Promise.race([
+      task(),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          void closeAuditPage(page, context);
+          reject(new Error(`${label} timed out after ${timeoutMs} ms`));
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function installMediaBlock(page, requests) {
   page.on("request", (request) => {
     if (isMediaUrl(request.url())) requests.push(request.url());
@@ -1014,57 +1063,96 @@ async function activationObservation(
   key,
   findings,
   browserTransport,
+  auditTimeoutMs,
 ) {
   const requests = [];
   const { context, page } = await newAuditPage(browser, controlledFixture);
   try {
-    await installMediaBlock(page, requests);
-    await navigateSameOrigin({
+    return await withAuditDeadline({
       page,
-      url,
-      origin,
-      timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
-      findings,
-      browserTransport,
-      intentionalBlockedUrl: isMediaUrl,
+      context,
+      timeoutMs: auditTimeoutMs,
+      label: `media ${key ? "keyboard" : "pointer"} pass`,
+      task: async () => {
+        await installMediaBlock(page, requests);
+        await navigateSameOrigin({
+          page,
+          url,
+          origin,
+          timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
+          findings,
+          browserTransport,
+          intentionalBlockedUrl: isMediaUrl,
+        });
+        const region = page.locator(MEDIA_REGION_SELECTOR);
+        const trigger = region.locator(MEDIA_ACTIVATE_SELECTOR);
+        const before = await mediaGeometry(region);
+        if (key) {
+          await trigger.focus();
+          await page.keyboard.press(key);
+        } else {
+          await trigger.click();
+        }
+        const iframe = region.locator("iframe");
+        await iframe
+          .first()
+          .waitFor({ state: "attached", timeout: 5_000 })
+          .catch(() => {});
+        const after = await mediaGeometry(region);
+        return {
+          iframeCount: await iframe.count(),
+          src:
+            (await iframe
+              .first()
+              .getAttribute("src")
+              .catch(() => null)) ?? "",
+          title:
+            (await iframe
+              .first()
+              .getAttribute("title")
+              .catch(() => null)) ?? "",
+          focused: await iframe
+            .first()
+            .evaluate((node) => document.activeElement === node)
+            .catch(() => false),
+          geometryStable: geometryStable(before, after),
+          requests,
+        };
+      },
     });
-    const region = page.locator(MEDIA_REGION_SELECTOR);
-    const trigger = region.locator(MEDIA_ACTIVATE_SELECTOR);
-    const before = await mediaGeometry(region);
-    if (key) {
-      await trigger.focus();
-      await page.keyboard.press(key);
-    } else {
-      await trigger.click();
-    }
-    const iframe = region.locator("iframe");
-    await iframe
-      .first()
-      .waitFor({ state: "attached", timeout: 5_000 })
-      .catch(() => {});
-    const after = await mediaGeometry(region);
-    return {
-      iframeCount: await iframe.count(),
-      src:
-        (await iframe
-          .first()
-          .getAttribute("src")
-          .catch(() => null)) ?? "",
-      title:
-        (await iframe
-          .first()
-          .getAttribute("title")
-          .catch(() => null)) ?? "",
-      focused: await iframe
-        .first()
-        .evaluate((node) => document.activeElement === node)
-        .catch(() => false),
-      geometryStable: geometryStable(before, after),
-      requests,
-    };
   } finally {
-    await context.close();
+    await closeAuditPage(page, context);
   }
+}
+
+function failedMediaResult(url, youtubeId = "") {
+  return {
+    url,
+    youtubeId,
+    preIntent: { iframeCount: 0, mediaRequests: [], geometry: null },
+    pointer: {
+      iframeCount: 0,
+      src: "",
+      title: "",
+      focused: false,
+      geometryStable: false,
+    },
+    keyboard: {
+      iframeCount: 0,
+      src: "",
+      title: "",
+      focused: false,
+      geometryStable: false,
+    },
+    fallback: {
+      href: "",
+      label: "",
+      visible: false,
+      focusable: false,
+      sameTab: false,
+    },
+    status: "FAIL",
+  };
 }
 
 async function auditMedia({
@@ -1075,6 +1163,7 @@ async function auditMedia({
   controlledFixture,
   findings,
   browserTransport,
+  auditTimeoutMs,
 }) {
   const results = [];
   for (const url of articleUrls.sort(comparePublicUrls)) {
@@ -1086,204 +1175,207 @@ async function auditMedia({
         "article cannot be rendered-audited without one valid YouTube identity",
         url,
       );
-      results.push({
-        url,
-        youtubeId: articleIdentity?.youtubeId ?? "",
-        preIntent: { iframeCount: 0, mediaRequests: [], geometry: null },
-        pointer: {
-          iframeCount: 0,
-          src: "",
-          title: "",
-          focused: false,
-          geometryStable: false,
-        },
-        keyboard: {
-          iframeCount: 0,
-          src: "",
-          title: "",
-          focused: false,
-          geometryStable: false,
-        },
-        fallback: {
-          href: "",
-          label: "",
-          visible: false,
-          focusable: false,
-          sameTab: false,
-        },
-        status: "FAIL",
-      });
+      results.push(failedMediaResult(url, articleIdentity?.youtubeId));
       continue;
     }
-    const youtubeId = articleIdentity.youtubeId;
-    const expectedTitle = articleIdentity.iframeTitle;
-    const expectedSrc = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(youtubeId)}?hl=ar`;
-    const expectedHref = `https://www.youtube.com/watch?v=${encodeURIComponent(youtubeId)}`;
-    const preRequests = [];
-    const pre = await newAuditPage(browser, controlledFixture);
-    let preIntent;
     try {
-      await installMediaBlock(pre.page, preRequests);
-      await navigateSameOrigin({
-        page: pre.page,
-        url,
+      const youtubeId = articleIdentity.youtubeId;
+      const expectedTitle = articleIdentity.iframeTitle;
+      const expectedSrc = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(youtubeId)}?hl=ar`;
+      const expectedHref = `https://www.youtube.com/watch?v=${encodeURIComponent(youtubeId)}`;
+      const preRequests = [];
+      const pre = await newAuditPage(browser, controlledFixture);
+      let preIntent;
+      try {
+        preIntent = await withAuditDeadline({
+          page: pre.page,
+          context: pre.context,
+          timeoutMs: auditTimeoutMs,
+          label: "media pre-intent pass",
+          task: async () => {
+            await installMediaBlock(pre.page, preRequests);
+            await navigateSameOrigin({
+              page: pre.page,
+              url,
+              origin,
+              timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
+              findings,
+              browserTransport,
+              intentionalBlockedUrl: isMediaUrl,
+            });
+            const region = pre.page.locator(MEDIA_REGION_SELECTOR);
+            return {
+              iframeCount: await pre.page.locator("iframe").count(),
+              mediaRequests: preRequests,
+              geometry: await mediaGeometry(region),
+            };
+          },
+        });
+      } finally {
+        await closeAuditPage(pre.page, pre.context);
+      }
+
+      const pointer = await activationObservation(
+        browser,
+        controlledFixture,
         origin,
-        timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
+        url,
+        undefined,
         findings,
         browserTransport,
-        intentionalBlockedUrl: isMediaUrl,
-      });
-      const region = pre.page.locator(MEDIA_REGION_SELECTOR);
-      preIntent = {
-        iframeCount: await pre.page.locator("iframe").count(),
-        mediaRequests: preRequests,
-        geometry: await mediaGeometry(region),
-      };
-    } finally {
-      await pre.context.close();
-    }
-
-    const pointer = await activationObservation(
-      browser,
-      controlledFixture,
-      origin,
-      url,
-      undefined,
-      findings,
-      browserTransport,
-    );
-    const keyboard = await activationObservation(
-      browser,
-      controlledFixture,
-      origin,
-      url,
-      "Enter",
-      findings,
-      browserTransport,
-    );
-
-    const fallbackPage = await newAuditPage(browser, controlledFixture);
-    const fallbackRequests = [];
-    let fallback;
-    try {
-      await installMediaBlock(fallbackPage.page, fallbackRequests);
-      await navigateSameOrigin({
-        page: fallbackPage.page,
-        url,
+        auditTimeoutMs,
+      );
+      const keyboard = await activationObservation(
+        browser,
+        controlledFixture,
         origin,
-        timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
+        url,
+        "Enter",
         findings,
         browserTransport,
-        intentionalBlockedUrl: isMediaUrl,
-      });
-      await fallbackPage.page.locator(MEDIA_ACTIVATE_SELECTOR).click();
-      const link = fallbackPage.page.locator(MEDIA_DIRECT_SELECTOR);
-      await link.focus().catch(() => {});
-      fallback = {
-        href: (await link.getAttribute("href")) ?? "",
-        label: (await link.innerText()).trim(),
-        visible: await link.isVisible(),
-        focusable: await link
-          .evaluate(
-            (node) => document.activeElement === node && node.tabIndex >= 0,
-          )
-          .catch(() => false),
-        sameTab: (await link.getAttribute("target")) === null,
-      };
-    } finally {
-      await fallbackPage.context.close();
-    }
+        auditTimeoutMs,
+      );
 
-    const validActivation = (observation) => {
-      if (observation.iframeCount !== 1 || observation.src !== expectedSrc)
-        return false;
-      const parsed = new URL(observation.src);
-      return (
-        parsed.hostname === "www.youtube-nocookie.com" &&
-        parsed.searchParams.get("hl") === "ar" &&
-        parsed.searchParams.get("autoplay") !== "1" &&
-        observation.title === expectedTitle &&
-        ARABIC.test(observation.title) &&
-        observation.focused
-      );
-    };
-    const preIntentPassed =
-      preIntent.iframeCount === 0 &&
-      preIntent.mediaRequests.length === 0 &&
-      preIntent.geometry !== null &&
-      Math.abs(preIntent.geometry.ratio - 16 / 9) <= 0.02;
-    if (!preIntentPassed) {
+      const fallbackPage = await newAuditPage(browser, controlledFixture);
+      const fallbackRequests = [];
+      let fallback;
+      try {
+        fallback = await withAuditDeadline({
+          page: fallbackPage.page,
+          context: fallbackPage.context,
+          timeoutMs: auditTimeoutMs,
+          label: "media fallback pass",
+          task: async () => {
+            await installMediaBlock(fallbackPage.page, fallbackRequests);
+            await navigateSameOrigin({
+              page: fallbackPage.page,
+              url,
+              origin,
+              timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
+              findings,
+              browserTransport,
+              intentionalBlockedUrl: isMediaUrl,
+            });
+            await fallbackPage.page.locator(MEDIA_ACTIVATE_SELECTOR).click();
+            const link = fallbackPage.page.locator(MEDIA_DIRECT_SELECTOR);
+            await link.focus().catch(() => {});
+            return {
+              href: (await link.getAttribute("href")) ?? "",
+              label: (await link.innerText()).trim(),
+              visible: await link.isVisible(),
+              focusable: await link
+                .evaluate(
+                  (node) =>
+                    document.activeElement === node && node.tabIndex >= 0,
+                )
+                .catch(() => false),
+              sameTab: (await link.getAttribute("target")) === null,
+            };
+          },
+        });
+      } finally {
+        await closeAuditPage(fallbackPage.page, fallbackPage.context);
+      }
+
+      const validActivation = (observation) => {
+        if (observation.iframeCount !== 1 || observation.src !== expectedSrc)
+          return false;
+        const parsed = new URL(observation.src);
+        return (
+          parsed.hostname === "www.youtube-nocookie.com" &&
+          parsed.searchParams.get("hl") === "ar" &&
+          parsed.searchParams.get("autoplay") !== "1" &&
+          observation.title === expectedTitle &&
+          ARABIC.test(observation.title) &&
+          observation.focused
+        );
+      };
+      const preIntentPassed =
+        preIntent.iframeCount === 0 &&
+        preIntent.mediaRequests.length === 0 &&
+        preIntent.geometry !== null &&
+        Math.abs(preIntent.geometry.ratio - 16 / 9) <= 0.02;
+      if (!preIntentPassed) {
+        finding(
+          findings,
+          preIntent.mediaRequests.length > 0 || preIntent.iframeCount > 0
+            ? "MEDIA_PRE_INTENT"
+            : "MEDIA_GEOMETRY",
+          "article loaded media before intent or lacked reserved 16:9 geometry",
+          url,
+        );
+      }
+      if (!validActivation(pointer) || !validActivation(keyboard)) {
+        finding(
+          findings,
+          "MEDIA_ACTIVATION",
+          "pointer and Enter must create one exact focused Arabic no-cookie iframe without autoplay",
+          url,
+        );
+      }
+      if (!pointer.geometryStable || !keyboard.geometryStable) {
+        finding(
+          findings,
+          "MEDIA_GEOMETRY",
+          "media region changed geometry after activation",
+          url,
+        );
+      }
+      if (
+        fallback.href !== expectedHref ||
+        !ARABIC.test(fallback.label) ||
+        !fallback.visible ||
+        !fallback.focusable ||
+        !fallback.sameTab
+      ) {
+        finding(
+          findings,
+          "MEDIA_FALLBACK",
+          "blocked player must preserve one visible focusable exact same-tab direct link",
+          url,
+        );
+      }
+      const passed =
+        preIntentPassed &&
+        validActivation(pointer) &&
+        validActivation(keyboard) &&
+        pointer.geometryStable &&
+        keyboard.geometryStable &&
+        fallback.href === expectedHref &&
+        ARABIC.test(fallback.label) &&
+        fallback.visible &&
+        fallback.focusable &&
+        fallback.sameTab;
+      results.push({
+        url,
+        youtubeId,
+        preIntent,
+        pointer: {
+          iframeCount: pointer.iframeCount,
+          src: pointer.src,
+          title: pointer.title,
+          focused: pointer.focused,
+          geometryStable: pointer.geometryStable,
+        },
+        keyboard: {
+          iframeCount: keyboard.iframeCount,
+          src: keyboard.src,
+          title: keyboard.title,
+          focused: keyboard.focused,
+          geometryStable: keyboard.geometryStable,
+        },
+        fallback,
+        status: passed ? "PASS" : "FAIL",
+      });
+    } catch (error) {
       finding(
         findings,
-        preIntent.mediaRequests.length > 0 || preIntent.iframeCount > 0
-          ? "MEDIA_PRE_INTENT"
-          : "MEDIA_GEOMETRY",
-        "article loaded media before intent or lacked reserved 16:9 geometry",
+        "MEDIA_NAVIGATION",
+        error instanceof Error ? error.message : String(error),
         url,
       );
+      results.push(failedMediaResult(url, articleIdentity.youtubeId));
     }
-    if (!validActivation(pointer) || !validActivation(keyboard)) {
-      finding(
-        findings,
-        "MEDIA_ACTIVATION",
-        "pointer and Enter must create one exact focused Arabic no-cookie iframe without autoplay",
-        url,
-      );
-    }
-    if (!pointer.geometryStable || !keyboard.geometryStable) {
-      finding(
-        findings,
-        "MEDIA_GEOMETRY",
-        "media region changed geometry after activation",
-        url,
-      );
-    }
-    if (
-      fallback.href !== expectedHref ||
-      !ARABIC.test(fallback.label) ||
-      !fallback.visible ||
-      !fallback.focusable ||
-      !fallback.sameTab
-    ) {
-      finding(
-        findings,
-        "MEDIA_FALLBACK",
-        "blocked player must preserve one visible focusable exact same-tab direct link",
-        url,
-      );
-    }
-    const passed =
-      preIntentPassed &&
-      validActivation(pointer) &&
-      validActivation(keyboard) &&
-      pointer.geometryStable &&
-      keyboard.geometryStable &&
-      fallback.href === expectedHref &&
-      ARABIC.test(fallback.label) &&
-      fallback.visible &&
-      fallback.focusable &&
-      fallback.sameTab;
-    results.push({
-      url,
-      youtubeId,
-      preIntent,
-      pointer: {
-        iframeCount: pointer.iframeCount,
-        src: pointer.src,
-        title: pointer.title,
-        focused: pointer.focused,
-        geometryStable: pointer.geometryStable,
-      },
-      keyboard: {
-        iframeCount: keyboard.iframeCount,
-        src: keyboard.src,
-        title: keyboard.title,
-        focused: keyboard.focused,
-        geometryStable: keyboard.geometryStable,
-      },
-      fallback,
-      status: passed ? "PASS" : "FAIL",
-    });
   }
   return results;
 }
@@ -1363,6 +1455,7 @@ async function auditPresentation({
   controlledFixture,
   findings,
   browserTransport,
+  auditTimeoutMs,
 }) {
   const results = [];
   for (const url of urls) {
@@ -1371,173 +1464,183 @@ async function auditPresentation({
       height: 844,
     });
     try {
-      await navigateSameOrigin({
+      await withAuditDeadline({
         page,
-        url,
-        origin,
-        timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
-        findings,
-        browserTransport,
-      });
-      const identity = await page.locator("html").evaluate((node) => ({
-        lang: node.getAttribute("lang"),
-        dir: node.getAttribute("dir"),
-      }));
-      const semantics = await page.evaluate(() => {
-        const levels = [...document.querySelectorAll("h1,h2,h3,h4,h5,h6")].map(
-          (heading) => Number(heading.tagName.slice(1)),
-        );
-        return {
-          mainCount: document.querySelectorAll("main").length,
-          h1Count: document.querySelectorAll("main h1").length,
-          headingsDoNotSkip: levels.every(
-            (level, index) => index === 0 || level - levels[index - 1] <= 1,
-          ),
-        };
-      });
-      const leaks = await latinLeaks(page, context);
-      const interactive = page.locator(
-        "a[href]:visible, button:visible, input:visible, select:visible, textarea:visible, [tabindex]:visible",
-      );
-      const interactiveCount = await interactive.count();
-      let keyboardReachable = true;
-      let visibleFocus = true;
-      for (let index = 0; index < interactiveCount; index += 1) {
-        const element = interactive.nth(index);
-        const tabIndex = await element.evaluate((node) => node.tabIndex);
-        if (tabIndex < 0) keyboardReachable = false;
-        await element.focus().catch(() => {});
-        const focus = await element
-          .evaluate((node) => {
-            const style = getComputedStyle(node);
+        context,
+        timeoutMs: auditTimeoutMs,
+        label: "presentation page audit",
+        task: async () => {
+          await navigateSameOrigin({
+            page,
+            url,
+            origin,
+            timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
+            findings,
+            browserTransport,
+          });
+          const identity = await page.locator("html").evaluate((node) => ({
+            lang: node.getAttribute("lang"),
+            dir: node.getAttribute("dir"),
+          }));
+          const semantics = await page.evaluate(() => {
+            const levels = [
+              ...document.querySelectorAll("h1,h2,h3,h4,h5,h6"),
+            ].map((heading) => Number(heading.tagName.slice(1)));
             return {
-              active: document.activeElement === node,
-              visible:
-                style.outlineStyle !== "none" &&
-                Number.parseFloat(style.outlineWidth) > 0,
+              mainCount: document.querySelectorAll("main").length,
+              h1Count: document.querySelectorAll("main h1").length,
+              headingsDoNotSkip: levels.every(
+                (level, index) => index === 0 || level - levels[index - 1] <= 1,
+              ),
             };
-          })
-          .catch(() => ({ active: false, visible: false }));
-        keyboardReachable &&= focus.active;
-        visibleFocus &&= focus.visible;
-      }
-      const horizontalOverflow = await page.evaluate(
-        () =>
-          document.documentElement.scrollWidth >
-            document.documentElement.clientWidth + 1 ||
-          [...document.body.querySelectorAll("*")]
-            .filter((node) => {
-              const style = getComputedStyle(node);
-              const box = node.getBoundingClientRect();
-              return (
-                style.display !== "none" && box.width > 0 && box.height > 0
-              );
-            })
-            .some((node) => {
-              const box = node.getBoundingClientRect();
-              return (
-                box.left < -1 ||
-                box.right > document.documentElement.clientWidth + 1
-              );
-            }),
-      );
-      await page.addStyleTag({
-        content:
-          "*{line-height:1.5!important;letter-spacing:.12em!important;word-spacing:.16em!important}p{margin-block-end:2em!important}",
-      });
-      const textSpacingLoss = await page.evaluate(() =>
-        [...document.querySelectorAll("p,li,a,button,h1,h2,h3,h4,h5,h6")]
-          .filter((node) => getComputedStyle(node).display !== "none")
-          .some((node) => {
-            const style = getComputedStyle(node);
-            return (
-              ["hidden", "clip"].includes(style.overflow) &&
-              (node.scrollHeight > node.clientHeight + 1 ||
-                node.scrollWidth > node.clientWidth + 1)
-            );
-          }),
-      );
-      const axe = await new AxeBuilder({ page })
-        .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
-        .analyze();
-      const axeFindings = axe.violations
-        .filter(({ impact }) => impact === "serious" || impact === "critical")
-        .map(({ id, impact }) => ({ id, impact }));
+          });
+          const leaks = await latinLeaks(page, context);
+          const interactive = page.locator(
+            "a[href]:visible, button:visible, input:visible, select:visible, textarea:visible, [tabindex]:visible",
+          );
+          const interactiveCount = await interactive.count();
+          let keyboardReachable = true;
+          let visibleFocus = true;
+          for (let index = 0; index < interactiveCount; index += 1) {
+            const element = interactive.nth(index);
+            const tabIndex = await element.evaluate((node) => node.tabIndex);
+            if (tabIndex < 0) keyboardReachable = false;
+            await element.focus().catch(() => {});
+            const focus = await element
+              .evaluate((node) => {
+                const style = getComputedStyle(node);
+                return {
+                  active: document.activeElement === node,
+                  visible:
+                    style.outlineStyle !== "none" &&
+                    Number.parseFloat(style.outlineWidth) > 0,
+                };
+              })
+              .catch(() => ({ active: false, visible: false }));
+            keyboardReachable &&= focus.active;
+            visibleFocus &&= focus.visible;
+          }
+          const horizontalOverflow = await page.evaluate(
+            () =>
+              document.documentElement.scrollWidth >
+                document.documentElement.clientWidth + 1 ||
+              [...document.body.querySelectorAll("*")]
+                .filter((node) => {
+                  const style = getComputedStyle(node);
+                  const box = node.getBoundingClientRect();
+                  return (
+                    style.display !== "none" && box.width > 0 && box.height > 0
+                  );
+                })
+                .some((node) => {
+                  const box = node.getBoundingClientRect();
+                  return (
+                    box.left < -1 ||
+                    box.right > document.documentElement.clientWidth + 1
+                  );
+                }),
+          );
+          await page.addStyleTag({
+            content:
+              "*{line-height:1.5!important;letter-spacing:.12em!important;word-spacing:.16em!important}p{margin-block-end:2em!important}",
+          });
+          const textSpacingLoss = await page.evaluate(() =>
+            [...document.querySelectorAll("p,li,a,button,h1,h2,h3,h4,h5,h6")]
+              .filter((node) => getComputedStyle(node).display !== "none")
+              .some((node) => {
+                const style = getComputedStyle(node);
+                return (
+                  ["hidden", "clip"].includes(style.overflow) &&
+                  (node.scrollHeight > node.clientHeight + 1 ||
+                    node.scrollWidth > node.clientWidth + 1)
+                );
+              }),
+          );
+          const axe = await new AxeBuilder({ page })
+            .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+            .analyze();
+          const axeFindings = axe.violations
+            .filter(
+              ({ impact }) => impact === "serious" || impact === "critical",
+            )
+            .map(({ id, impact }) => ({ id, impact }));
 
-      if (identity.lang !== "ar" || identity.dir !== "rtl")
-        finding(
-          findings,
-          "PRESENTATION_IDENTITY",
-          "rendered page must use Arabic RTL identity",
-          url,
-        );
-      if (leaks.length > 0)
-        finding(
-          findings,
-          "PRESENTATION_LATIN",
-          `reader-facing Latin leakage: ${leaks.join(" | ")}`,
-          url,
-        );
-      if (
-        semantics.mainCount !== 1 ||
-        semantics.h1Count !== 1 ||
-        !semantics.headingsDoNotSkip
-      )
-        finding(
-          findings,
-          "PRESENTATION_SEMANTICS",
-          "page must contain one main, one h1, and non-skipping headings",
-          url,
-        );
-      if (!keyboardReachable || !visibleFocus)
-        finding(
-          findings,
-          "PRESENTATION_KEYBOARD",
-          "every visible control must be keyboard reachable with visible focus",
-          url,
-        );
-      if (axeFindings.length > 0)
-        finding(
-          findings,
-          "PRESENTATION_AXE",
-          `serious or critical Axe findings: ${axeFindings.map(({ id }) => id).join(", ")}`,
-          url,
-        );
-      if (textSpacingLoss)
-        finding(
-          findings,
-          "PRESENTATION_TEXT_SPACING",
-          "text spacing stress caused content loss",
-          url,
-        );
-      if (horizontalOverflow)
-        finding(
-          findings,
-          "PRESENTATION_REFLOW",
-          "page overflows horizontally at 320 CSS pixels",
-          url,
-        );
-      const passed =
-        identity.lang === "ar" &&
-        identity.dir === "rtl" &&
-        leaks.length === 0 &&
-        semantics.mainCount === 1 &&
-        semantics.h1Count === 1 &&
-        semantics.headingsDoNotSkip &&
-        keyboardReachable &&
-        visibleFocus &&
-        axeFindings.length === 0 &&
-        !textSpacingLoss &&
-        !horizontalOverflow;
-      results.push({
-        url,
-        latinLeaks: leaks,
-        axeFindings,
-        keyboardReachable,
-        visibleFocus,
-        textSpacingLoss,
-        horizontalOverflow,
-        status: passed ? "PASS" : "FAIL",
+          if (identity.lang !== "ar" || identity.dir !== "rtl")
+            finding(
+              findings,
+              "PRESENTATION_IDENTITY",
+              "rendered page must use Arabic RTL identity",
+              url,
+            );
+          if (leaks.length > 0)
+            finding(
+              findings,
+              "PRESENTATION_LATIN",
+              `reader-facing Latin leakage: ${leaks.join(" | ")}`,
+              url,
+            );
+          if (
+            semantics.mainCount !== 1 ||
+            semantics.h1Count !== 1 ||
+            !semantics.headingsDoNotSkip
+          )
+            finding(
+              findings,
+              "PRESENTATION_SEMANTICS",
+              "page must contain one main, one h1, and non-skipping headings",
+              url,
+            );
+          if (!keyboardReachable || !visibleFocus)
+            finding(
+              findings,
+              "PRESENTATION_KEYBOARD",
+              "every visible control must be keyboard reachable with visible focus",
+              url,
+            );
+          if (axeFindings.length > 0)
+            finding(
+              findings,
+              "PRESENTATION_AXE",
+              `serious or critical Axe findings: ${axeFindings.map(({ id }) => id).join(", ")}`,
+              url,
+            );
+          if (textSpacingLoss)
+            finding(
+              findings,
+              "PRESENTATION_TEXT_SPACING",
+              "text spacing stress caused content loss",
+              url,
+            );
+          if (horizontalOverflow)
+            finding(
+              findings,
+              "PRESENTATION_REFLOW",
+              "page overflows horizontally at 320 CSS pixels",
+              url,
+            );
+          const passed =
+            identity.lang === "ar" &&
+            identity.dir === "rtl" &&
+            leaks.length === 0 &&
+            semantics.mainCount === 1 &&
+            semantics.h1Count === 1 &&
+            semantics.headingsDoNotSkip &&
+            keyboardReachable &&
+            visibleFocus &&
+            axeFindings.length === 0 &&
+            !textSpacingLoss &&
+            !horizontalOverflow;
+          results.push({
+            url,
+            latinLeaks: leaks,
+            axeFindings,
+            keyboardReachable,
+            visibleFocus,
+            textSpacingLoss,
+            horizontalOverflow,
+            status: passed ? "PASS" : "FAIL",
+          });
+        },
       });
     } catch (error) {
       finding(
@@ -1557,7 +1660,7 @@ async function auditPresentation({
         status: "FAIL",
       });
     } finally {
-      await context.close();
+      await closeAuditPage(page, context);
     }
   }
   return results;
@@ -1610,7 +1713,30 @@ export async function runProductionVerification(options = {}) {
         Number(controlledFixture.fontReadyTimeoutMs ?? FONT_READY_TIMEOUT_MS),
       )
     : FONT_READY_TIMEOUT_MS;
-  const profile = { ...PROFILE, readerIdleMs, fontReadyTimeoutMs };
+  const performanceAuditTimeoutMs = controlledFixture
+    ? Math.max(
+        1,
+        Number(
+          controlledFixture.performanceAuditTimeoutMs ??
+            PERFORMANCE_AUDIT_TIMEOUT_MS,
+        ),
+      )
+    : PERFORMANCE_AUDIT_TIMEOUT_MS;
+  const renderedAuditTimeoutMs = controlledFixture
+    ? Math.max(
+        1,
+        Number(
+          controlledFixture.renderedAuditTimeoutMs ?? RENDERED_AUDIT_TIMEOUT_MS,
+        ),
+      )
+    : RENDERED_AUDIT_TIMEOUT_MS;
+  const profile = {
+    ...PROFILE,
+    readerIdleMs,
+    fontReadyTimeoutMs,
+    performanceAuditTimeoutMs,
+    renderedAuditTimeoutMs,
+  };
   const auditKinds = new Set(
     controlledFixture?.auditKinds ?? ["performance", "media", "presentation"],
   );
@@ -1929,6 +2055,7 @@ export async function runProductionVerification(options = {}) {
         controlledFixture,
         readerIdleMs,
         fontReadyTimeoutMs,
+        auditTimeoutMs: performanceAuditTimeoutMs,
         findings,
         browserTransport,
       });
@@ -1945,6 +2072,7 @@ export async function runProductionVerification(options = {}) {
         controlledFixture,
         findings,
         browserTransport,
+        auditTimeoutMs: renderedAuditTimeoutMs,
       });
     }
     if (auditKinds.has("presentation")) {
@@ -1955,6 +2083,7 @@ export async function runProductionVerification(options = {}) {
         controlledFixture,
         findings,
         browserTransport,
+        auditTimeoutMs: renderedAuditTimeoutMs,
       });
     }
   } catch (error) {
