@@ -384,9 +384,10 @@ async function parseHtml(page, source, url, findings) {
         scripts: [...document.querySelectorAll("script[src]")].map((node) => ({
           src: node.getAttribute("src")?.trim() ?? "",
           defer: node.hasAttribute("defer"),
-          async: node.hasAttribute("async"),
-          nomodule: node.hasAttribute("nomodule"),
-          type: node.getAttribute("type")?.trim() ?? "",
+          attributes: [...node.attributes].map(({ name, value }) => ({
+            name,
+            value,
+          })),
         })),
         anchors: attributeValues("a[href]", "href"),
         h1: [...document.querySelectorAll("main h1")].map(
@@ -418,15 +419,10 @@ function validatedPlausibleLoader(document, url, findings) {
   if (
     loaders.length !== 1 ||
     !loaders[0].defer ||
-    loaders[0].async ||
-    loaders[0].nomodule ||
-    ![
-      "",
-      "text/javascript",
-      "application/javascript",
-      "text/ecmascript",
-      "application/ecmascript",
-    ].includes(loaders[0].type.split(";", 1)[0].trim().toLowerCase()) ||
+    loaders[0].attributes.length !== 2 ||
+    loaders[0].attributes.some(
+      ({ name }) => name !== "src" && name !== "defer",
+    ) ||
     document.scripts.some(
       ({ src }) =>
         new URL(src, url).origin === "https://plausible.io" &&
@@ -436,7 +432,7 @@ function validatedPlausibleLoader(document, url, findings) {
     finding(
       findings,
       "PLAUSIBLE_LOADER",
-      "page must contain one exact deferred classic Plausible property loader without async or nomodule",
+      "page must contain one exact Plausible property loader with only src and defer attributes",
       url,
     );
     return undefined;
@@ -745,6 +741,7 @@ async function navigateSameOrigin({
   onUnexpectedRequest = () => {},
 }) {
   const unexpectedRequests = [];
+  const plausibleLoaderRequests = [];
   const responseChecks = [];
   const responseListener = (response) => {
     if (new URL(response.url()).origin !== origin) return;
@@ -783,6 +780,12 @@ async function navigateSameOrigin({
     const request = route.request();
     const destination = new URL(request.url());
     if (destination.origin === origin) return route.fallback();
+    if (request.url() === browserTransport.plausibleLoader)
+      plausibleLoaderRequests.push({
+        url: request.url(),
+        method: request.method(),
+        resourceType: request.resourceType(),
+      });
     if (
       !isApprovedPlausibleRequest(request, browserTransport.plausibleLoader) &&
       !intentionalBlockedRequest(request)
@@ -815,6 +818,16 @@ async function navigateSameOrigin({
   PAGE_TRANSPORT_MONITORS.set(page, async () => {
     page.off("response", responseListener);
     await Promise.allSettled(responseChecks);
+    if (
+      browserTransport.plausibleLoader &&
+      (plausibleLoaderRequests.length !== 1 ||
+        plausibleLoaderRequests[0].method !== "GET" ||
+        plausibleLoaderRequests[0].resourceType !== "script")
+    ) {
+      const detail = `expected one exact Plausible GET script request, observed ${JSON.stringify(plausibleLoaderRequests)}`;
+      finding(findings, "PLAUSIBLE_LOADER_REQUEST", detail, url);
+      unexpectedRequests.push(detail);
+    }
     for (const detail of unexpectedRequests.filter((value) =>
       value.includes("remote address"),
     ))

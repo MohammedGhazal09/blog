@@ -1113,6 +1113,7 @@ for (const [name, attributes] of [
   ["an inert type", 'defer type="application/json"'],
   ["nomodule", "defer nomodule"],
   ["async plus defer", "async defer"],
+  ["integrity metadata", 'defer integrity="sha256-invalid"'],
 ] as const) {
   test(`a Plausible loader with ${name} fails the executable analytics contract`, async () => {
     const fixture = createFixture();
@@ -1129,6 +1130,50 @@ for (const [name, attributes] of [
       report = await runControlled(fixture);
       expectFinding(report, "PLAUSIBLE_LOADER");
       assert.equal(report.plausibleLoader, null);
+    } finally {
+      await cleanupReport(report);
+    }
+  });
+}
+
+for (const [name, delayMs] of [
+  ["immediate", 0],
+  ["delayed", 150],
+] as const) {
+  test(`${name} dynamic duplicate Plausible loaders fail presentation without third-party contact`, async () => {
+    const fixture = createFixture();
+    const homepage = fixture.responses.get(absolute("/"));
+    assert.ok(homepage);
+    const appendDuplicate = `const loader=document.createElement("script");loader.defer=true;loader.src=${JSON.stringify(CONTROLLED_PLAUSIBLE_SCRIPT_SRC)};document.head.append(loader)`;
+    fixture.browserOverrides.set(absolute("/"), {
+      ...homepage,
+      body: homepage.body.replace(
+        "</body>",
+        `<script>${delayMs === 0 ? `addEventListener("load",()=>{${appendDuplicate}},{once:true})` : `setTimeout(()=>{${appendDuplicate}},${delayMs})`}</script></body>`,
+      ),
+    });
+    fixture.auditKinds = ["presentation"];
+    let report: VerificationReport | undefined;
+    try {
+      report = await runControlled(fixture);
+      assert.ok(
+        report.findings.some(
+          ({ code, url }) =>
+            code === "PLAUSIBLE_LOADER_REQUEST" && url === absolute("/"),
+        ),
+        JSON.stringify(report.findings),
+      );
+      assert.equal(
+        fixture.browserRequests.some(
+          (url) => new URL(url).origin === "https://plausible.io",
+        ),
+        false,
+      );
+      assert.equal(
+        report.presentation.find(({ url }) => url === absolute("/"))?.status,
+        "FAIL",
+      );
+      assert.equal(report.automatedGates.presentation, "FAIL");
     } finally {
       await cleanupReport(report);
     }
