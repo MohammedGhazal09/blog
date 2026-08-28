@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  chromiumHostResolverRules,
+  createPinnedLookup,
   productionSiteOrigin,
   verifiedProductionSiteOrigin,
 } from "../src/lib/site-origin.ts";
@@ -85,6 +87,8 @@ for (const [name, address, family] of [
   ["private IPv6 DNS answer", "fd00::1", 6],
   ["link-local IPv6 DNS answer", "fe80::1", 6],
   ["documentation IPv6 DNS answer", "2001:db8::1", 6],
+  ["deprecated site-local IPv6 DNS answer", "fec0::1", 6],
+  ["discard-only IPv6 DNS answer", "100:0:0:1::1", 6],
 ] as const) {
   test(`rejects ${name}`, async () => {
     await assert.rejects(() =>
@@ -95,3 +99,31 @@ for (const [name, address, family] of [
     );
   });
 }
+
+test("pins the approved DNS answer for Node and Chromium", async () => {
+  let resolverCalls = 0;
+  const verified = await verifiedProductionSiteOrigin(
+    "https://blog.ahmed-mangawy.org",
+    async () => {
+      resolverCalls += 1;
+      return resolverCalls === 1
+        ? [{ address: "93.184.216.34", family: 4 }]
+        : [{ address: "192.168.1.1", family: 4 }];
+    },
+  );
+  const resolved = await new Promise<{ address: string; family: number }>(
+    (resolveLookup, rejectLookup) =>
+      createPinnedLookup(verified)(verified.hostname, {}, (error, address, family) => {
+        if (error) rejectLookup(error);
+        else resolveLookup({ address: String(address), family: family ?? 0 });
+      }),
+  );
+
+  assert.equal(resolverCalls, 1);
+  assert.deepEqual(resolved, { address: "93.184.216.34", family: 4 });
+  assert.equal(
+    chromiumHostResolverRules(verified),
+    "MAP blog.ahmed-mangawy.org 93.184.216.34, EXCLUDE localhost",
+  );
+  assert.equal(chromiumHostResolverRules(verified).includes("192.168.1.1"), false);
+});

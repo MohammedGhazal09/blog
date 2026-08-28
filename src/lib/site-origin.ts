@@ -44,6 +44,7 @@ for (const [network, prefix] of [
   ["64:ff9b::", 96],
   ["64:ff9b:1::", 48],
   ["100::", 64],
+  ["100:0:0:1::", 64],
   ["2001::", 23],
   ["2001:db8::", 32],
   ["2002::", 16],
@@ -51,6 +52,7 @@ for (const [network, prefix] of [
   ["5f00::", 16],
   ["fc00::", 7],
   ["fe80::", 10],
+  ["fec0::", 10],
   ["ff00::", 8],
 ] as const) {
   NON_GLOBAL_ADDRESSES.addSubnet(network, prefix, "ipv6");
@@ -60,6 +62,19 @@ type ResolveHostname = (
   hostname: string,
   options: { all: true; verbatim: true },
 ) => Promise<readonly { address: string; family: number }[]>;
+
+export type VerifiedProductionSite = {
+  origin: string;
+  hostname: string;
+  addresses: readonly { address: string; family: 4 | 6 }[];
+};
+
+type PinnedLookupOptions = number | { all?: boolean; family?: number };
+type PinnedLookupCallback = (
+  error: Error | null,
+  address: string | { address: string; family: 4 | 6 }[],
+  family?: number,
+) => void;
 
 export function productionSiteOrigin(raw: unknown): string {
   if (typeof raw !== "string" || raw.length === 0 || raw !== raw.trim()) {
@@ -102,7 +117,7 @@ export function productionSiteOrigin(raw: unknown): string {
 export async function verifiedProductionSiteOrigin(
   raw: unknown,
   resolveHostname: ResolveHostname = lookup,
-): Promise<string> {
+): Promise<VerifiedProductionSite> {
   const origin = productionSiteOrigin(raw);
   const hostname = new URL(origin).hostname;
   const addresses = await resolveHostname(hostname, {
@@ -129,5 +144,45 @@ export async function verifiedProductionSiteOrigin(
     );
   }
 
-  return origin;
+  return {
+    origin,
+    hostname,
+    addresses: addresses.map(({ address, family }) => ({
+      address,
+      family: family as 4 | 6,
+    })),
+  };
+}
+
+export function createPinnedLookup(verified: VerifiedProductionSite) {
+  return (
+    hostname: string,
+    options: PinnedLookupOptions,
+    callback: PinnedLookupCallback,
+  ): void => {
+    const requestedFamily =
+      typeof options === "number" ? options : (options.family ?? 0);
+    const candidates = verified.addresses.filter(
+      ({ family }) => requestedFamily === 0 || family === requestedFamily,
+    );
+    if (hostname !== verified.hostname || candidates.length === 0) {
+      callback(new Error("pinned DNS lookup rejected an unapproved target"), "");
+      return;
+    }
+    if (typeof options === "object" && options.all) {
+      callback(
+        null,
+        candidates.map(({ address, family }) => ({ address, family })),
+      );
+      return;
+    }
+    callback(null, candidates[0].address, candidates[0].family);
+  };
+}
+
+export function chromiumHostResolverRules(
+  verified: VerifiedProductionSite,
+): string {
+  const { address, family } = verified.addresses[0];
+  return `MAP ${verified.hostname} ${family === 6 ? `[${address}]` : address}, EXCLUDE localhost`;
 }

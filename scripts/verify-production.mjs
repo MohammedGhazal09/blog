@@ -1,13 +1,19 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { request as httpsRequest } from "node:https";
 import { extname, join, resolve } from "node:path";
+import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
 
 import { chromium } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
 import { sectionRegistry } from "../src/config/registries.ts";
-import { verifiedProductionSiteOrigin } from "../src/lib/site-origin.ts";
+import {
+  chromiumHostResolverRules,
+  createPinnedLookup,
+  verifiedProductionSiteOrigin,
+} from "../src/lib/site-origin.ts";
 
 const MAX_BODY_BYTES = 5 * 1024 * 1024;
 const FETCH_TIMEOUT_MS = 20_000;
@@ -156,6 +162,37 @@ async function readBoundedBody(response, findings, url) {
   return source + decoder.decode();
 }
 
+function createPinnedFetch(verifiedSite) {
+  const lookup = createPinnedLookup(verifiedSite);
+  return (rawUrl, init) =>
+    new Promise((resolveRequest, rejectRequest) => {
+      const url = new URL(rawUrl);
+      if (url.origin !== verifiedSite.origin) {
+        rejectRequest(new Error("pinned fetch rejected an off-origin URL"));
+        return;
+      }
+      const request = httpsRequest(
+        url,
+        {
+          method: "GET",
+          lookup,
+          servername: verifiedSite.hostname,
+          signal: init.signal,
+        },
+        (response) => {
+          resolveRequest(
+            new Response(Readable.toWeb(response), {
+              status: response.statusCode,
+              headers: response.headers,
+            }),
+          );
+        },
+      );
+      request.once("error", rejectRequest);
+      request.end();
+    });
+}
+
 function cleanSameOriginUrl(raw, origin, findings, sourceUrl) {
   let url;
   try {
@@ -196,6 +233,7 @@ async function fetchStatic({
   expectedStatus,
   expectedType,
   controlledFixture,
+  networkFetch,
   findings,
   failureCode = "HTTP_STATUS",
 }) {
@@ -207,7 +245,7 @@ async function fetchStatic({
     };
     response = controlledFixture
       ? await controlledFixture.fetch(url, init)
-      : await fetch(url, init);
+      : await networkFetch(url, init);
   } catch (error) {
     finding(
       findings,
@@ -1445,10 +1483,12 @@ async function writeReport(report, scope, started) {
 
 export async function runProductionVerification(options = {}) {
   const controlledFixture = options.controlledFixture;
-  const normalizedOrigin = await verifiedProductionSiteOrigin(
+  const verifiedSite = await verifiedProductionSiteOrigin(
     process.env.SITE_ORIGIN,
     controlledFixture?.resolveHostname,
   );
+  const normalizedOrigin = verifiedSite.origin;
+  const networkFetch = createPinnedFetch(verifiedSite);
   const inputOrigin = process.env.SITE_ORIGIN;
 
   const evidenceScope = controlledFixture ? "controlled" : "final-origin";
@@ -1486,7 +1526,10 @@ export async function runProductionVerification(options = {}) {
   let chromiumVersion = "unavailable";
 
   try {
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({
+      headless: true,
+      args: [`--host-resolver-rules=${chromiumHostResolverRules(verifiedSite)}`],
+    });
     chromiumVersion = browser.version();
     const context = await browser.newContext({ serviceWorkers: "block" });
     const page = await context.newPage();
@@ -1500,6 +1543,7 @@ export async function runProductionVerification(options = {}) {
       expectedStatus: 200,
       expectedType: ["text/plain"],
       controlledFixture,
+      networkFetch,
       findings,
     });
     if (robots !== undefined) {
@@ -1520,6 +1564,7 @@ export async function runProductionVerification(options = {}) {
       expectedStatus: 200,
       expectedType: ["application/xml", "text/xml"],
       controlledFixture,
+      networkFetch,
       findings,
     });
     const childSitemaps = sitemapIndex
@@ -1559,6 +1604,7 @@ export async function runProductionVerification(options = {}) {
         expectedStatus: 200,
         expectedType: ["application/xml", "text/xml"],
         controlledFixture,
+        networkFetch,
         findings,
       });
       if (!child) continue;
@@ -1623,6 +1669,7 @@ export async function runProductionVerification(options = {}) {
         expectedStatus: 200,
         expectedType: ["text/html", "application/xhtml+xml"],
         controlledFixture,
+        networkFetch,
         findings,
       });
       if (source === undefined) continue;
@@ -1712,6 +1759,7 @@ export async function runProductionVerification(options = {}) {
         expectedStatus: 200,
         expectedType: ["text/html", "application/xhtml+xml"],
         controlledFixture,
+        networkFetch,
         findings,
         failureCode: "BROKEN_INTERNAL_LINK",
       });
@@ -1733,6 +1781,7 @@ export async function runProductionVerification(options = {}) {
       expectedStatus: 404,
       expectedType: ["text/html", "application/xhtml+xml"],
       controlledFixture,
+      networkFetch,
       findings,
       failureCode: "NOT_FOUND_CONTRACT",
     });
