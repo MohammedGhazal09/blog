@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { readdir, rm } from "node:fs/promises";
 import { createServer } from "node:http";
+import { createServer as createHttpsServer } from "node:https";
 import { dirname, resolve } from "node:path";
 import test from "node:test";
+import { pathToFileURL } from "node:url";
 
 import { chromium, type Page } from "@playwright/test";
 
@@ -28,6 +31,25 @@ const PUBLIC_PATHS = [
   ...ARTICLE_PATHS,
   "/عن-أحمد-المنجاوي/",
 ] as const;
+const UNTRUSTED_TLS_KEY = `-----BEGIN PRIVATE KEY-----
+MIHuAgEAMBAGByqGSM49AgEGBSuBBAAjBIHWMIHTAgEBBEIA2GK0mXHrZl0GWkYy
+UjqzE44KedmA02JAy3+uyQk64Iq5LaOmKCFZf7nu2Q1PfKl4Ewn23uv+njl0tiXW
+Vq4B1XahgYkDgYYABAFSXEEgv58hS6AkQlcZtUMRYkWL+DWt7WPqhf4PQDc4ZvOD
+fVysYtuNOQ1EOX5guHEeeQd+eOa9nXkHjpRpLBn78wHCiwmAt4sTFrLaw9tSNc/q
+pfQGQaS3KXpNDxastLHUy9R4bPf/aawn8Q8sycxsr2zFqsKTigR7XJWlkNes5/L9
+eg==
+-----END PRIVATE KEY-----`;
+const UNTRUSTED_TLS_CERT = `-----BEGIN CERTIFICATE-----
+MIIBpDCCAQagAwIBAgIJAL/3zxwtYjSFMAoGCCqGSM49BAMCMBQxEjAQBgNVBAMT
+CWxvY2FsaG9zdDAeFw0yNjA4MjcwODQzMzVaFw0yNjA5MjcwODQzMzVaMBQxEjAQ
+BgNVBAMTCWxvY2FsaG9zdDCBmzAQBgcqhkjOPQIBBgUrgQQAIwOBhgAEAVJcQSC/
+nyFLoCRCVxm1QxFiRYv4Na3tY+qF/g9ANzhm84N9XKxi2405DUQ5fmC4cR55B354
+5r2deQeOlGksGfvzAcKLCYC3ixMWstrD21I1z+ql9AZBpLcpek0PFqy0sdTL1Hhs
+9/9prCfxDyzJzGyvbMWqwpOKBHtclaWQ16zn8v16MAoGCCqGSM49BAMCA4GLADCB
+hwJBT9RF+imScEKKoPI4z00g9olPXTwQLUT++4le+q/oTyxj1cHDbDokrpjuv8A1
+hIgxYeOC2POtkWAQAnNAwHdqSF0CQgGH1CaxJeVmPqNea1vDa42PTTHMzHvyQN5s
+OgXaRjBRl67Cul7MGxF2UAL0rPv01pFdxLng78ZZmQmFikyqkofiAw==
+-----END CERTIFICATE-----`;
 
 type FixtureResponse = {
   status: number;
@@ -340,9 +362,10 @@ async function loadRunner(): Promise<{
   return import("../scripts/verify-production.mjs");
 }
 
-async function listen(
-  server: ReturnType<typeof createServer>,
-): Promise<number> {
+type LocalServer =
+  ReturnType<typeof createServer> | ReturnType<typeof createHttpsServer>;
+
+async function listen(server: LocalServer): Promise<number> {
   await new Promise<void>((resolveListen, rejectListen) => {
     server.once("error", rejectListen);
     server.listen(0, "127.0.0.1", resolveListen);
@@ -352,12 +375,30 @@ async function listen(
   return address.port;
 }
 
-async function closeServer(
-  server: ReturnType<typeof createServer>,
-): Promise<void> {
+async function closeServer(server: LocalServer): Promise<void> {
   await new Promise<void>((resolveClose, rejectClose) =>
     server.close((error) => (error ? rejectClose(error) : resolveClose())),
   );
+}
+
+async function runTlsDisabledChild(source: string): Promise<{
+  code: number | null;
+  stdout: string;
+  stderr: string;
+}> {
+  const child = spawn(process.execPath, ["--input-type=module", "-e", source], {
+    env: { ...process.env, NODE_TLS_REJECT_UNAUTHORIZED: "0" },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  let stdout = "";
+  let stderr = "";
+  child.stdout.setEncoding("utf8").on("data", (value) => (stdout += value));
+  child.stderr.setEncoding("utf8").on("data", (value) => (stderr += value));
+  const code = await new Promise<number | null>((resolveExit, rejectExit) => {
+    child.once("error", rejectExit);
+    child.once("exit", resolveExit);
+  });
+  return { code, stdout, stderr };
 }
 
 async function runControlled(
@@ -986,6 +1027,46 @@ test("off-origin WebSockets are blocked before a local handshake", async () => {
   } finally {
     await cleanupReport(report);
     await closeServer(destination);
+  }
+});
+
+test("pinned HTTPS rejects an untrusted certificate even when Node TLS rejection is disabled", async () => {
+  let successfulRequests = 0;
+  const endpoint = createHttpsServer(
+    { key: UNTRUSTED_TLS_KEY, cert: UNTRUSTED_TLS_CERT },
+    (_request, response) => {
+      successfulRequests += 1;
+      response.end("unsafe response");
+    },
+  );
+  const port = await listen(endpoint);
+  const runnerUrl = pathToFileURL(
+    resolve("scripts/verify-production.mjs"),
+  ).href;
+  const origin = `https://localhost:${port}`;
+  try {
+    const child = await runTlsDisabledChild(`
+      const { createPinnedFetch } = await import(${JSON.stringify(runnerUrl)});
+      const fetchPinned = createPinnedFetch({
+        origin: ${JSON.stringify(origin)},
+        hostname: "localhost",
+        addresses: [{ address: "127.0.0.1", family: 4 }],
+      });
+      try {
+        await fetchPinned(${JSON.stringify(`${origin}/`)}, {
+          signal: AbortSignal.timeout(2_000),
+        });
+        console.error("untrusted response accepted");
+        process.exitCode = 1;
+      } catch {
+        console.log("untrusted response rejected");
+      }
+    `);
+    assert.equal(child.code, 0, child.stderr);
+    assert.match(child.stdout, /untrusted response rejected/u);
+    assert.equal(successfulRequests, 0);
+  } finally {
+    await closeServer(endpoint);
   }
 });
 

@@ -162,7 +162,7 @@ async function readBoundedBody(response, findings, url) {
   return source + decoder.decode();
 }
 
-function createPinnedFetch(verifiedSite) {
+export function createPinnedFetch(verifiedSite) {
   const lookup = createPinnedLookup(verifiedSite);
   return (rawUrl, init) =>
     new Promise((resolveRequest, rejectRequest) => {
@@ -177,6 +177,7 @@ function createPinnedFetch(verifiedSite) {
           method: "GET",
           lookup,
           servername: verifiedSite.hostname,
+          rejectUnauthorized: true,
           signal: init.signal,
         },
         (response) => {
