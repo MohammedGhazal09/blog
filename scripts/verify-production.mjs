@@ -18,6 +18,9 @@ const LATIN = /[A-Za-z]/u;
 const FINAL_READER_IDLE_MS = 5_000;
 const PERFORMANCE_NAVIGATION_TIMEOUT_MS = 45_000;
 const RENDERED_NAVIGATION_TIMEOUT_MS = 30_000;
+const MEDIA_REGION_SELECTOR = "[data-video-region]";
+const MEDIA_ACTIVATE_SELECTOR = "[data-video-activate]";
+const MEDIA_DIRECT_SELECTOR = ".youtube-cta";
 const MEDIA_HOST_SUFFIXES = [
   "youtube.com",
   "youtube-nocookie.com",
@@ -759,8 +762,8 @@ async function activationObservation(browser, controlledFixture, url, key) {
       waitUntil: "load",
       timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
     });
-    const region = page.locator("[data-video-region]");
-    const trigger = region.locator("[data-video-activate]");
+    const region = page.locator(MEDIA_REGION_SELECTOR);
+    const trigger = region.locator(MEDIA_ACTIVATE_SELECTOR);
     const before = await mediaGeometry(region);
     if (key) {
       await trigger.focus();
@@ -821,7 +824,7 @@ async function auditMedia({
         waitUntil: "load",
         timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
       });
-      const region = pre.page.locator("[data-video-region]");
+      const region = pre.page.locator(MEDIA_REGION_SELECTOR);
       preIntent = {
         iframeCount: await pre.page.locator("iframe").count(),
         mediaRequests: preRequests,
@@ -853,8 +856,8 @@ async function auditMedia({
         waitUntil: "load",
         timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
       });
-      await fallbackPage.page.locator("[data-video-activate]").click();
-      const link = fallbackPage.page.locator("[data-youtube-direct]");
+      await fallbackPage.page.locator(MEDIA_ACTIVATE_SELECTOR).click();
+      const link = fallbackPage.page.locator(MEDIA_DIRECT_SELECTOR);
       await link.focus().catch(() => {});
       fallback = {
         href: (await link.getAttribute("href")) ?? "",

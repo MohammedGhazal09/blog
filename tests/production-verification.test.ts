@@ -172,7 +172,7 @@ function pageHtml({
   youtubeId?: string;
 }): string {
   const media = youtubeId
-    ? `<section><h2>الفيديو المرتبط بالمقال</h2><div data-video-region data-youtube-id="${youtubeId}" data-iframe-title="فيديو المقال: ${title}"><button type="button" data-video-activate>تشغيل الفيديو هنا</button><p role="status" hidden data-video-error>تعذر تشغيل الفيديو هنا. يمكنك مشاهدة الفيديو مباشرة على يوتيوب.</p></div><a data-youtube-direct href="https://www.youtube.com/watch?v=${youtubeId}">مشاهدة الفيديو على يوتيوب</a></section>`
+    ? `<section class="media-continuation"><h2>الفيديو المرتبط بالمقال</h2><div class="video-region" data-video-region data-youtube-id="${youtubeId}" data-iframe-title="فيديو المقال: ${title}"><button type="button" data-video-activate>تشغيل الفيديو هنا</button><p role="status" hidden data-video-error>تعذر تشغيل الفيديو هنا. يمكنك مشاهدة الفيديو مباشرة على يوتيوب.</p></div><a class="youtube-cta" href="https://www.youtube.com/watch?v=${youtubeId}">مشاهدة الفيديو على يوتيوب</a></section>`
     : "";
   return `<!doctype html><html lang="ar" dir="rtl"><head><title>${title}</title><meta name="description" content="${description}"><link rel="canonical" href="${absolute(path)}"><style>*{box-sizing:border-box}body{margin:0;font:18px/1.7 sans-serif}header,main{max-inline-size:70ch;margin-inline:auto;padding:1rem}a,button{min-inline-size:44px;min-block-size:44px}a:focus-visible,button:focus-visible,[data-video-region]:focus-within{outline:3px solid #166534;outline-offset:3px}[data-video-region]{aspect-ratio:16/9;inline-size:100%;display:grid;place-items:center;background:#eee}[data-video-region] iframe{border:0;inline-size:100%;block-size:100%}</style></head><body><header><a href="/">مدونة أحمد المنجاوي</a></header><main><h1>${title}</h1>${links.map((href) => `<a href="${href}">رابط عربي</a>`).join("")}${media}</main><script>for(const region of document.querySelectorAll('[data-video-region]')){const button=region.querySelector('[data-video-activate]');button?.addEventListener('click',()=>{if(region.querySelector('iframe'))return;try{const id=region.getAttribute('data-youtube-id');const title=region.getAttribute('data-iframe-title');const iframe=document.createElement('iframe');iframe.title=title;iframe.src='https://www.youtube-nocookie.com/embed/'+encodeURIComponent(id)+'?hl=ar';button.replaceWith(iframe);iframe.focus()}catch{button.hidden=true;region.querySelector('[data-video-error]').hidden=false}},{once:true})}</script></body></html>`;
 }
@@ -645,8 +645,8 @@ const renderedAuditCases: readonly {
       replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
         ...response,
         body: response.body.replace(
-          "<a data-youtube-direct",
-          "<a hidden data-youtube-direct",
+          '<a class="youtube-cta"',
+          '<a hidden class="youtube-cta"',
         ),
       })),
   },
@@ -1093,6 +1093,18 @@ test("source wiring keeps production verification isolated and dependency-free",
     ].sort(),
   );
   const runner = readFileSync("scripts/verify-production.mjs", "utf8");
+  const player = readFileSync("src/components/YouTubePlayer.astro", "utf8");
+  for (const [selector, componentMarker] of [
+    ["[data-video-region]", "data-video-region"],
+    ["[data-video-activate]", "data-video-activate"],
+    [".youtube-cta", 'class="youtube-cta"'],
+  ]) {
+    assert.ok(runner.includes(selector), `runner selector missing: ${selector}`);
+    assert.ok(
+      player.includes(componentMarker),
+      `component contract missing: ${componentMarker}`,
+    );
+  }
   assert.match(runner, /productionSiteOrigin\(process\.env\.SITE_ORIGIN\)/u);
   assert.match(runner, /redirect:\s*["']manual["']/u);
   assert.doesNotMatch(
