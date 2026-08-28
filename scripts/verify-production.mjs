@@ -1079,16 +1079,16 @@ async function auditMedia({
   const results = [];
   for (const url of articleUrls.sort(comparePublicUrls)) {
     const articleIdentity = documents.get(url)?.media[0];
-    if (!articleIdentity) {
+    if (!articleIdentity || !YOUTUBE_ID.test(articleIdentity.youtubeId)) {
       finding(
         findings,
         "MEDIA_IDENTITY",
-        "article cannot be rendered-audited without one media region",
+        "article cannot be rendered-audited without one valid YouTube identity",
         url,
       );
       results.push({
         url,
-        youtubeId: "",
+        youtubeId: articleIdentity?.youtubeId ?? "",
         preIntent: { iframeCount: 0, mediaRequests: [], geometry: null },
         pointer: {
           iframeCount: 0,
