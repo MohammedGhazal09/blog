@@ -812,6 +812,89 @@ test("a synchronously appended and removed iframe is retained in the reported ma
   }
 });
 
+test("an empty wrapper followed by its sole iframe keeps the maximum at one", async () => {
+  const fixture = createFixture();
+  const articleUrl = absolute(ARTICLE_PATHS[0]);
+  replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
+    ...response,
+    body: response.body.replace(
+      "button.replaceWith(iframe);iframe.focus()",
+      "const wrapper=document.createElement('div');button.replaceWith(wrapper);wrapper.append(iframe);iframe.focus()",
+    ),
+  }));
+  fixture.auditKinds = ["media"];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    const article = report.media.find(({ url }) => url === articleUrl);
+    assert.ok(article);
+    assert.equal(article.pointer.maxIframeCount, 1);
+    assert.equal(article.keyboard.maxIframeCount, 1);
+    assert.equal(article.fallback.maxIframeCount, 1);
+    assert.equal(article.status, "PASS");
+    assert.equal(report.automatedGates.media, "PASS");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+test("a prebuilt nested duplicate removed synchronously reaches a maximum of two", async () => {
+  const fixture = createFixture();
+  const articleUrl = absolute(ARTICLE_PATHS[0]);
+  replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
+    ...response,
+    body: response.body.replace(
+      "button.replaceWith(iframe);iframe.focus()",
+      "button.replaceWith(iframe);const wrapper=document.createElement('div');const duplicate=iframe.cloneNode();wrapper.append(duplicate);region.append(wrapper);duplicate.remove();iframe.focus()",
+    ),
+  }));
+  fixture.auditKinds = ["media"];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    const article = report.media.find(({ url }) => url === articleUrl);
+    assert.ok(article);
+    assert.ok(
+      report.findings.some(
+        ({ code, url }) => code === "MEDIA_ACTIVATION" && url === articleUrl,
+      ),
+      JSON.stringify({ findings: report.findings, article }),
+    );
+    assert.equal(article.pointer.iframeCount, 1);
+    assert.equal(article.pointer.maxIframeCount, 2);
+    assert.equal(article.status, "FAIL");
+    assert.equal(report.automatedGates.media, "FAIL");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+test("reparenting one iframe inside the media region does not create a false peak", async () => {
+  const fixture = createFixture();
+  const articleUrl = absolute(ARTICLE_PATHS[0]);
+  replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
+    ...response,
+    body: response.body.replace(
+      "button.replaceWith(iframe);iframe.focus()",
+      "button.replaceWith(iframe);const wrapper=document.createElement('div');region.append(wrapper);wrapper.append(iframe);iframe.focus()",
+    ),
+  }));
+  fixture.auditKinds = ["media"];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    const article = report.media.find(({ url }) => url === articleUrl);
+    assert.ok(article);
+    assert.equal(article.pointer.maxIframeCount, 1);
+    assert.equal(article.keyboard.maxIframeCount, 1);
+    assert.equal(article.fallback.maxIframeCount, 1);
+    assert.equal(article.status, "PASS");
+    assert.equal(report.automatedGates.media, "PASS");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
 for (const [name, auditLabel, resultKey, findingCode] of [
   ["pointer", "media pointer pass", "pointer", "MEDIA_ACTIVATION"],
   ["Enter", "media keyboard pass", "keyboard", "MEDIA_ACTIVATION"],

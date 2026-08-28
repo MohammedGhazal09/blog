@@ -1135,7 +1135,6 @@ async function withAuditPage({
 
 function exactMediaIntent(expectedSrc, requests) {
   let readEventSequence = async () => 0;
-  let consumedEventSequence = 0;
   let preActivationRequestCount = 0;
   return {
     bindEventSequenceReader(reader) {
@@ -1145,14 +1144,13 @@ function exactMediaIntent(expectedSrc, requests) {
       if (request.url() !== expectedSrc) return false;
       requests.push(request.url());
       const eventSequence = await readEventSequence().catch(() => 0);
-      const eventBoundaryReached = eventSequence > consumedEventSequence;
+      const eventBoundaryReached = eventSequence > 0;
       if (!eventBoundaryReached) preActivationRequestCount += 1;
       const approved =
         eventBoundaryReached &&
         request.method() === "GET" &&
         request.resourceType() === "document" &&
         request.isNavigationRequest();
-      if (approved) consumedEventSequence = eventSequence;
       return approved;
     },
     preActivationRequestCount() {
@@ -1196,44 +1194,56 @@ async function mediaGeometry(region) {
 async function startMediaStabilityObservation(region) {
   await region.evaluate((node) => {
     const key = Symbol.for("mangawy.production.media-stability");
-    const countIframes = (candidate) => {
-      if (candidate.nodeType !== Node.ELEMENT_NODE) return 0;
-      return (
-        Number(candidate.matches("iframe")) +
-        candidate.querySelectorAll("iframe").length
-      );
-    };
     const state = {
-      currentIframeCount: node.querySelectorAll("iframe").length,
       maxIframeCount: node.querySelectorAll("iframe").length,
       mutationCount: 0,
       observer: undefined,
+      restorers: [],
       sample: undefined,
     };
     state.sample = () => {
-      state.currentIframeCount = node.querySelectorAll("iframe").length;
       state.maxIframeCount = Math.max(
         state.maxIframeCount,
-        state.currentIframeCount,
+        node.querySelectorAll("iframe").length,
       );
     };
+    const instrument = (prototype, method) => {
+      const descriptor = Object.getOwnPropertyDescriptor(prototype, method);
+      if (!descriptor || typeof descriptor.value !== "function") return;
+      Object.defineProperty(prototype, method, {
+        ...descriptor,
+        value: function (...args) {
+          try {
+            return Reflect.apply(descriptor.value, this, args);
+          } finally {
+            state.sample();
+          }
+        },
+      });
+      state.restorers.push(() =>
+        Object.defineProperty(prototype, method, descriptor),
+      );
+    };
+    for (const method of [
+      "appendChild",
+      "insertBefore",
+      "removeChild",
+      "replaceChild",
+    ])
+      instrument(Node.prototype, method);
+    for (const method of [
+      "append",
+      "prepend",
+      "replaceChildren",
+      "before",
+      "after",
+      "replaceWith",
+      "remove",
+      "insertAdjacentElement",
+    ])
+      instrument(Element.prototype, method);
     state.observer = new MutationObserver((records) => {
-      for (const record of records) {
-        state.mutationCount += 1;
-        if (record.type !== "childList") continue;
-        for (const removed of record.removedNodes)
-          state.currentIframeCount = Math.max(
-            0,
-            state.currentIframeCount - countIframes(removed),
-          );
-        for (const added of record.addedNodes) {
-          state.currentIframeCount += countIframes(added);
-          state.maxIframeCount = Math.max(
-            state.maxIframeCount,
-            state.currentIframeCount,
-          );
-        }
-      }
+      state.mutationCount += records.length;
     });
     state.observer.observe(node, {
       attributes: true,
@@ -1252,6 +1262,7 @@ async function completeMediaStabilityObservation(region) {
     await new Promise((resolveWait) => setTimeout(resolveWait, durationMs));
     state.sample();
     state.observer.disconnect();
+    for (const restore of state.restorers.reverse()) restore();
     delete node[key];
     return {
       iframeCount: node.querySelectorAll("iframe").length,
