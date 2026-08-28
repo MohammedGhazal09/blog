@@ -41,6 +41,7 @@ type ControlledFixture = {
   browserRouteInstalled: boolean;
   browserRouteInstallCount: number;
   readerIdleMs: number;
+  auditKinds?: readonly ("performance" | "media" | "presentation")[];
   performanceSamples: Map<
     string,
     readonly {
@@ -130,6 +131,7 @@ type VerificationReport = {
     };
     fallback: {
       href: string;
+      label: string;
       visible: boolean;
       focusable: boolean;
       sameTab: boolean;
@@ -329,6 +331,13 @@ async function runControlled(
   }
 }
 
+let sharedRenderedAudit: Promise<VerificationReport> | undefined;
+
+function runSharedRenderedAudit(): Promise<VerificationReport> {
+  sharedRenderedAudit ??= runControlled(createFixture());
+  return sharedRenderedAudit;
+}
+
 async function cleanupReport(
   report: VerificationReport | undefined,
 ): Promise<void> {
@@ -362,6 +371,7 @@ function expectFinding(report: VerificationReport, code: string): void {
 
 test("exact controlled crawl reports sitemap membership and same-origin closure", async () => {
   const fixture = createFixture();
+  fixture.auditKinds = [];
   let report: VerificationReport | undefined;
   try {
     report = await runControlled(fixture);
@@ -406,10 +416,9 @@ test("exact controlled crawl reports sitemap membership and same-origin closure"
 });
 
 test("controlled performance profile selects five roles and preserves fifteen cold raw samples", async () => {
-  const fixture = createFixture();
   let report: VerificationReport | undefined;
   try {
-    report = await runControlled(fixture);
+    report = await runSharedRenderedAudit();
     assert.deepEqual(report.profile, {
       viewport: { width: 390, height: 844 },
       deviceScaleFactor: 1,
@@ -435,8 +444,8 @@ test("controlled performance profile selects five roles and preserves fifteen co
         ["homepage", absolute("/")],
         ["section-index", absolute(SECTION_PATHS[0])],
         ["section-article", absolute(ARTICLE_PATHS[0])],
-        ["section-article", absolute(ARTICLE_PATHS[1])],
         ["section-article", absolute(ARTICLE_PATHS[2])],
+        ["section-article", absolute(ARTICLE_PATHS[1])],
       ],
     );
     assert.equal(report.performance.length, 5);
@@ -471,10 +480,9 @@ test("controlled performance profile selects five roles and preserves fifteen co
 });
 
 test("controlled media audit covers every article intent path and direct fallback", async () => {
-  const fixture = createFixture();
   let report: VerificationReport | undefined;
   try {
-    report = await runControlled(fixture);
+    report = await runSharedRenderedAudit();
     assert.deepEqual(
       report.media.map(({ url }) => url).sort(),
       ARTICLE_PATHS.map(absolute).sort(),
@@ -497,6 +505,7 @@ test("controlled media audit covers every article intent path and direct fallbac
       }
       assert.deepEqual(article.fallback, {
         href: `https://www.youtube.com/watch?v=${article.youtubeId}`,
+        label: "مشاهدة الفيديو على يوتيوب",
         visible: true,
         focusable: true,
         sameTab: true,
@@ -510,10 +519,9 @@ test("controlled media audit covers every article intent path and direct fallbac
 });
 
 test("controlled Arabic RTL accessibility and reflow audit covers every route plus 404", async () => {
-  const fixture = createFixture();
   let report: VerificationReport | undefined;
   try {
-    report = await runControlled(fixture);
+    report = await runSharedRenderedAudit();
     assert.deepEqual(
       report.presentation.map(({ url }) => url).sort(),
       [...PUBLIC_PATHS.map(absolute), absolute(MISSING_PATH)].sort(),
@@ -734,6 +742,13 @@ for (const scenario of renderedAuditCases) {
   test(`controlled ${scenario.name}`, async () => {
     const fixture = createFixture();
     scenario.mutate(fixture);
+    fixture.auditKinds = [
+      scenario.code.startsWith("PERFORMANCE_")
+        ? "performance"
+        : scenario.code.startsWith("MEDIA_")
+          ? "media"
+          : "presentation",
+    ];
     let report: VerificationReport | undefined;
     try {
       report = await runControlled(fixture);
@@ -749,6 +764,7 @@ for (const scenario of renderedAuditCases) {
 
 test("media hostname matching ignores substring spoofing", async () => {
   const fixture = createFixture();
+  fixture.auditKinds = ["media"];
   replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
     ...response,
     body: response.body.replace(
@@ -978,6 +994,7 @@ const failureCases: readonly {
 for (const scenario of failureCases) {
   test(`controlled crawl rejects ${scenario.name}`, async () => {
     const fixture = createFixture();
+    fixture.auditKinds = [];
     scenario.mutate(fixture);
     let report: VerificationReport | undefined;
     try {
@@ -991,6 +1008,7 @@ for (const scenario of failureCases) {
 
 test("external YouTube destinations are recorded but never crawled", async () => {
   const fixture = createFixture();
+  fixture.auditKinds = [];
   let report: VerificationReport | undefined;
   try {
     report = await runControlled(fixture);
@@ -1013,6 +1031,7 @@ test("external YouTube destinations are recorded but never crawled", async () =>
 
 test("controlled authority cannot be caller-promoted or redirected", async () => {
   const fixture = createFixture();
+  fixture.auditKinds = [];
   let report: VerificationReport | undefined;
   try {
     report = await runControlled(fixture, {
