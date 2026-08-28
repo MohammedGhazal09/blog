@@ -2,7 +2,7 @@
 
 **Audited:** 2026-08-26 (post-fix re-audit at commit `32463e9`)
 
-**Baseline:** `02-UI-SPEC.md` (Phase 2 design contract; file status remains `draft` / checker approval pending)
+**Baseline:** `02-UI-SPEC.md` (approved Phase 2 design contract; this final re-audit supplies the 24/24 approval evidence)
 
 **Screenshots:** Fresh ignored Hercules captures inspected personally: Markdown and MDX viewport/full-page states at 390×844 and 768×1024. Earlier Phase 2 responsive/state and native Chrome 200% zoom evidence remains applicable.
 
@@ -10,14 +10,14 @@
 
 ## Pillar Scores
 
-| Pillar | Score | Key Finding |
-|--------|-------|-------------|
-| 1. Copywriting | 4/4 | **PASS:** Public prose now uses `ماركداون` and `جافاسكربت`; a rendered-text guard rejects future unisolated Latin prose while permitting intentional `code`/`bdi` values. |
-| 2. Visuals | 4/4 | **PASS:** Inspected responsive/state captures preserve the specified calm single-column hierarchy, stable 16:9 media surface, and persistent primary CTA without excluded decoration. |
-| 3. Color | 4/4 | **PASS:** The implementation uses only the seven declared palette values and restricts green accent to links, controls, hover, and focus. |
-| 4. Typography | 4/4 | **PASS:** Source and computed-style assertions enforce exactly four sizes, two weights, the system Arabic stack, 1.9 body leading, and a 70ch measure. |
-| 5. Spacing | 4/4 | **PASS:** All layout values match the declared 4px scale or the explicit 44px target/border/focus exceptions at the specified breakpoint. |
-| 6. Experience Design | 4/4 | **PASS:** Static, no-JS, blocked-host, construction-error, keyboard, repeat-activation, zoom, and conditional-content states are implemented and evidenced. |
+| Pillar               | Score | Key Finding                                                                                                                                                                           |
+| -------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Copywriting       | 4/4   | **PASS:** Public prose now uses `ماركداون` and `جافاسكربت`; a rendered-text guard rejects future unisolated Latin prose while permitting intentional `code`/`bdi` values.             |
+| 2. Visuals           | 4/4   | **PASS:** Inspected responsive/state captures preserve the specified calm single-column hierarchy, stable 16:9 media surface, and persistent primary CTA without excluded decoration. |
+| 3. Color             | 4/4   | **PASS:** The implementation uses only the seven declared palette values and restricts green accent to links, controls, hover, and focus.                                             |
+| 4. Typography        | 4/4   | **PASS:** Source and computed-style assertions enforce exactly four sizes, two weights, the system Arabic stack, 1.9 body leading, and a 70ch measure.                                |
+| 5. Spacing           | 4/4   | **PASS:** All layout values match the declared 4px scale or the explicit 44px target/border/focus exceptions at the specified breakpoint.                                             |
+| 6. Experience Design | 4/4   | **PASS:** Static, no-JS, blocked-host, construction-error, keyboard, repeat-activation, zoom, and conditional-content states are implemented and evidenced.                           |
 
 **Overall: 24/24**
 
