@@ -1,6 +1,6 @@
 ---
 phase: 05-deployment-and-measurement
-reviewed: 2026-08-28T03:44:28Z
+reviewed: 2026-08-28T03:46:42Z
 depth: deep
 files_reviewed: 7
 files_reviewed_list:
@@ -13,44 +13,28 @@ files_reviewed_list:
   - tests/deployment-measurement.test.ts
 findings:
   critical: 0
-  warning: 1
+  warning: 0
   info: 0
-  total: 1
-status: issues_found
+  total: 0
+status: clean
 ---
 
 # Phase 05: Code Review Report
 
-**Reviewed:** 2026-08-28T03:44:28Z  
+**Reviewed:** 2026-08-28T03:46:42Z  
 **Depth:** deep  
 **Files Reviewed:** 7  
-**Status:** issues_found
+**Status:** clean
 
 ## Summary
 
-The review traced the launch flow from `npm run launch:ready` through the two input validators, Astro build mode, the shared head, generated documents, controlled browser interception, ordinary-output restoration, and the Arabic deployment runbook. The production path is fail-closed and no credential, injection, duplicate tracking, navigation interception, or analytics/UI coupling defect was found.
+The clean re-review traced the launch flow from `npm run launch:ready` through the two input validators, Astro build mode, the shared head, generated documents, controlled browser interception, ordinary-output restoration, and the Arabic deployment runbook. The production path is fail-closed and no credential, injection, duplicate tracking, navigation interception, analytics/UI coupling, or remaining test-reliability defect was found.
 
-One portability defect exists in the new browser test server. It does not affect the generated website, but it makes the Phase 5 measurement test fail on POSIX runners and therefore weakens the promised reproducible verification path.
+The first review iteration found one Windows-only path separator in the measurement test server. Commit `18e07ee` replaced it with Node's platform separator, and all `133/133` native tests passed afterward. See `05-REVIEW-FIX.md` for the applied-fix record.
 
 ## Narrative Findings (AI reviewer)
 
-## Warnings
-
-### WR-01: Static-server containment check is Windows-only
-
-**File:** `tests/deployment-measurement.test.ts:70`  
-**Issue:** The server accepts files only when the resolved path starts with `` `${DIST_ROOT}\\` ``. `node:path.resolve()` uses `/` on Linux and macOS, so every legitimate file below `dist/` fails this check on those platforms and receives HTTP 400. The controlled measurement test therefore cannot run on the POSIX environment used by most deployment/CI systems. This is a test-reliability defect in a Phase 5 gate, not a style preference.
-
-**Fix:** Import `sep` from `node:path` and compare against `` `${DIST_ROOT}${sep}` `` while retaining the exact-root exception:
-
-```ts
-import { extname, resolve, sep } from "node:path";
-
-if (!path.startsWith(`${DIST_ROOT}${sep}`) && path !== DIST_ROOT) {
-  response.writeHead(400).end();
-  return;
-}
-```
+All reviewed files meet the Phase 5 correctness, security, and maintainability standards after the focused fix. No Critical, Warning, or Info findings remain.
 
 ## Deep Review Notes
 
@@ -63,6 +47,6 @@ if (!path.startsWith(`${DIST_ROOT}${sep}`) && path !== DIST_ROOT) {
 
 ---
 
-_Reviewed: 2026-08-28T03:44:28Z_  
+_Reviewed: 2026-08-28T03:46:42Z_  
 _Reviewer: Codex acting inline as gsd-code-reviewer_  
 _Depth: deep_
