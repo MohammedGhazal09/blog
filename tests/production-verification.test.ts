@@ -1099,4 +1099,133 @@ test("source wiring keeps production verification isolated and dependency-free",
     runner,
     /dotenv|outputPath|evidenceScope\s*[:=]\s*options|06-PRODUCTION-EVIDENCE/u,
   );
+  assert.match(runner, /const FINAL_READER_IDLE_MS = 5_000/u);
+  assert.match(
+    runner,
+    /controlledFixture[\s\S]+controlledFixture\.readerIdleMs[\s\S]+FINAL_READER_IDLE_MS/u,
+  );
+  assert.match(runner, /Network\.emulateNetworkConditionsByRule/u);
+  assert.match(runner, /Network\.overrideNetworkState/u);
+  assert.match(runner, /maximumSessionWindowCls/u);
+  assert.doesNotMatch(
+    runner,
+    /ignoreHTTPSErrors|launchPersistentContext|httpCredentials|extraHTTPHeaders|storageState|proxy\s*:/u,
+  );
+});
+
+test("evidence ledger keeps every external and requirement authority pending", () => {
+  const path =
+    ".planning/phases/06-production-launch-verification/06-PRODUCTION-EVIDENCE.md";
+  const source = readFileSync(path, "utf8");
+  const rows = source
+    .split(/\r?\n/u)
+    .filter((line) => line.startsWith("|") && !/^\|\s*-+/u.test(line))
+    .slice(1)
+    .map((line) =>
+      line
+        .split("|")
+        .slice(1, -1)
+        .map((cell) => cell.trim()),
+    );
+  assert.ok(rows.length >= 14);
+  assert.ok(rows.every((row) => row.length === 7));
+  assert.ok(
+    rows.every((row) =>
+      ["PASS", "FAIL", "PENDING", "BLOCKED"].includes(row[2]),
+    ),
+  );
+  const controlled = rows.find((row) => row[1] === "صحة أداة التحقق المضبوطة");
+  assert.ok(controlled);
+  assert.equal(controlled[2], "PASS");
+  assert.match(controlled[3], /Node `v24\.19\.0` وnpm `11\.17\.0`/u);
+  assert.match(controlled[5], /\.artifacts\/phase-06\/controlled\//u);
+  for (const gate of [
+    "اعتماد الأصل النهائي الدقيق",
+    "زحف الأصل النهائي",
+    "قياسات LCP وCLS الإنتاجية",
+    "الوسائط قبل التفاعل وبعده",
+    "العربية وRTL وإمكانية الوصول وإعادة التدفق",
+    "التكبير الأصلي 200%",
+    "INP وبيانات Core Web Vitals الحقلية",
+    "Cloudflare والنشر وDNS وTLS",
+    "ملكية Search Console وإرسال خريطة الموقع",
+    "مشاهدات Plausible المجمعة",
+    "نقرة رابط يوتيوب في Plausible",
+    "`QUAL-05`",
+    "`QUAL-06`",
+  ]) {
+    const row = rows.find((candidate) => candidate[1] === gate);
+    assert.ok(row, `missing ledger row: ${gate}`);
+    assert.equal(row[2], "PENDING", gate);
+    assert.notEqual(row[3], "", gate);
+    assert.notEqual(row[6], "", gate);
+  }
+  assert.match(source, /لا تعدّل الأداة هذا الملف/u);
+  assert.match(
+    source,
+    /إنشاء إطار يوتيوب[\s\S]+لا يثبت السماح بالتشغيل أو بدءه أو اكتماله/u,
+  );
+});
+
+test("Arabic README documents the isolated process-local production operator path", () => {
+  const source = readFileSync("README.md", "utf8");
+  assert.match(source, /## التحقق الاختياري من الأصل النهائي/u);
+  assert.match(source, /Node\.js `24\.19\.0` وnpm `11\.17\.0`/u);
+  assert.match(source, /\$approvedOrigin = Read-Host/u);
+  assert.match(source, /\$env:SITE_ORIGIN = \$approvedOrigin/u);
+  assert.match(source, /npm run verify:production/u);
+  assert.match(source, /Remove-Item Env:SITE_ORIGIN/u);
+  assert.match(
+    source,
+    /\.artifacts\/phase-06\/production\/\{UTC-run-id\}\/report\.json/u,
+  );
+  assert.match(source, /15 عينة/u);
+  assert.match(source, /INP حقيقة حقلية منفصلة/u);
+  assert.match(source, /لا يثبت إنشاء الإطار تشغيل الفيديو/u);
+  assert.match(source, /التكبير الأصلي للمتصفح بنسبة 200%/u);
+  assert.match(source, /Cloudflare أو Search Console أو Plausible/u);
+  assert.doesNotMatch(source, /\.env(?:\b|\.)|dotenv/iu);
+});
+
+test("ordinary verification and artifact boundaries cannot invoke or promote production", () => {
+  const packageData = JSON.parse(readFileSync("package.json", "utf8")) as {
+    scripts: Record<string, string>;
+  };
+  for (const command of ["test", "test:browser", "verify"]) {
+    assert.equal(
+      packageData.scripts[command].includes("verify:production"),
+      false,
+      command,
+    );
+  }
+  const runner = readFileSync("scripts/verify-production.mjs", "utf8");
+  assert.match(
+    runner,
+    /\.artifacts["'],\s*["']phase-06["'],\s*scope === ["']controlled["']/u,
+  );
+  assert.doesNotMatch(runner, /06-PRODUCTION-EVIDENCE|\.planning\/phases/u);
+  assert.match(runner, /"QUAL-05": "PENDING"/u);
+  assert.match(runner, /"QUAL-06": "PENDING"/u);
+  assert.match(
+    runner,
+    /fieldInp: \{ status: "PENDING", authority: "field-only" \}/u,
+  );
+});
+
+test("controlled report generation never mutates the reviewer evidence ledger", async () => {
+  const ledgerPath =
+    ".planning/phases/06-production-launch-verification/06-PRODUCTION-EVIDENCE.md";
+  const before = readFileSync(ledgerPath, "utf8");
+  const fixture = createFixture();
+  fixture.auditKinds = [];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    assert.equal(report.evidenceScope, "controlled");
+    assert.equal(report.automatedGates["QUAL-05"], "PENDING");
+    assert.equal(report.automatedGates["QUAL-06"], "PENDING");
+    assert.equal(readFileSync(ledgerPath, "utf8"), before);
+  } finally {
+    await cleanupReport(report);
+  }
 });
