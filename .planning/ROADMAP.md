@@ -93,7 +93,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
   2. The owner can view aggregate page traffic without session replay, fingerprinting, or per-reader profiles.
   3. The owner can measure one outbound YouTube activation per link action, reported as a link click rather than a video view.
 
-**Plans:** TBD
+**Plans:** 2 plans
 **UI hint:** yes
 
 ### Phase 6: Production Launch Verification
