@@ -1681,6 +1681,7 @@ test("an unavailable sitemap article fails both crawl and media coverage", async
         ?.status,
       "FAIL",
     );
+    assert.equal(report.plausibleLoader, null);
     assert.equal(report.automatedGates.media, "FAIL");
   } finally {
     await cleanupReport(report);
@@ -1934,6 +1935,7 @@ const failureCases: readonly {
   name: string;
   code: string;
   mutate(fixture: ControlledFixture): void;
+  assertPlausibleLoaderNull?: boolean;
 }[] = [
   {
     name: "substring-only discovery content type",
@@ -2088,6 +2090,7 @@ const failureCases: readonly {
         ...response,
         status: 503,
       })),
+    assertPlausibleLoaderNull: true,
   },
   {
     name: "broken same-origin link",
@@ -2181,6 +2184,15 @@ const failureCases: readonly {
         ...response,
         status: 200,
       })),
+    assertPlausibleLoaderNull: true,
+  },
+  {
+    name: "missing 404",
+    code: "NOT_FOUND_CONTRACT",
+    mutate: (fixture) => {
+      fixture.responses.delete(absolute(MISSING_PATH));
+    },
+    assertPlausibleLoaderNull: true,
   },
 ];
 
@@ -2193,6 +2205,8 @@ for (const scenario of failureCases) {
     try {
       report = await runControlled(fixture);
       expectFinding(report, scenario.code);
+      if (scenario.assertPlausibleLoaderNull)
+        assert.equal(report.plausibleLoader, null);
     } finally {
       await cleanupReport(report);
     }

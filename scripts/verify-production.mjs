@@ -2203,15 +2203,21 @@ export async function runProductionVerification(options = {}) {
     }
     const plausibleLoaderUrls = [...browserTransport.plausibleLoaders.values()];
     const uniquePlausibleLoaders = new Set(plausibleLoaderUrls);
-    if (
-      browserTransport.plausibleLoaders.size === documents.size &&
-      uniquePlausibleLoaders.size === 1
-    ) {
+    const expectedPlausibleDocuments = new Set([
+      ...routeGraph.sitemapUrls,
+      missingUrl,
+    ]);
+    const hasExactPlausibleDocuments =
+      documents.size === expectedPlausibleDocuments.size &&
+      browserTransport.plausibleLoaders.size ===
+        expectedPlausibleDocuments.size &&
+      [...expectedPlausibleDocuments].every(
+        (url) =>
+          documents.has(url) && browserTransport.plausibleLoaders.has(url),
+      );
+    if (hasExactPlausibleDocuments && uniquePlausibleLoaders.size === 1) {
       browserTransport.plausibleLoader = plausibleLoaderUrls[0];
-    } else if (
-      browserTransport.plausibleLoaders.size === documents.size &&
-      uniquePlausibleLoaders.size > 1
-    ) {
+    } else if (hasExactPlausibleDocuments && uniquePlausibleLoaders.size > 1) {
       finding(
         findings,
         "PLAUSIBLE_LOADER",
