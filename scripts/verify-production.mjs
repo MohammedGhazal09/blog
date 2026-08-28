@@ -457,6 +457,41 @@ function articleUrls(origin, documents) {
     .sort(comparePublicUrls);
 }
 
+function validateSitemapCoverage(origin, urls, findings, sitemapIndexUrl) {
+  if (urls.length === 0) {
+    finding(
+      findings,
+      "SITEMAP_URLS",
+      "sitemap discovery produced zero public URLs",
+      sitemapIndexUrl,
+    );
+  }
+  const missing = [];
+  const discovered = new Set(urls);
+  const homepage = new URL("/", origin).href;
+  if (!discovered.has(homepage)) missing.push("homepage");
+  for (const { slug } of Object.values(sectionRegistry)) {
+    const sectionUrl = new URL(`/${slug}/`, origin).href;
+    if (!discovered.has(sectionUrl)) missing.push(`section:${slug}`);
+    if (
+      !urls.some((url) => {
+        if (!isArticleUrl(url, origin)) return false;
+        return decodeURI(new URL(url).pathname).split("/").filter(Boolean)[0] === slug;
+      })
+    ) {
+      missing.push(`article:${slug}`);
+    }
+  }
+  if (missing.length > 0) {
+    finding(
+      findings,
+      "SITEMAP_COVERAGE",
+      `sitemap is missing required route coverage: ${missing.join(", ")}`,
+      sitemapIndexUrl,
+    );
+  }
+}
+
 function validateArticle(document, url, origin, findings) {
   if (!isArticleUrl(url, origin)) return;
   if (document.media.length !== 1) {
@@ -1435,6 +1470,14 @@ export async function runProductionVerification(options = {}) {
         cleanSameOriginUrl(url, normalizedOrigin, findings, sitemapIndexUrl),
       )
       .filter(Boolean);
+    if (cleanChildren.length === 0) {
+      finding(
+        findings,
+        "SITEMAP_CHILDREN",
+        "sitemap index contains zero valid child sitemaps",
+        sitemapIndexUrl,
+      );
+    }
     for (const childUrl of cleanChildren) {
       if (!/^\/sitemap-[0-9]+\.xml$/u.test(new URL(childUrl).pathname)) {
         finding(
@@ -1481,6 +1524,12 @@ export async function runProductionVerification(options = {}) {
       );
       routeGraph.sitemapUrls = [...new Set(routeGraph.sitemapUrls)];
     }
+    validateSitemapCoverage(
+      normalizedOrigin,
+      routeGraph.sitemapUrls,
+      findings,
+      sitemapIndexUrl,
+    );
 
     const drafts = new Set(await repositoryDraftPaths());
     for (const url of routeGraph.sitemapUrls) {
@@ -1643,12 +1692,12 @@ export async function runProductionVerification(options = {}) {
     }
     await context.close();
 
-    crawlPassed = findings.length === 0;
     selectedPerformanceRoutes = selectPerformanceRoutes(
       normalizedOrigin,
       documents,
       findings,
     );
+    crawlPassed = findings.length === 0;
     if (
       auditKinds.has("performance") &&
       selectedPerformanceRoutes.length === 5

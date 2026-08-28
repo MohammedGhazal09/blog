@@ -946,6 +946,38 @@ test("every registered article route fails crawl and media when its media is abs
   }
 });
 
+for (const [name, path, emptyBody, code] of [
+  [
+    "empty sitemap index",
+    "/sitemap-index.xml",
+    '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></sitemapindex>',
+    "SITEMAP_CHILDREN",
+  ],
+  [
+    "empty child urlset",
+    "/sitemap-0.xml",
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>',
+    "SITEMAP_URLS",
+  ],
+] as const) {
+  test(`${name} cannot report a passing crawl gate`, async () => {
+    const fixture = createFixture();
+    fixture.auditKinds = [];
+    replaceResponse(fixture, path, (response) => ({
+      ...response,
+      body: emptyBody,
+    }));
+    let report: VerificationReport | undefined;
+    try {
+      report = await runControlled(fixture);
+      expectFinding(report, code);
+      assert.equal(report.automatedGates.crawl, "FAIL");
+    } finally {
+      await cleanupReport(report);
+    }
+  });
+}
+
 const failureCases: readonly {
   name: string;
   code: string;
