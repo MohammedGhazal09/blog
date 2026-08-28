@@ -166,6 +166,7 @@ type VerificationReport = {
     };
     pointer: {
       iframeCount: number;
+      maxIframeCount: number;
       src: string;
       title: string;
       focused: boolean;
@@ -174,6 +175,7 @@ type VerificationReport = {
     };
     keyboard: {
       iframeCount: number;
+      maxIframeCount: number;
       src: string;
       title: string;
       focused: boolean;
@@ -181,6 +183,8 @@ type VerificationReport = {
       mediaRequests: string[];
     };
     fallback: {
+      iframeCount: number;
+      maxIframeCount: number;
       href: string;
       label: string;
       visible: boolean;
@@ -607,6 +611,7 @@ test("controlled media audit covers every article intent path and direct fallbac
       );
       for (const activation of [article.pointer, article.keyboard]) {
         assert.equal(activation.iframeCount, 1);
+        assert.equal(activation.maxIframeCount, 1);
         assert.equal(
           activation.src,
           `https://www.youtube-nocookie.com/embed/${article.youtubeId}?hl=ar`,
@@ -617,6 +622,8 @@ test("controlled media audit covers every article intent path and direct fallbac
         assert.deepEqual(activation.mediaRequests, [activation.src]);
       }
       assert.deepEqual(article.fallback, {
+        iframeCount: 1,
+        maxIframeCount: 1,
         href: `https://www.youtube.com/watch?v=${article.youtubeId}`,
         label: "مشاهدة الفيديو على يوتيوب",
         visible: true,
@@ -658,8 +665,11 @@ test("duplicate exact iframe navigations fail media even when one iframe is remo
     const expectedSrc = `https://www.youtube-nocookie.com/embed/${article.youtubeId}?hl=ar`;
     for (const activation of [article.pointer, article.keyboard]) {
       assert.equal(activation.iframeCount, 1);
+      assert.equal(activation.maxIframeCount, 2);
       assert.deepEqual(activation.mediaRequests, [expectedSrc, expectedSrc]);
     }
+    assert.equal(article.fallback.iframeCount, 1);
+    assert.equal(article.fallback.maxIframeCount, 2);
     assert.deepEqual(article.fallback.mediaRequests, [
       expectedSrc,
       expectedSrc,
@@ -670,6 +680,54 @@ test("duplicate exact iframe navigations fail media even when one iframe is remo
     await cleanupReport(report);
   }
 });
+
+for (const [name, auditLabel, resultKey, findingCode] of [
+  ["pointer", "media pointer pass", "pointer", "MEDIA_ACTIVATION"],
+  ["Enter", "media keyboard pass", "keyboard", "MEDIA_ACTIVATION"],
+  ["fallback", "media fallback pass", "fallback", "MEDIA_FALLBACK"],
+] as const) {
+  test(`${name} media duplicates scheduled beyond 50 ms fail the article and media gate`, async () => {
+    const fixture = createFixture();
+    const articleUrl = absolute(ARTICLE_PATHS[0]);
+    const articleResponse = fixture.responses.get(articleUrl);
+    assert.ok(articleResponse);
+    const expectedSrc = `https://www.youtube-nocookie.com/embed/${VIDEO_IDS[0]}?hl=ar`;
+    const duplicateAfterOldSnapshot = `<script>document.querySelector('[data-video-activate]').addEventListener('click',()=>setTimeout(()=>{const region=document.querySelector('[data-video-region]');const duplicate=document.createElement('iframe');duplicate.src=${JSON.stringify(expectedSrc)};region.append(duplicate);setTimeout(()=>duplicate.remove(),20)},100))</script>`;
+    const mutatedResponse = {
+      ...articleResponse,
+      body: articleResponse.body.replace(
+        "</body>",
+        `${duplicateAfterOldSnapshot}</body>`,
+      ),
+    };
+    fixture.beforeAuditPageSetup = async (label) => {
+      if (label === auditLabel)
+        fixture.browserOverrides.set(articleUrl, mutatedResponse);
+      else fixture.browserOverrides.delete(articleUrl);
+    };
+    fixture.auditKinds = ["media"];
+    let report: VerificationReport | undefined;
+    try {
+      report = await runControlled(fixture);
+      const article = report.media.find(({ url }) => url === articleUrl);
+      assert.ok(article);
+      assert.ok(
+        report.findings.some(
+          ({ code, url }) => code === findingCode && url === articleUrl,
+        ),
+        JSON.stringify(report.findings),
+      );
+      const observation = article[resultKey];
+      assert.equal(observation.iframeCount, 1);
+      assert.equal(observation.maxIframeCount, 2);
+      assert.deepEqual(observation.mediaRequests, [expectedSrc, expectedSrc]);
+      assert.equal(article.status, "FAIL");
+      assert.equal(report.automatedGates.media, "FAIL");
+    } finally {
+      await cleanupReport(report);
+    }
+  });
+}
 
 test("controlled Arabic RTL accessibility and reflow audit covers every route plus 404", async () => {
   let report: VerificationReport | undefined;

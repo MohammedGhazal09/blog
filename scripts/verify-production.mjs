@@ -33,7 +33,9 @@ const BROWSER_CLOSE_TIMEOUT_MS = 5_000;
 const MEDIA_REGION_SELECTOR = "[data-video-region]";
 const MEDIA_ACTIVATE_SELECTOR = "[data-video-activate]";
 const MEDIA_DIRECT_SELECTOR = ".youtube-cta";
-const MEDIA_ACTIVATION_SETTLE_MS = 50;
+// Activation may schedule follow-up DOM and navigation work. Observe every
+// mutation and request for one bounded interval after the interaction ends.
+const MEDIA_POST_ACTIVATION_STABILITY_MS = 250;
 const PLAUSIBLE_LOADER =
   /^https:\/\/plausible\.io\/js\/pa-[A-Za-z0-9_-]+\.js$/u;
 const PAGE_TRANSPORT_MONITORS = new WeakMap();
@@ -1149,6 +1151,51 @@ async function mediaGeometry(region) {
     : null;
 }
 
+async function startMediaStabilityObservation(region) {
+  await region.evaluate((node) => {
+    const key = Symbol.for("mangawy.production.media-stability");
+    const state = {
+      maxIframeCount: node.querySelectorAll("iframe").length,
+      mutationCount: 0,
+      observer: undefined,
+      sample: undefined,
+    };
+    state.sample = () => {
+      state.maxIframeCount = Math.max(
+        state.maxIframeCount,
+        node.querySelectorAll("iframe").length,
+      );
+    };
+    state.observer = new MutationObserver(() => {
+      state.mutationCount += 1;
+      state.sample();
+    });
+    state.observer.observe(node, {
+      attributes: true,
+      attributeFilter: ["src"],
+      childList: true,
+      subtree: true,
+    });
+    node[key] = state;
+  });
+}
+
+async function completeMediaStabilityObservation(region) {
+  return region.evaluate(async (node, durationMs) => {
+    const key = Symbol.for("mangawy.production.media-stability");
+    const state = node[key];
+    await new Promise((resolveWait) => setTimeout(resolveWait, durationMs));
+    state.sample();
+    state.observer.disconnect();
+    delete node[key];
+    return {
+      iframeCount: node.querySelectorAll("iframe").length,
+      maxIframeCount: state.maxIframeCount,
+      mutationCount: state.mutationCount,
+    };
+  }, MEDIA_POST_ACTIVATION_STABILITY_MS);
+}
+
 function geometryStable(before, after) {
   return Boolean(
     before &&
@@ -1207,6 +1254,7 @@ async function activationObservation(
       const region = page.locator(MEDIA_REGION_SELECTOR);
       const trigger = region.locator(MEDIA_ACTIVATE_SELECTOR);
       const before = await mediaGeometry(region);
+      await startMediaStabilityObservation(region);
       intent.activate();
       if (key) {
         await trigger.focus();
@@ -1214,15 +1262,12 @@ async function activationObservation(
       } else {
         await trigger.click();
       }
-      await page.waitForTimeout(MEDIA_ACTIVATION_SETTLE_MS);
+      const stability = await completeMediaStabilityObservation(region);
       const iframe = region.locator("iframe");
-      await iframe
-        .first()
-        .waitFor({ state: "attached", timeout: 5_000 })
-        .catch(() => {});
       const after = await mediaGeometry(region);
       return {
-        iframeCount: await iframe.count(),
+        iframeCount: stability.iframeCount,
+        maxIframeCount: stability.maxIframeCount,
         src:
           (await iframe
             .first()
@@ -1251,6 +1296,7 @@ function failedMediaResult(url, youtubeId = "") {
     preIntent: { iframeCount: 0, mediaRequests: [], geometry: null },
     pointer: {
       iframeCount: 0,
+      maxIframeCount: 0,
       src: "",
       title: "",
       focused: false,
@@ -1259,6 +1305,7 @@ function failedMediaResult(url, youtubeId = "") {
     },
     keyboard: {
       iframeCount: 0,
+      maxIframeCount: 0,
       src: "",
       title: "",
       focused: false,
@@ -1266,6 +1313,8 @@ function failedMediaResult(url, youtubeId = "") {
       mediaRequests: [],
     },
     fallback: {
+      iframeCount: 0,
+      maxIframeCount: 0,
       href: "",
       label: "",
       visible: false,
@@ -1388,12 +1437,16 @@ async function auditMedia({
             browserTransport,
             intentionalBlockedRequest: fallbackIntent.classify,
           });
+          const region = page.locator(MEDIA_REGION_SELECTOR);
+          await startMediaStabilityObservation(region);
           fallbackIntent.activate();
           await page.locator(MEDIA_ACTIVATE_SELECTOR).click();
-          await page.waitForTimeout(MEDIA_ACTIVATION_SETTLE_MS);
+          const stability = await completeMediaStabilityObservation(region);
           const link = page.locator(MEDIA_DIRECT_SELECTOR);
           await link.focus().catch(() => {});
           return {
+            iframeCount: stability.iframeCount,
+            maxIframeCount: stability.maxIframeCount,
             href: (await link.getAttribute("href")) ?? "",
             label: (await link.innerText()).trim(),
             visible: await link.isVisible(),
@@ -1414,6 +1467,7 @@ async function auditMedia({
       const validActivation = (observation) => {
         if (
           observation.iframeCount !== 1 ||
+          observation.maxIframeCount !== 1 ||
           observation.src !== expectedSrc ||
           !hasOneExactMediaRequest(observation)
         )
@@ -1434,6 +1488,8 @@ async function auditMedia({
         preIntent.geometry !== null &&
         Math.abs(preIntent.geometry.ratio - 16 / 9) <= 0.02;
       const fallbackPassed =
+        fallback.iframeCount === 1 &&
+        fallback.maxIframeCount === 1 &&
         fallback.href === expectedHref &&
         ARABIC.test(fallback.label) &&
         fallback.visible &&
@@ -1487,6 +1543,7 @@ async function auditMedia({
         preIntent,
         pointer: {
           iframeCount: pointer.iframeCount,
+          maxIframeCount: pointer.maxIframeCount,
           src: pointer.src,
           title: pointer.title,
           focused: pointer.focused,
@@ -1495,6 +1552,7 @@ async function auditMedia({
         },
         keyboard: {
           iframeCount: keyboard.iframeCount,
+          maxIframeCount: keyboard.maxIframeCount,
           src: keyboard.src,
           title: keyboard.title,
           focused: keyboard.focused,
