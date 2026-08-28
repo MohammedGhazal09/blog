@@ -1,4 +1,6 @@
 ---
+import { plausibleScriptSource } from "../lib/measurement.ts";
+
 type Props =
   | {
       title: string;
@@ -19,6 +21,11 @@ const canonical =
   page.indexable === false
     ? undefined
     : new URL(Astro.url.pathname, Astro.site).href;
+const isLaunchReadiness =
+  import.meta.env.MODE === "launch-readiness";
+const plausibleScriptSrc = isLaunchReadiness
+  ? plausibleScriptSource(import.meta.env.PLAUSIBLE_SCRIPT_SRC)
+  : undefined;
 ---
 
 <!doctype html>
@@ -45,6 +52,11 @@ const canonical =
           <meta name="twitter:title" content={page.title} />
           <meta name="twitter:description" content={page.description} />
         </>
+      )
+    }
+    {
+      plausibleScriptSrc && (
+        <script is:inline defer src={plausibleScriptSrc}></script>
       )
     }
   </head>

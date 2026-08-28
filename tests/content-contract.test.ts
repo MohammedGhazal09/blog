@@ -33,12 +33,12 @@ function emittedHtml(): ReadonlyMap<string, string> {
   return new Map(
     globSync("dist/**/*.html")
       .sort()
-      .map((path) => [path, readFileSync(path, "utf8")]),
+      .map((path) => [path.replaceAll("\\", "/"), readFileSync(path, "utf8")]),
   );
 }
 
 function htmlBody(source: string): string {
-  const body = /<body>[\s\S]*<\/body>/u.exec(source)?.[0];
+  const body = /<body\b[^>]*>[\s\S]*<\/body>/u.exec(source)?.[0];
   assert.ok(body, "emitted HTML must contain one body");
   return body;
 }
@@ -541,7 +541,7 @@ test("launch readiness wires controlled identity and analytics without changing 
   );
   assert.match(
     launchScript,
-    /plausibleScriptSource\(process\.env\.PLAUSIBLE_SCRIPT_SRC\)/u,
+    /plausibleScriptSource\(\s*process\.env\.PLAUSIBLE_SCRIPT_SRC,?\s*\)/u,
   );
 
   const layoutSource = readFileSync(
