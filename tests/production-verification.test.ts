@@ -948,6 +948,47 @@ test("every registered article route fails crawl and media when its media is abs
   }
 });
 
+for (const [name, markup] of [
+  [
+    "image",
+    '<img src="https://127.0.0.1:4443/private-image" alt="صورة تجريبية">',
+  ],
+  [
+    "fetch",
+    '<script>fetch("https://127.0.0.1:4443/private-fetch").catch(()=>{})</script>',
+  ],
+  [
+    "child iframe",
+    '<iframe src="https://127.0.0.1:4443/private-frame" title="إطار تجريبي"></iframe>',
+  ],
+] as const) {
+  test(`off-origin ${name} requests are blocked before destination contact`, async () => {
+    const fixture = createFixture();
+    const homepage = fixture.responses.get(absolute("/"));
+    assert.ok(homepage);
+    fixture.browserOverrides.set(absolute("/"), {
+      ...homepage,
+      body: homepage.body.replace("</main>", `${markup}</main>`),
+    });
+    fixture.auditKinds = ["presentation"];
+    let report: VerificationReport | undefined;
+    try {
+      report = await runControlled(fixture);
+      assert.ok(
+        report.findings.some(({ code }) => code === "BROWSER_ORIGIN_ESCAPE"),
+        JSON.stringify(report.findings),
+      );
+      assert.equal(
+        fixture.browserRequests.some((url) => url.startsWith("https://127.0.0.1:4443/")),
+        false,
+      );
+      assert.equal(report.automatedGates.presentation, "FAIL");
+    } finally {
+      await cleanupReport(report);
+    }
+  });
+}
+
 test("an unavailable sitemap article fails both crawl and media coverage", async () => {
   const fixture = createFixture();
   replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({

@@ -642,30 +642,38 @@ async function installControlledRoutes(page, controlledFixture) {
   if (controlledFixture) await controlledFixture.installBrowserRoutes(page);
 }
 
-async function navigateSameOrigin({ page, url, origin, timeout, findings }) {
-  let escapedUrl;
-  await page.route("**/*", async (route) => {
+async function navigateSameOrigin({
+  page,
+  url,
+  origin,
+  timeout,
+  findings,
+  intentionalBlockedUrl = () => false,
+}) {
+  const unexpectedRequests = [];
+  const guard = async (route) => {
     const request = route.request();
-    if (
-      !request.isNavigationRequest() ||
-      request.frame() !== page.mainFrame()
-    ) {
-      return route.fallback();
-    }
     const destination = new URL(request.url());
     if (destination.origin === origin) return route.fallback();
-    escapedUrl = destination.href;
-    finding(
-      findings,
-      "BROWSER_ORIGIN_ESCAPE",
-      `browser navigation left the verified origin: ${destination.origin}`,
-      url,
-    );
+    if (!intentionalBlockedUrl(destination.href)) {
+      unexpectedRequests.push(destination.href);
+      finding(
+        findings,
+        "BROWSER_ORIGIN_ESCAPE",
+        `blocked off-origin ${request.resourceType()} request: ${destination.href}`,
+        url,
+      );
+    }
     return route.abort("blockedbyclient");
-  });
+  };
+  await page.context().route("**/*", guard);
+  await page.route("**/*", guard);
   await page.goto(url, { waitUntil: "load", timeout });
-  if (escapedUrl)
-    throw new Error(`blocked off-origin navigation: ${escapedUrl}`);
+  await page.waitForTimeout(0);
+  if (unexpectedRequests.length > 0)
+    throw new Error(
+      `blocked off-origin browser requests: ${unexpectedRequests.join(", ")}`,
+    );
   if (page.url() !== url) {
     finding(
       findings,
@@ -743,6 +751,7 @@ async function auditPerformance({
         deviceScaleFactor: PROFILE.deviceScaleFactor,
         isMobile: PROFILE.isMobile,
         hasTouch: PROFILE.hasTouch,
+        serviceWorkers: "block",
       });
       try {
         await context.addInitScript(installVitalsObserver);
@@ -854,7 +863,7 @@ async function newAuditPage(
   controlledFixture,
   viewport = PROFILE.viewport,
 ) {
-  const context = await browser.newContext({ viewport });
+  const context = await browser.newContext({ viewport, serviceWorkers: "block" });
   const page = await context.newPage();
   await installControlledRoutes(page, controlledFixture);
   return { context, page };
@@ -907,6 +916,7 @@ async function activationObservation(
       origin,
       timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
       findings,
+      intentionalBlockedUrl: isMediaUrl,
     });
     const region = page.locator(MEDIA_REGION_SELECTOR);
     const trigger = region.locator(MEDIA_ACTIVATE_SELECTOR);
@@ -1009,6 +1019,7 @@ async function auditMedia({
         origin,
         timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
         findings,
+        intentionalBlockedUrl: isMediaUrl,
       });
       const region = pre.page.locator(MEDIA_REGION_SELECTOR);
       preIntent = {
@@ -1048,6 +1059,7 @@ async function auditMedia({
         origin,
         timeout: RENDERED_NAVIGATION_TIMEOUT_MS,
         findings,
+        intentionalBlockedUrl: isMediaUrl,
       });
       await fallbackPage.page.locator(MEDIA_ACTIVATE_SELECTOR).click();
       const link = fallbackPage.page.locator(MEDIA_DIRECT_SELECTOR);
@@ -1476,7 +1488,7 @@ export async function runProductionVerification(options = {}) {
   try {
     browser = await chromium.launch({ headless: true });
     chromiumVersion = browser.version();
-    const context = await browser.newContext();
+    const context = await browser.newContext({ serviceWorkers: "block" });
     const page = await context.newPage();
     if (controlledFixture) await controlledFixture.installBrowserRoutes(page);
 
