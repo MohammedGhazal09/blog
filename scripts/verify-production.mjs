@@ -1302,20 +1302,33 @@ function isAllowedLatinValue(value) {
 async function latinLeaks(page, context) {
   const domValues = await page.evaluate(() => {
     const visibleText = [];
+    const isVisible = (node) => {
+      if (node.closest("[hidden], [aria-hidden='true']")) return false;
+      const style = getComputedStyle(node);
+      return style.display !== "none" && style.visibility !== "hidden";
+    };
     const walker = document.createTreeWalker(
       document.body,
       NodeFilter.SHOW_TEXT,
     );
     while (walker.nextNode()) {
       const parent = walker.currentNode.parentElement;
-      if (!parent?.closest("script, style, [hidden], [aria-hidden='true']")) {
-        const style = getComputedStyle(parent);
-        if (style.display !== "none" && style.visibility !== "hidden")
-          visibleText.push(walker.currentNode.textContent ?? "");
-      }
+      if (parent && !parent.closest("script, style") && isVisible(parent))
+        visibleText.push(walker.currentNode.textContent ?? "");
     }
+    const formValues = [
+      ...document.querySelectorAll("input, textarea, select"),
+    ].flatMap((control) => {
+      if (!isVisible(control)) return [];
+      if (control instanceof HTMLSelectElement)
+        return [...control.selectedOptions].map(
+          (option) => option.label || option.textContent || "",
+        );
+      return [control.getAttribute("placeholder") ?? "", control.value];
+    });
     return [
       ...visibleText,
+      ...formValues,
       document.title,
       document
         .querySelector('meta[name="description"]')
@@ -1330,11 +1343,15 @@ async function latinLeaks(page, context) {
   });
   const cdp = await context.newCDPSession(page);
   const tree = await cdp.send("Accessibility.getFullAXTree");
-  const axNames = tree.nodes
+  const axValues = tree.nodes
     .filter((node) => !node.ignored)
-    .map((node) => node.name?.value)
+    .flatMap((node) => [
+      node.name?.value,
+      node.value?.value,
+      node.description?.value,
+    ])
     .filter((value) => typeof value === "string");
-  return [...new Set([...domValues, ...axNames])]
+  return [...new Set([...domValues, ...axValues])]
     .map((value) => value.replace(/\s+/gu, " ").trim())
     .filter((value) => LATIN.test(value) && !isAllowedLatinValue(value));
 }

@@ -630,6 +630,40 @@ test("controlled Arabic RTL accessibility and reflow audit covers every route pl
   }
 });
 
+test("presentation detects visible form and accessibility value leakage", async () => {
+  const fixture = createFixture();
+  replaceResponse(fixture, "/", (response) => ({
+    ...response,
+    body: response.body.replace(
+      "</main>",
+      '<label>بحث<input aria-label="بحث" aria-description="ControlHelp" value="EnglishValue" placeholder="SettingsNow"></label><label>اختيار<select aria-label="اختيار"><option selected>SelectedNow</option></select></label></main>',
+    ),
+  }));
+  fixture.auditKinds = ["presentation"];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    const homepage = report.presentation.find(
+      ({ url }) => url === absolute("/"),
+    );
+    assert.ok(homepage);
+    for (const leak of [
+      "EnglishValue",
+      "SettingsNow",
+      "SelectedNow",
+      "ControlHelp",
+    ])
+      assert.ok(homepage.latinLeaks.includes(leak), JSON.stringify(homepage));
+    assert.equal(homepage.status, "FAIL");
+    assert.ok(
+      report.findings.some(({ code }) => code === "PRESENTATION_LATIN"),
+    );
+    assert.equal(report.automatedGates.presentation, "FAIL");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
 const renderedAuditCases: readonly {
   name: string;
   code: string;
