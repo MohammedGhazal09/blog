@@ -41,6 +41,10 @@ type ControlledFixture = {
   browserRouteInstalled: boolean;
   browserRouteInstallCount: number;
   readerIdleMs: number;
+  resolveHostname(
+    hostname: string,
+    options: { all: true; verbatim: true },
+  ): Promise<readonly { address: string; family: number }[]>;
   auditKinds?: readonly ("performance" | "media" | "presentation")[];
   performanceSamples: Map<
     string,
@@ -270,6 +274,11 @@ function createFixture(): ControlledFixture {
     browserRouteInstalled: false,
     browserRouteInstallCount: 0,
     readerIdleMs: 10,
+    async resolveHostname(hostname, options) {
+      assert.equal(hostname, new URL(CONTROLLED_ORIGIN).hostname);
+      assert.deepEqual(options, { all: true, verbatim: true });
+      return [{ address: "93.184.216.34", family: 4 }];
+    },
     performanceSamples,
     async fetch(url, init) {
       fixture.requests.push(url);
@@ -800,6 +809,10 @@ test("invalid or absent origin fails before fixture, browser, or artifact I/O", 
     `${CONTROLLED_ORIGIN}#fragment`,
     "https://127.0.0.1",
     "https://localhost",
+    "https://router",
+    "https://router.local",
+    "https://router.internal",
+    "https://router.home.arpa",
     "https://fixture.example",
   ]) {
     const fixture = createFixture();
@@ -817,6 +830,19 @@ test("invalid or absent origin fails before fixture, browser, or artifact I/O", 
       else process.env.SITE_ORIGIN = prior;
     }
   }
+  const after = existsSync(ARTIFACT_ROOT) ? await readdir(ARTIFACT_ROOT) : [];
+  assert.deepEqual(after, before);
+});
+
+test("private DNS answers fail before fixture, browser, artifact, or route I/O", async () => {
+  const fixture = createFixture();
+  fixture.resolveHostname = async () => [
+    { address: "192.168.1.1", family: 4 },
+  ];
+  const before = existsSync(ARTIFACT_ROOT) ? await readdir(ARTIFACT_ROOT) : [];
+  await assert.rejects(() => runControlled(fixture));
+  assert.deepEqual(fixture.requests, []);
+  assert.equal(fixture.browserRouteInstalled, false);
   const after = existsSync(ARTIFACT_ROOT) ? await readdir(ARTIFACT_ROOT) : [];
   assert.deepEqual(after, before);
 });

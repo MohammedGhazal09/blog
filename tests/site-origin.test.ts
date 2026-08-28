@@ -3,6 +3,10 @@ import test from "node:test";
 
 import { productionSiteOrigin } from "../src/lib/site-origin.ts";
 
+const publicResolver = async () => [
+  { address: "93.184.216.34", family: 4 },
+];
+
 const validOrigins = [
   [
     "root HTTPS origin",
@@ -12,8 +16,8 @@ const validOrigins = [
 ] as const;
 
 for (const [name, raw, expected] of validOrigins) {
-  test(`accepts ${name}`, () => {
-    assert.equal(productionSiteOrigin(raw), expected);
+  test(`accepts ${name}`, async () => {
+    assert.equal(await productionSiteOrigin(raw, publicResolver), expected);
   });
 }
 
@@ -42,6 +46,10 @@ const invalidOrigins: readonly [string, unknown][] = [
   ["trailing-dot host", "https://blog.ahmed-mangawy.org./"],
   ["localhost", "https://localhost"],
   ["localhost subdomain", "https://blog.localhost"],
+  ["single-label local DNS name", "https://router"],
+  ["multicast DNS suffix", "https://router.local"],
+  ["internal suffix", "https://router.internal"],
+  ["home ARPA suffix", "https://router.home.arpa"],
   ["loopback IPv4", "https://127.0.0.1"],
   ["public IPv4", "https://203.0.113.10"],
   ["loopback IPv6", "https://[::1]"],
@@ -64,7 +72,24 @@ const invalidOrigins: readonly [string, unknown][] = [
 ];
 
 for (const [name, raw] of invalidOrigins) {
-  test(`rejects ${name}`, () => {
-    assert.throws(() => productionSiteOrigin(raw));
+  test(`rejects ${name}`, async () => {
+    await assert.rejects(() => productionSiteOrigin(raw, publicResolver));
+  });
+}
+
+for (const [name, address, family] of [
+  ["private IPv4 DNS answer", "192.168.1.1", 4],
+  ["link-local IPv4 DNS answer", "169.254.1.1", 4],
+  ["documentation IPv4 DNS answer", "203.0.113.1", 4],
+  ["private IPv6 DNS answer", "fd00::1", 6],
+  ["link-local IPv6 DNS answer", "fe80::1", 6],
+  ["documentation IPv6 DNS answer", "2001:db8::1", 6],
+] as const) {
+  test(`rejects ${name}`, async () => {
+    await assert.rejects(() =>
+      productionSiteOrigin("https://blog.ahmed-mangawy.org", async () => [
+        { address, family },
+      ]),
+    );
   });
 }

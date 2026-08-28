@@ -1231,10 +1231,13 @@ async function writeReport(report, scope, started) {
 }
 
 export async function runProductionVerification(options = {}) {
-  const normalizedOrigin = productionSiteOrigin(process.env.SITE_ORIGIN);
+  const controlledFixture = options.controlledFixture;
+  const normalizedOrigin = await productionSiteOrigin(
+    process.env.SITE_ORIGIN,
+    controlledFixture?.resolveHostname,
+  );
   const inputOrigin = process.env.SITE_ORIGIN;
 
-  const controlledFixture = options.controlledFixture;
   const evidenceScope = controlledFixture ? "controlled" : "final-origin";
   const transport = controlledFixture ? "intercepted-fixture" : "network";
   const started = new Date();
