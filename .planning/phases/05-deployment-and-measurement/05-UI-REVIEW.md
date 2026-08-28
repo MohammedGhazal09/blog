@@ -13,9 +13,12 @@ browser_backend: headed Playwright fallback
 
 # Phase 05 — UI Review
 
-**Overall status:** PASSED  
-**Visual-change budget:** zero visible or accessible-body change  
-**Browser evidence:** captured and independently inspected  
+**Overall status:** PASSED
+
+**Visual-change budget:** zero visible or accessible-body change
+
+**Browser evidence:** captured and independently inspected
+
 **Source range:** `43743d6..be59416`
 
 Chrome DevTools MCP was unavailable during implementation, so the repository's existing headed Playwright fallback supplied the browser evidence. The final evidence set covers all nine generated route families at `320`, `390`, `768`, `1024`, and `1440` CSS pixels, plus analytics failure, focus, player activation, and no-JavaScript states.

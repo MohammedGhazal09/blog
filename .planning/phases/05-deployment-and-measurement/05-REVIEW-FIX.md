@@ -11,8 +11,10 @@ status: all_fixed
 
 # Phase 05: Code Review Fix Report
 
-**Fixed at:** 2026-08-28T03:46:42Z  
-**Source review:** `.planning/phases/05-deployment-and-measurement/05-REVIEW.md`  
+**Fixed at:** 2026-08-28T03:46:42Z
+
+**Source review:** `.planning/phases/05-deployment-and-measurement/05-REVIEW.md`
+
 **Iteration:** 1
 
 **Summary:**
@@ -25,8 +27,10 @@ status: all_fixed
 
 ### WR-01: Static-server containment check is Windows-only
 
-**Files modified:** `tests/deployment-measurement.test.ts`  
-**Commit:** `18e07ee`  
+**Files modified:** `tests/deployment-measurement.test.ts`
+
+**Commit:** `18e07ee`
+
 **Applied fix:** Imported `node:path.sep` and used it in the resolved `dist/` containment prefix. The traversal guard retains its exact-root exception and now accepts legitimate child files on Windows, Linux, and macOS.
 
 **Verification:**
@@ -38,6 +42,8 @@ status: all_fixed
 
 ---
 
-_Fixed: 2026-08-28T03:46:42Z_  
-_Fixer: Codex acting inline as gsd-code-fixer_  
+_Fixed: 2026-08-28T03:46:42Z_
+
+_Fixer: Codex acting inline as gsd-code-fixer_
+
 _Iteration: 1_
