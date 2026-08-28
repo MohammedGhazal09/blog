@@ -948,6 +948,29 @@ test("every registered article route fails crawl and media when its media is abs
   }
 });
 
+test("an unavailable sitemap article fails both crawl and media coverage", async () => {
+  const fixture = createFixture();
+  replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
+    ...response,
+    status: 503,
+  }));
+  fixture.auditKinds = ["media"];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    expectFinding(report, "HTTP_STATUS");
+    assert.ok(report.findings.some(({ code }) => code === "MEDIA_IDENTITY"));
+    assert.equal(report.media.length, ARTICLE_PATHS.length);
+    assert.equal(
+      report.media.find(({ url }) => url === absolute(ARTICLE_PATHS[0]))?.status,
+      "FAIL",
+    );
+    assert.equal(report.automatedGates.media, "FAIL");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
 test("stalled font readiness returns a failed performance report within its bound", async () => {
   const fixture = createFixture();
   const homepage = fixture.responses.get(absolute("/"));

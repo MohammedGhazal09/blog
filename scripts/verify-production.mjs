@@ -1442,6 +1442,7 @@ export async function runProductionVerification(options = {}) {
     controlledFixture?.auditKinds ?? ["performance", "media", "presentation"],
   );
   let selectedPerformanceRoutes = [];
+  let discoveredArticleUrls = [];
   let performance = [];
   let media = [];
   let presentation = [];
@@ -1742,7 +1743,9 @@ export async function runProductionVerification(options = {}) {
         findings,
       });
     }
-    const discoveredArticleUrls = articleUrls(normalizedOrigin, documents);
+    discoveredArticleUrls = routeGraph.sitemapUrls.filter((url) =>
+      isArticleUrl(url, normalizedOrigin),
+    );
     if (auditKinds.has("media")) {
       media = await auditMedia({
         browser,
@@ -1809,7 +1812,8 @@ export async function runProductionVerification(options = {}) {
           : "FAIL",
       media: !auditKinds.has("media")
         ? "PENDING"
-        : media.length > 0 &&
+        : media.length === discoveredArticleUrls.length &&
+            discoveredArticleUrls.length > 0 &&
             media.every(({ status }) => status === "PASS") &&
             errors.length === 0
           ? "PASS"
