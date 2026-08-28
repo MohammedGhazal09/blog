@@ -1,10 +1,13 @@
 ---
 phase: 05
 slug: deployment-and-measurement
-status: draft
+status: partial
 nyquist_compliant: false
-wave_0_complete: false
+wave_0_complete: true
 created: 2026-08-28
+audited: 2026-08-28
+automated_gaps: 0
+manual_only_checks: 4
 requirements: [SEO-06, MEAS-01, MEAS-02]
 ---
 
@@ -38,11 +41,11 @@ requirements: [SEO-06, MEAS-01, MEAS-02]
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure behavior | Test type | Automated command | File exists | Status |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 05-W0-01 | TBD | 0 | SEO-06 | T-05-07 | Local fixtures cannot mark Search Console ownership or sitemap submission complete. | Native contract | `npm test` | ❌ extend `tests/content-contract.test.ts` | ⬜ pending |
-| 05-W0-02 | TBD | 0 | MEAS-01 | T-05-01, T-05-03 | Ordinary output has no analytics; launch output accepts exactly one current official Plausible asset URL per document. | Native build/output | `npm test` | ❌ extend `tests/content-contract.test.ts` | ⬜ pending |
-| 05-W0-03 | TBD | 0 | MEAS-01 | T-05-05, T-05-06 | Analytics success, failure, or blocking cannot alter Arabic/RTL content, focus, layout, or navigation. | Browser invariance | `npm run test:browser` | ❌ focused Phase 5 browser coverage | ⬜ pending |
-| 05-W0-04 | TBD | 0 | MEAS-01, MEAS-02 | T-05-04 | One direct YouTube activation creates at most one automatic outbound attempt; player activation creates none. | Isolated wiring test | `node --test --test-reporter=tap tests/deployment-measurement.test.ts` | ❌ create | ⬜ pending |
-| 05-W0-05 | TBD | 0 | MEAS-01, MEAS-02 | T-05-02 | Source and output contain no credential, verification token, custom tracker, session replay, fingerprinting, cookie identifier, tag manager, or real production `pa-…` value. | Source/output scan | `npm test` | ❌ extend `tests/content-contract.test.ts` | ⬜ pending |
+| 05-W0-01 | 05-02 | 0 | SEO-06 | T-05-07 | Local fixtures cannot mark Search Console ownership or sitemap submission complete. | Native evidence contract | `npm test` | ✅ `tests/content-contract.test.ts` | ✅ green locally; live property remains manual-only |
+| 05-W0-02 | 05-01 | 0 | MEAS-01 | T-05-01, T-05-03 | Ordinary output has no analytics; launch output accepts exactly one current official Plausible asset URL per document. | Native build/output | `npm test` | ✅ `tests/content-contract.test.ts` | ✅ green |
+| 05-W0-03 | 05-01 | 0 | MEAS-01 | T-05-05, T-05-06 | Analytics success, failure, or blocking cannot alter Arabic/RTL content, focus, layout, or navigation. | Browser invariance | `npm run test:browser` plus headed Phase 5 QA | ✅ existing browser suites and ignored evidence | ✅ green |
+| 05-W0-04 | 05-01 | 0 | MEAS-01, MEAS-02 | T-05-04 | One direct YouTube activation creates at most one automatic outbound attempt; player activation creates none. | Isolated wiring test | `npm test` | ✅ `tests/deployment-measurement.test.ts` | ✅ green |
+| 05-W0-05 | 05-02 | 0 | MEAS-01, MEAS-02 | T-05-02 | Source and output contain no credential, verification token, custom tracker, session replay, fingerprinting, cookie identifier, tag manager, or real production `pa-…` value. | Source/output scan | `npm test` | ✅ `tests/content-contract.test.ts` | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠ flaky*
 
@@ -59,19 +62,19 @@ requirements: [SEO-06, MEAS-01, MEAS-02]
 
 ## Wave 0 Requirements
 
-- [ ] Extend `tests/content-contract.test.ts` with launch-only inclusion, ordinary omission, exact source-gate, README/evidence-contract, prohibited-tool, secret-pattern, and restoration assertions.
-- [ ] Add `tests/deployment-measurement.test.ts` for the isolated current-snippet wiring seam; write artifacts only under `.artifacts/` if a failure needs them.
-- [ ] Add the new test file to the explicit `npm test` file list in `package.json`.
-- [ ] Reuse the installed Node, Astro, Playwright, and Axe infrastructure; add no test framework or analytics dependency.
+- [x] Extended `tests/content-contract.test.ts` with launch-only inclusion, ordinary omission, exact source-gate, README/evidence-contract, prohibited-tool, secret-pattern, and restoration assertions.
+- [x] Added `tests/deployment-measurement.test.ts` for the isolated current-snippet wiring seam; browser artifacts remain under ignored `.artifacts/`.
+- [x] Added the new test file to the explicit serialized `npm test` file list in `package.json`.
+- [x] Reused the installed Node, Astro, Playwright, and Axe infrastructure; no test framework or analytics dependency was added.
 
 ## Manual-Only Verifications
 
 | Behavior | Requirement | Why manual | Passing evidence |
 | --- | --- | --- | --- |
-| Cloudflare production project, deployment, DNS, and TLS are real and correctly configured. | SEO-06 | Requires owner-controlled provider state and final domain ownership. | Dated provider configuration plus a reachable final HTTPS response matching the canonical origin. |
-| Search Console property is verified and the absolute canonical sitemap is submitted. | SEO-06 | Ownership and submission status cannot be proven from repository fixtures. | Exact URL-prefix property, `/sitemap-index.xml` submission, last-read date, and service status. |
-| Plausible property receives aggregate production pageviews. | MEAS-01 | Only the real dashboard can prove ingestion and reporting. | Real production property and dated aggregate pageview evidence. |
-| Plausible **Outbound links** is enabled and reports the YouTube destination. | MEAS-02 | A local interception proves only project wiring. | Exact `Outbound Link: Click` event filtered by property `url`; described only as a link click. |
+| Cloudflare production project, deployment, DNS, and TLS are real and correctly configured. | SEO-06 | Requires owner-controlled provider state and final domain ownership. | `PENDING` — dated provider configuration plus a reachable final HTTPS response matching the canonical origin. |
+| Search Console property is verified and the absolute canonical sitemap is submitted. | SEO-06 | Ownership and submission status cannot be proven from repository fixtures. | `PENDING` — exact URL-prefix property, `/sitemap-index.xml` submission, last-read date, and service status. |
+| Plausible property receives aggregate production pageviews. | MEAS-01 | Only the real dashboard can prove ingestion and reporting. | `PENDING` — real production property and dated aggregate pageview evidence. |
+| Plausible **Outbound links** is enabled and reports the YouTube destination. | MEAS-02 | A local interception proves only project wiring. | `PENDING` — exact `Outbound Link: Click` event filtered by property `url`; described only as a link click. |
 
 ## Evidence Integrity Rules
 
@@ -81,14 +84,35 @@ requirements: [SEO-06, MEAS-01, MEAS-02]
 - Never commit the real `PLAUSIBLE_SCRIPT_SRC`, a Search Console verification artifact, or provider credentials.
 - Never equate a YouTube link click with playback, viewing, watch time, or completion.
 
+## Requirement Coverage Result
+
+| Requirement | Automated repository coverage | Live-service coverage | Final validation state |
+| --- | --- | --- | --- |
+| SEO-06 | Runbook/evidence-state contract, safe origin output, sitemap/robots generation, and fabricated-pass rejection are green. | Final deployment, DNS/TLS, Search Console ownership, and sitemap submission are `PENDING`. | PARTIAL |
+| MEAS-01 | Launch-only aggregate loader, ordinary omission, failure independence, no-reader-identifier scan, and controlled pageview seam are green. | Real aggregate pageviews in the owner Plausible property are `PENDING`. | PARTIAL |
+| MEAS-02 | Exactly one controlled direct-link event attempt with matching `url`, zero player attempts, and no project tracking path are green. | Real `Outbound Link: Click` reporting in the owner property is `PENDING`. | PARTIAL |
+
+No missing automated repository test was found, so no Nyquist test file was added during this audit. `nyquist_compliant` remains `false` because the three Phase 5 requirements include owner-controlled live-service outcomes that cannot truthfully pass from repository automation.
+
+## Validation Audit 2026-08-28
+
+| Metric | Count |
+| --- | ---: |
+| Automated gaps found | 0 |
+| Automated gaps resolved | 0 |
+| Local map entries green | 5 |
+| Manual-only checks pending | 4 |
+
 ## Validation Sign-Off
 
-- [ ] Every planned task has a runnable automated verification command.
-- [ ] No three consecutive implementation tasks lack an automated check.
-- [ ] Wave 0 covers every currently missing local assertion.
-- [ ] Full ordinary verification passes before and after controlled launch verification.
-- [ ] Browser artifacts remain under ignored `.artifacts/**`.
-- [ ] External facts remain explicitly pending unless supported by real owner-controlled evidence.
-- [ ] `wave_0_complete: true` and `nyquist_compliant: true` are set only after all local checks pass.
+- [x] Every planned repository task has a runnable automated verification command.
+- [x] No three consecutive implementation tasks lack an automated check.
+- [x] Wave 0 covers every local assertion identified by the draft strategy.
+- [x] Pinned `npm test` passed `133/133` after the code-review fix.
+- [x] The latest complete browser gate passed `49/49`; headed evidence records `45/45` identical visual/state pairs.
+- [x] Browser artifacts remain under ignored `.artifacts/**`.
+- [x] External facts remain explicitly pending without fabricated evidence.
+- [x] `wave_0_complete: true` records local completion.
+- [x] `nyquist_compliant: false` records unresolved manual live-service outcomes.
 
-**Approval:** pending implementation and audit.
+**Approval:** partial — automated repository coverage is complete; four owner-controlled checks remain pending.
