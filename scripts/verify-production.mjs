@@ -206,8 +206,19 @@ export function chromiumLaunchArgs(verifiedSite) {
   return [
     "--no-proxy-server",
     "--proxy-bypass-list=*",
+    "--force-webrtc-ip-handling-policy=disable_non_proxied_udp",
+    "--webrtc-ip-handling-policy=disable_non_proxied_udp",
     `--host-resolver-rules=${chromiumHostResolverRules(verifiedSite)}`,
   ];
+}
+
+function disableWebRtc() {
+  for (const name of ["RTCPeerConnection", "webkitRTCPeerConnection"])
+    Object.defineProperty(globalThis, name, {
+      value: undefined,
+      configurable: false,
+      writable: false,
+    });
 }
 
 function cleanSameOriginUrl(raw, origin, findings, sourceUrl) {
@@ -910,6 +921,7 @@ async function auditPerformance({
         hasTouch: PROFILE.hasTouch,
         serviceWorkers: "block",
       });
+      await context.addInitScript(disableWebRtc);
       await context.addInitScript(installVitalsObserver);
       const page = await context.newPage();
       try {
@@ -1033,6 +1045,7 @@ async function newAuditPage(
     viewport,
     serviceWorkers: "block",
   });
+  await context.addInitScript(disableWebRtc);
   const page = await context.newPage();
   await installControlledRoutes(page, controlledFixture);
   return { context, page };
@@ -1811,6 +1824,7 @@ export async function runProductionVerification(options = {}) {
     });
     chromiumVersion = browser.version();
     const context = await browser.newContext({ serviceWorkers: "block" });
+    await context.addInitScript(disableWebRtc);
     const page = await context.newPage();
     if (controlledFixture) await controlledFixture.installBrowserRoutes(page);
 

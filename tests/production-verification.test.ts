@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { createSocket } from "node:dgram";
 import { existsSync, readFileSync } from "node:fs";
 import { readdir, rm } from "node:fs/promises";
 import { createServer } from "node:http";
@@ -1148,6 +1149,39 @@ test("off-origin WebSockets are blocked before a local handshake", async () => {
   } finally {
     await cleanupReport(report);
     await closeServer(destination);
+  }
+});
+
+test("WebRTC is disabled before page code can send a local UDP packet", async () => {
+  const udp = createSocket("udp4");
+  let packets = 0;
+  udp.on("message", () => (packets += 1));
+  await new Promise<void>((resolveBind) =>
+    udp.bind(0, "127.0.0.1", resolveBind),
+  );
+  const address = udp.address();
+  assert.equal(typeof address, "object");
+
+  const fixture = createFixture();
+  const homepage = fixture.responses.get(absolute("/"));
+  assert.ok(homepage);
+  fixture.browserOverrides.set(absolute("/"), {
+    ...homepage,
+    body: homepage.body.replace(
+      "</main>",
+      `<script>const peer=new RTCPeerConnection({iceServers:[{urls:"stun:127.0.0.1:${address.port}"}]});peer.createDataChannel("probe");peer.createOffer().then((offer)=>peer.setLocalDescription(offer))</script></main>`,
+    ),
+  });
+  fixture.auditKinds = ["presentation"];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    await new Promise((resolveWait) => setTimeout(resolveWait, 200));
+    assert.equal(packets, 0);
+    assert.equal(report.automatedGates.presentation, "PASS");
+  } finally {
+    await cleanupReport(report);
+    udp.close();
   }
 });
 
