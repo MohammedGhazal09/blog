@@ -41,6 +41,9 @@ jobs:
       - name: Install the locked dependency graph
         run: npm ci --ignore-scripts
 
+      - name: Install the pinned Chromium runtime
+        run: npx playwright install --with-deps chromium
+
       - name: Run content and security tests
         run: npm test
 
