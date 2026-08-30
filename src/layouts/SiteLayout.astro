@@ -23,9 +23,10 @@ const canonical =
     : new URL(Astro.url.pathname, Astro.site).href;
 const isLaunchReadiness =
   import.meta.env.MODE === "launch-readiness";
-const plausibleScriptSrc = isLaunchReadiness
-  ? plausibleScriptSource(import.meta.env.PLAUSIBLE_SCRIPT_SRC)
-  : undefined;
+const plausibleScriptSrc =
+  isLaunchReadiness && import.meta.env.PLAUSIBLE_SCRIPT_SRC
+    ? plausibleScriptSource(import.meta.env.PLAUSIBLE_SCRIPT_SRC)
+    : undefined;
 ---
 
 <!doctype html>

@@ -470,6 +470,10 @@ function validatedPlausibleLoader(document, url, findings) {
   const loaders = document.scripts.filter(({ src }) =>
     PLAUSIBLE_LOADER.test(src),
   );
+  const plausibleScripts = document.scripts.filter(
+    ({ src }) => new URL(src, url).origin === "https://plausible.io",
+  );
+  if (plausibleScripts.length === 0) return undefined;
   if (
     loaders.length !== 1 ||
     !loaders[0].defer ||
@@ -477,11 +481,7 @@ function validatedPlausibleLoader(document, url, findings) {
     loaders[0].attributes.some(
       ({ name }) => name !== "src" && name !== "defer",
     ) ||
-    document.scripts.some(
-      ({ src }) =>
-        new URL(src, url).origin === "https://plausible.io" &&
-        !PLAUSIBLE_LOADER.test(src),
-    )
+    plausibleScripts.some(({ src }) => !PLAUSIBLE_LOADER.test(src))
   ) {
     finding(
       findings,
@@ -2565,11 +2565,11 @@ export async function runProductionVerification(options = {}) {
       );
     if (hasExactPlausibleDocuments && uniquePlausibleLoaders.size === 1) {
       browserTransport.plausibleLoader = plausibleLoaderUrls[0];
-    } else if (hasExactPlausibleDocuments && uniquePlausibleLoaders.size > 1) {
+    } else if (browserTransport.plausibleLoaders.size > 0) {
       finding(
         findings,
         "PLAUSIBLE_LOADER",
-        "every public sitemap document and the 404 must use one common exact Plausible property loader",
+        "analytics must be absent everywhere or every public sitemap document and the 404 must use one common exact Plausible property loader",
         normalizedOrigin,
       );
     }

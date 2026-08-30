@@ -32,10 +32,7 @@ const CONTROLLED_PLAUSIBLE_SCRIPT_SRC =
 function emittedHtml(): ReadonlyMap<string, string> {
   return new Map(
     globSync("dist/**/*.html")
-      .filter(
-        (path) =>
-          !path.replaceAll("\\", "/").startsWith("dist/admin/"),
-      )
+      .filter((path) => !path.replaceAll("\\", "/").startsWith("dist/admin/"))
       .sort()
       .map((path) => [path.replaceAll("\\", "/"), readFileSync(path, "utf8")]),
   );
@@ -140,7 +137,7 @@ function assertLaunchEvidence(markdown: string): void {
   }
 }
 
-test("Arabic owner runbook locks the exact deployment and measurement path", () => {
+test("Arabic owner runbook locks the analytics-free deployment path", () => {
   const readme = readFileSync(new URL("../README.md", import.meta.url), "utf8");
   const publicRunbook = readme.replace(
     /\n## لوحة النشر Sveltia CMS[\s\S]*?(?=\n## التحقق الاختياري من الأصل النهائي)/u,
@@ -156,10 +153,6 @@ test("Arabic owner runbook locks the exact deployment and measurement path", () 
     "npm ci && npm run check && npm run launch:ready",
     "dist",
     "SITE_ORIGIN",
-    "PLAUSIBLE_SCRIPT_SRC",
-    "Outbound links",
-    "Outbound Link: Click",
-    "url",
     "/sitemap-index.xml",
   ]) {
     assert.ok(readme.includes(exact), `README must include ${exact}`);
@@ -168,16 +161,17 @@ test("Arabic owner runbook locks the exact deployment and measurement path", () 
   assert.match(readme, /خاصية[^\n]*بادئة URL/u);
   assert.match(readme, /إعادة نشر|التراجع/u);
   assert.match(readme, /لا[^\n]*(?:فهرسة|الفهرسة)/u);
-  assert.match(readme, /نقرة[^\n]*رابط/u);
+  assert.match(readme, /لا يفعّل[^\n]*تحليلات/u);
   assert.doesNotMatch(readme, /مشاهدة فيديو|تشغيل فيديو|وقت المشاهدة/u);
+  assert.doesNotMatch(
+    publicRunbook,
+    /PLAUSIBLE_SCRIPT_SRC|Outbound links|Outbound Link: Click/iu,
+  );
   assert.doesNotMatch(
     publicRunbook,
     /script\.outbound-links\.js|wrangler|GitHub Actions/iu,
   );
-  assert.doesNotMatch(
-    publicRunbook,
-    /(?:أنشئ|اقرأ|افتح)[^\n]{0,40}\.env/iu,
-  );
+  assert.doesNotMatch(publicRunbook, /(?:أنشئ|اقرأ|افتح)[^\n]{0,40}\.env/iu);
 });
 
 test("launch evidence separates local readiness from real external authority", () => {
@@ -758,7 +752,7 @@ test("duplicate articles in one section cannot satisfy another section", () => {
   );
 });
 
-test("launch readiness wires controlled identity and analytics without changing bodies", () => {
+test("launch readiness wires controlled identity with optional analytics without changing bodies", () => {
   const npmCli = process.env.npm_execpath;
   assert.ok(npmCli, "npm_execpath must identify the pinned npm CLI");
   const controlledOrigin = "https://blog.ahmed-mangawy.org";
@@ -820,6 +814,32 @@ test("launch readiness wires controlled identity and analytics without changing 
     assert.ok(ordinaryHtml.has("dist/404.html"));
     for (const [path, source] of ordinaryHtml) {
       assert.doesNotMatch(source, /plausible\.io/iu, path);
+    }
+
+    const analyticsFreeEnv = {
+      ...process.env,
+      SITE_ORIGIN: controlledOrigin,
+    };
+    delete analyticsFreeEnv.PLAUSIBLE_SCRIPT_SRC;
+    const analyticsFreeResult = spawnSync(
+      process.execPath,
+      [npmCli, "run", "launch:ready"],
+      {
+        encoding: "utf8",
+        env: analyticsFreeEnv,
+      },
+    );
+    const analyticsFreeOutput = `${analyticsFreeResult.stdout ?? ""}\n${analyticsFreeResult.stderr ?? ""}`;
+    assert.equal(analyticsFreeResult.status, 0, analyticsFreeOutput);
+    const analyticsFreeHtml = emittedHtml();
+    assert.deepEqual([...analyticsFreeHtml.keys()], [...ordinaryHtml.keys()]);
+    for (const [path, source] of analyticsFreeHtml) {
+      assert.doesNotMatch(source, /plausible\.io/iu, path);
+      assert.equal(
+        htmlBody(source),
+        htmlBody(ordinaryHtml.get(path) ?? ""),
+        `${path}: analytics-free launch body must remain byte-identical`,
+      );
     }
 
     const result = spawnSync(

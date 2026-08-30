@@ -1491,6 +1491,31 @@ test("the exact Plausible loader is statically validated and contained without t
   }
 });
 
+test("a consistently analytics-free site passes production verification", async () => {
+  const fixture = createFixture();
+  const loader = `<script defer src="${CONTROLLED_PLAUSIBLE_SCRIPT_SRC}"></script>`;
+  for (const [url, response] of fixture.responses) {
+    fixture.responses.set(url, {
+      ...response,
+      body: response.body.replace(loader, ""),
+    });
+  }
+  fixture.auditKinds = ["presentation"];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    assert.equal(
+      report.findings.some(({ code }) => code === "PLAUSIBLE_LOADER"),
+      false,
+      JSON.stringify(report.findings),
+    );
+    assert.equal(report.plausibleLoader, null);
+    assert.equal(report.automatedGates.presentation, "PASS");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
 test("a manual Plausible event POST is blocked, reported, and fails its presentation gate", async () => {
   const fixture = createFixture();
   const homepage = fixture.responses.get(absolute("/"));
@@ -1605,6 +1630,26 @@ test("mixed exact Plausible loader tokens across routes fail the common-loader c
     body: response.body.replace(
       CONTROLLED_PLAUSIBLE_SCRIPT_SRC,
       alternateLoader,
+    ),
+  }));
+  fixture.auditKinds = [];
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    expectFinding(report, "PLAUSIBLE_LOADER");
+    assert.equal(report.plausibleLoader, null);
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
+test("partial analytics omission fails the common-loader contract", async () => {
+  const fixture = createFixture();
+  replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
+    ...response,
+    body: response.body.replace(
+      `<script defer src="${CONTROLLED_PLAUSIBLE_SCRIPT_SRC}"></script>`,
+      "",
     ),
   }));
   fixture.auditKinds = [];
@@ -2968,7 +3013,7 @@ test("Arabic README documents the isolated process-local production operator pat
   assert.match(source, /INP حقيقة حقلية منفصلة/u);
   assert.match(source, /لا يثبت إنشاء الإطار تشغيل الفيديو/u);
   assert.match(source, /التكبير الأصلي للمتصفح بنسبة 200%/u);
-  assert.match(source, /Cloudflare أو Search Console أو Plausible/u);
+  assert.match(source, /Cloudflare أو Search Console/u);
   assert.doesNotMatch(source, /\.env(?:\b|\.)|dotenv/iu);
 });
 
