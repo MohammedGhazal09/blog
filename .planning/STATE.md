@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Private GitHub deploy source created; approved origin and provider authentication remain
-last_updated: "2026-08-28T15:12:06Z"
-last_activity: 2026-08-28
+stopped_at: Secure Sveltia repository controls complete; owner-controlled provider activation and production evidence remain
+last_updated: "2026-08-30T14:57:58Z"
+last_activity: 2026-08-30
 progress:
   total_phases: 6
   completed_phases: 6
@@ -18,7 +18,7 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-08-28)
+See: .planning/PROJECT.md (updated 2026-08-30)
 
 **Core value:** Arabic search users can find a useful, relevant article on Google and continue directly to the matching content on Ahmed El-Mangawy's YouTube channel.
 **Current focus:** Phase 06 — production-launch-verification
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-08-28)
 
 Phase: 06 (production-launch-verification) — VERIFYING
 Plan: 2 of 2
-Status: Local pipeline current; milestone audit remains gaps_found at 31/36 because Phases 5 and 6 await external evidence
-Last activity: 2026-08-28
+Status: Local pipeline and secure CMS repository controls are current; the milestone remains verification-pending for owner-controlled Phase 5/6 and CMS activation evidence
+Last activity: 2026-08-30 - Completed quick task 260830-lmh: secure single-owner Sveltia CMS publishing
 
 Progress: [██████████] 100%
 
@@ -82,7 +82,7 @@ Progress: [██████████] 100%
 Decisions are logged in PROJECT.md Key Decisions table.
 
 - [Roadmap]: Use six vertical MVP phases from content identity through production verification.
-- [Architecture]: Keep v1 fully static and registry-driven; no CMS, database, authentication, search, React, Tailwind, community, or runtime AI generation. AI-assisted source content is allowed only with visible disclosure.
+- [Architecture]: Keep the reader site fully static and registry-driven with no database, public application backend, custom credential store, search, React, Tailwind, community, or runtime AI generation. An isolated Sveltia admin may edit Git-tracked content through GitHub OAuth and pull requests. AI-assisted source content is allowed only with visible disclosure.
 - [Content]: Launch with one substantive, source-backed AI-assisted article and matching video in each primary section; claim human review only if it actually occurs.
 - [Phase 01]: Keep article identity explicit and title-independent through validated Arabic section and article slugs.
 - [Phase 01]: Use the identical final route family for development draft preview while excluding drafts from every production query.
@@ -144,6 +144,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [External access preflight]: Created private repository `MohammedGhazal09/ahmed-el-mangawy-blog`, pushed the exact clean state to default branch `main`, and attached it as `origin`. Wrangler and provider dashboards remain unauthenticated, and the controlled test hostname is NXDOMAIN. Keep all five external requirements pending until the owner supplies a different approved origin and direct service authority.
 - [Pipeline audit reconciliation]: Persisted the complete Phase 1–6 Spec, Discuss, UI, Plan, Execute, UI review/fix, code review/fix, and Verification matrix in the milestone audit. All repository stages are present; only the documented Phase 5/6 owner-authority gates remain open.
 - [External access retry]: Two fresh Wrangler device grants expired without owner approval. GitHub reports no deployments, checks, environments, hooks, Actions secrets, variables, or workflows for the private deploy repository, and the exact repository-name `pages.dev` hostname does not resolve. Do not substitute a temporary account or another provider.
+- [Quick 260830-lmh]: Keep the public site static while isolating an Arabic Sveltia editor behind Cloudflare Access, a hardened GitHub OAuth Worker, editorial pull requests, and a trusted-base content/media gate. Repository controls are verified; provider activation requires the owner.
 
 ### Pending Todos
 
@@ -154,7 +155,13 @@ None yet.
 - [Phase 05] Final canonical domain and hostname require owner-controlled deployment and DNS evidence before the live property can be certified.
 - [Phase 05] Analytics account configuration and Search Console ownership are external authority boundaries; local code and verification must be completed first without fabricating service evidence.
 - [Phase 06] Ten owner-controlled production UAT checks remain blocked: exact origin, production crawl, LCP/CLS/media, native zoom, field INP, Cloudflare/DNS/TLS, Search Console, Plausible, QUAL-05, and QUAL-06.
-- [External authority] The private GitHub deploy source is ready, but this session cannot deploy or inspect the intended production property because no approved origin, Cloudflare authentication, Plausible property access, or Search Console property access is available.
+- [External authority] The private GitHub deploy source and CMS repository controls are ready, but this session cannot activate or inspect the intended production property, final admin hostname, Cloudflare Access policy, GitHub OAuth app, protected branch rules, Plausible property, or Search Console property without the owner's provider authority.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Status | Directory |
+|---|-------------|------|--------|--------|-----------|
+| 260830-lmh | Add secure single-owner Sveltia CMS publishing | 2026-08-30 | 1f665c0 | Verified | [260830-lmh-add-secure-single-owner-sveltia-cms-publ](./quick/260830-lmh-add-secure-single-owner-sveltia-cms-publ/) |
 
 ## Deferred Items
 
@@ -164,6 +171,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-28T15:54:22Z
-Stopped at: Eight-stage pipeline audit persisted; private deploy source is ready, while approved origin and owner-controlled provider authentication remain
+Last session: 2026-08-30T14:57:58Z
+Stopped at: Secure Sveltia implementation and repository verification complete; final hostname, Access, OAuth, protected branch, and real draft publishing require the owner
 Resume file: None

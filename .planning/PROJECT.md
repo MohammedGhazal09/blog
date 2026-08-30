@@ -12,7 +12,7 @@ Arabic search users can find a useful, relevant article on Google and continue d
 
 ### Validated
 
-- ✓ Let the owner create and edit locally previewable Markdown/MDX articles without a CMS, authentication system, or database — Phase 1
+- ✓ Store locally previewable articles in validated, Git-tracked Markdown/MDX files without a database or public application backend — Phase 1
 - ✓ Give every published article an explicit, stable, clean Arabic URL identity that does not change with its title — Phase 1
 - ✓ Let future primary sections reuse the central registry and content contract without an application or article-model rewrite — Phase 1
 - ✓ Deliver a complete accessible Arabic RTL article journey that remains readable and actionable without JavaScript or embedded media, with an intent-gated privacy-enhanced player and a permanent direct YouTube action — Phase 2
@@ -22,16 +22,18 @@ Arabic search users can find a useful, relevant article on Google and continue d
 - ✓ Provide the three primary sections, with القسم العلمي defined as structured Islamic scholarship, plus a homepage, section indexes, and reusable article layout — Phase 3
 - ✓ Launch with one substantive, source-backed real article and matching YouTube video in every primary section — Phase 3
 - ✓ Publish unique Arabic metadata, crawlable discovery links, canonical URLs, sitemap output, and matching robots directives for every public route — Phase 4
+- ✓ Provide the repository-controlled Arabic Sveltia editor, GitHub OAuth Worker, editorial pull-request workflow, content/media gate, and fail-closed deployment configuration without adding a database or public runtime backend — Quick Task 260830-lmh
 
 ### Active
 
 - [ ] Include privacy-conscious analytics suitable for measuring organic discovery and outbound YouTube engagement.
+- [ ] Activate and prove the owner-controlled Cloudflare Access policy, GitHub OAuth app, protected `main` ruleset, and one real draft-only Sveltia pull-request publishing flow.
 
 ### Out of Scope
 
 - English or multilingual pages — the website is intentionally Arabic-only.
-- A browser-based CMS or administration dashboard — Markdown/MDX is the v1 publishing workflow.
-- User accounts, authentication, comments, or community features — they do not support the initial SEO-to-YouTube objective.
+- A database-backed CMS, custom credential system, or multi-user administration — the isolated Sveltia editor writes Git-tracked Markdown through OAuth and pull requests.
+- Public reader accounts, comments, or community features — the single-owner editorial login is isolated from the public site.
 - Unattended transcript import or bulk article generation — v1 uses three deliberately drafted, source-backed articles and no catalog-scale automation.
 - Migrating the owner's complete YouTube catalog before launch — v1 requires representative real content, not a full archive.
 - Natural-science educational content — القسم العلمي refers to Islamic scholarly and educational material.
@@ -52,7 +54,7 @@ Arabic search users can find a useful, relevant article on Google and continue d
 
 - **Language:** All reader-facing content and navigation must be Arabic — there is no English version.
 - **Directionality:** The document and interface must use RTL semantics while preserving correct bidirectional rendering for URLs, numbers, and embedded media.
-- **Publishing:** Content lives in Markdown/MDX files — the initial release has no CMS, database, or editorial login.
+- **Publishing:** Canonical content remains in Markdown/MDX files. An isolated Sveltia admin may edit those files through GitHub OAuth and pull requests; there is no database, custom password store, or public application backend.
 - **Performance:** The site must remain minimal and lightweight despite YouTube embeds — unnecessary visual effects and client-side code are excluded.
 - **SEO:** Public content must be server-rendered or statically generated, crawlable without JavaScript, and equipped with correct metadata and discovery files.
 - **Media:** Each article must include both an embedded YouTube player and an explicit outbound YouTube action.
@@ -63,7 +65,8 @@ Arabic search users can find a useful, relevant article on Google and continue d
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Name the site مدونة أحمد المنجاوي | User-provided public identity | — Pending |
-| Publish through Markdown/MDX | Simplest lightweight workflow; avoids CMS, authentication, and database scope | ✓ Good |
+| Store canonical content in Git-tracked Markdown/MDX | Preserves static builds, reviewable history, and the existing content contract whether files are edited locally or through Sveltia | ✓ Good |
+| Isolate Sveltia behind Cloudflare Access and GitHub OAuth with editorial pull requests | Gives the non-technical owner a browser editor without adding a database, public runtime backend, custom passwords, or direct-to-main publishing | ✓ Repository controls verified; provider activation pending |
 | Include an embedded player and a direct YouTube button on every article | Supports onsite viewing while preserving a clear path to the channel | ✓ Good |
 | Define القسم العلمي as Islamic scholarship and structured religious lessons | Removes ambiguity with natural-science content | — Pending |
 | Write for the general Arabic-speaking public | Aligns content with broad search intent and minimal assumed knowledge | — Pending |
@@ -95,4 +98,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-28 after Phase 4 search-discovery verification*
+*Last updated: 2026-08-30 during secure Sveltia CMS integration*
