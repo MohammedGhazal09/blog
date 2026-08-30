@@ -4,7 +4,8 @@ compatibility_date = "2026-08-30"
 workers_dev = true
 preview_urls = false
 
-# Fail-closed placeholders. Replace both values during the documented one-time setup.
+# The exact admin hostname is public. The OAuth client ID remains fail-closed
+# until the owner creates the GitHub OAuth app during one-time setup.
 [vars]
-ALLOWED_DOMAINS = "cms.example.invalid"
+ALLOWED_DOMAINS = "ahmed-almangawy.de5.net"
 GITHUB_CLIENT_ID = "replace-before-deploy"

@@ -53,16 +53,23 @@ test("admin shell, pinned bundle, OAuth-only config, and security headers stay i
   assert.match(accessibility, /maximum-scale\|user-scalable/u);
   assert.match(locale, /sveltia-cms\.prefs/u);
   assert.match(locale, /locale: "ar"/u);
+  assert.match(config, /repo: MohammedGhazal09\/blog/u);
   assert.match(config, /auth_methods: \[oauth\]/u);
-  assert.match(config, /auth_scope: repo/u);
+  assert.match(config, /auth_scope: public_repo/u);
   assert.match(config, /publish_mode: editorial_workflow/u);
-  assert.match(config, /base_url: https:\/\/cms-auth\.example\.invalid/u);
+  assert.match(
+    config,
+    /base_url: https:\/\/mangawy-sveltia-cms-auth\.ahmed-el-mangawy-blog\.workers\.dev/u,
+  );
   assert.doesNotMatch(
     config,
     /(?:client_secret|access_token|password)\s*:/iu,
   );
   assert.match(config, /name: draft[\s\S]*?default: true/u);
-  assert.match(wrangler, /ALLOWED_DOMAINS = "cms\.example\.invalid"/u);
+  assert.match(
+    wrangler,
+    /ALLOWED_DOMAINS = "ahmed-almangawy\.de5\.net"/u,
+  );
   assert.match(wrangler, /GITHUB_CLIENT_ID = "replace-before-deploy"/u);
   assert.doesNotMatch(wrangler, /GITHUB_CLIENT_SECRET|client_secret/iu);
   assert.match(headers, /default-src 'none'/u);
@@ -265,10 +272,10 @@ test("OAuth Worker fails closed without an exact hostname allowlist", async () =
   }
 });
 
-test("OAuth Worker permits only GitHub repo scope and an allowlisted caller", async () => {
+test("OAuth Worker permits only GitHub public_repo scope and an allowlisted caller", async () => {
   const allowed = await oauthWorker.fetch(
     new Request(
-      "https://auth.example.com/auth?provider=github&site_id=admin.example.com&scope=repo",
+      "https://auth.example.com/auth?provider=github&site_id=admin.example.com&scope=public_repo",
     ),
     oauthEnv,
   );
@@ -276,10 +283,23 @@ test("OAuth Worker permits only GitHub repo scope and an allowlisted caller", as
   const location = new URL(allowed.headers.get("location") ?? "");
   assert.equal(location.origin, "https://github.com");
   assert.equal(location.pathname, "/login/oauth/authorize");
-  assert.equal(location.searchParams.get("scope"), "repo");
+  assert.equal(location.searchParams.get("scope"), "public_repo");
   assert.match(
     allowed.headers.get("set-cookie") ?? "",
     /^__Host-sveltia-csrf=github_[0-9a-f]{32}; HttpOnly; Path=\/; Max-Age=600; SameSite=Lax; Secure$/u,
+  );
+
+  const excessive = await oauthWorker.fetch(
+    new Request(
+      "https://auth.example.com/auth?provider=github&site_id=admin.example.com&scope=repo",
+    ),
+    oauthEnv,
+  );
+  assert.equal(
+    new URL(excessive.headers.get("location") ?? "").searchParams.get(
+      "scope",
+    ),
+    "public_repo",
   );
 
   const deniedDomain = await oauthWorker.fetch(

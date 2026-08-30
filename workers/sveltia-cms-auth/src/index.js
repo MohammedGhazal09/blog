@@ -3,7 +3,7 @@
  * 25f56e1ed4a96cb25fcb96469c9c99fb6d3713bc (source blob
  * 8c4c3beb721245c30b43e8b5e8444be7038f1789).
  *
- * Local hardening: GitHub/repo scope only, exact hostname allowlists only,
+ * Local hardening: GitHub/public_repo scope only, exact hostname allowlists only,
  * fail closed when the allowlist is absent, fixed github.com endpoints, and
  * no-store/CSP response headers. See THIRD_PARTY_NOTICES.md.
  */
@@ -12,9 +12,9 @@ const supportedProviders = ["github"];
 
 const providerScopes = {
   github: {
-    default: "repo",
+    default: "public_repo",
     separator: ",",
-    allowed: ["repo"],
+    allowed: ["public_repo"],
   },
 };
 

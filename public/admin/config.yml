@@ -2,11 +2,11 @@
 
 backend:
   name: github
-  repo: MohammedGhazal09/ahmed-el-mangawy-blog
+  repo: MohammedGhazal09/blog
   branch: main
-  base_url: https://cms-auth.example.invalid
+  base_url: https://mangawy-sveltia-cms-auth.ahmed-el-mangawy-blog.workers.dev
   auth_methods: [oauth]
-  auth_scope: repo
+  auth_scope: public_repo
   squash_merges: true
 
 publish_mode: editorial_workflow
