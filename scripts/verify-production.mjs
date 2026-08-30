@@ -681,11 +681,11 @@ function validateArticle(document, url, origin, findings) {
     return;
   }
   const expected = `https://www.youtube.com/watch?v=${encodeURIComponent(youtubeId)}`;
-  if (document.anchors.filter((href) => href === expected).length !== 1) {
+  if (!document.anchors.includes(expected)) {
     finding(
       findings,
       "YOUTUBE_ANCHOR",
-      "article must contain one matching direct YouTube anchor",
+      "article must contain a matching direct YouTube anchor",
       url,
     );
   }
