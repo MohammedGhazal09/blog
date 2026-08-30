@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 test("Arabic RTL CMS login loads from pinned local assets with OAuth only", async ({
@@ -32,7 +33,9 @@ test("Arabic RTL CMS login loads from pinned local assets with OAuth only", asyn
       ),
   ).toBe(true);
 
-  const login = page.getByRole("button", {
+  const adminMain = page.locator("main#nc-root");
+  await expect(adminMain).toHaveCount(1);
+  const login = adminMain.getByRole("button", {
     name: /تسجيل الدخول باستخدام\s*\p{Cf}*GitHub\p{Cf}*/u,
   });
   await expect(login).toBeVisible({ timeout: 20_000 });
@@ -55,6 +58,9 @@ test("Arabic RTL CMS login loads from pinned local assets with OAuth only", asyn
         ),
       ),
   ).toBe(true);
+
+  const accessibility = await new AxeBuilder({ page }).analyze();
+  expect(accessibility.violations).toEqual([]);
 
   const script = page.locator('script[src="/admin/sveltia-cms.js"]');
   await expect(script).toHaveAttribute("data-cfasync", "false");
