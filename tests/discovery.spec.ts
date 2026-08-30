@@ -218,14 +218,21 @@ async function renderedArticlePathsForSection(page: Page): Promise<string[]> {
     );
 }
 
-function readOutputTree(directory: string): string {
-  return walkFiles(directory, [".html", ".css", ".js", ".json", ".xml", ".txt"])
+function publicOutputFiles(extensions: readonly string[]): string[] {
+  return walkFiles("dist", extensions).filter(
+    (path) =>
+      !relative("dist", path).replaceAll("\\", "/").startsWith("admin/"),
+  );
+}
+
+function readPublicOutputTree(): string {
+  return publicOutputFiles([".html", ".css", ".js", ".json", ".xml", ".txt"])
     .map((path) => readFileSync(path, "utf8"))
     .join("\n");
 }
 
 function builtHtmlPaths(): string[] {
-  return walkFiles("dist", [".html"])
+  return publicOutputFiles([".html"])
     .map((path) => {
       const outputPath = relative("dist", path).replaceAll("\\", "/");
       if (outputPath === "index.html") return "/";
@@ -447,9 +454,11 @@ test("raw source, HTML, internal links, canonicals, social URLs, and sitemap agr
   const socialUrls: string[] = [];
   for (const path of expectedPaths) {
     expect((await page.goto(path))?.status()).toBe(200);
-    const anchors = await page.locator("a[href]").evaluateAll((nodes) =>
-      nodes.map((node) => (node as HTMLAnchorElement).href),
-    );
+    const anchors = await page
+      .locator("a[href]")
+      .evaluateAll((nodes) =>
+        nodes.map((node) => (node as HTMLAnchorElement).href),
+      );
     for (const href of anchors) {
       const destination = new URL(href);
       if (destination.origin !== PRODUCTION_ORIGIN) continue;
@@ -497,17 +506,14 @@ test("raw source, HTML, internal links, canonicals, social URLs, and sitemap agr
   const excludedPaths = excluded.map(({ path }) => path);
   expect(new Set(excludedPaths).size).toBe(excludedPaths.length);
   expect(excludedPaths).toEqual(expect.arrayContaining([...PROOF_PATHS]));
-  for (const path of [
-    ...excluded.map(({ path }) => path),
-    "/قسم-غير-مسجل/",
-  ]) {
+  for (const path of [...excluded.map(({ path }) => path), "/قسم-غير-مسجل/"]) {
     expect((await request.get(path)).status()).toBe(404);
   }
 
   const robotsResponse = await request.get("/robots.txt");
   expect(robotsResponse.status()).toBe(200);
   const outputFamilies = {
-    html: walkFiles("dist", [".html"])
+    html: publicOutputFiles([".html"])
       .map((path) => readFileSync(path, "utf8"))
       .join("\n"),
     xml: `${sitemapIndex}\n${sitemap}`,
@@ -532,10 +538,7 @@ test("raw source, HTML, internal links, canonicals, social URLs, and sitemap agr
 
 test("independent discovery oracle enables document-title checks and avoids the application selector", () => {
   const source = readFileSync("tests/discovery.spec.ts", "utf8");
-  const disabledTitleRule = [
-    ".disable",
-    'Rules(["document-title"])',
-  ].join("");
+  const disabledTitleRule = [".disable", 'Rules(["document-title"])'].join("");
   expect(source).not.toContain(disabledTitleRule);
   expect(source).not.toMatch(
     /import\s*\{[^}]*getPublicArticles[^}]*\}\s*from\s*["'][^"']*src\/lib\/articles/u,
@@ -573,7 +576,7 @@ test("public routes contain no proof or fabricated review trace", async ({
   }
   expect((await page.goto("/قسم-غير-مسجل/"))?.status()).toBe(404);
 
-  const builtText = readOutputTree("dist");
+  const builtText = readPublicOutputTree();
   expect(builtText).not.toMatch(
     /اختبار عقد المحتوى|اختبار مكون إم دي إكس|example\.com|dQw4w9WgXcQ/iu,
   );

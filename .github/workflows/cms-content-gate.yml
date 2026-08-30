@@ -1,0 +1,51 @@
+name: CMS content gate
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  cms-content-gate:
+    name: cms-content-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the pull request
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Use the pinned Node.js runtime
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.19.0
+          cache: npm
+
+      - name: Restrict Sveltia CMS pull requests
+        if: startsWith(github.head_ref, 'cms/')
+        env:
+          CMS_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          CMS_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git show "${CMS_BASE_SHA}:scripts/validate-cms-change.mjs" > "$RUNNER_TEMP/validate-cms-change.mjs"
+          node "$RUNNER_TEMP/validate-cms-change.mjs" "$CMS_BASE_SHA" "$CMS_HEAD_SHA"
+
+      - name: Verify the package-manager version
+        run: |
+          test "$(node --version)" = "v24.19.0"
+          test "$(npm --version)" = "11.17.0"
+
+      - name: Install the locked dependency graph
+        run: npm ci --ignore-scripts
+
+      - name: Run content and security tests
+        run: npm test
+
+      - name: Run Astro diagnostics
+        run: npm run check
+
+      - name: Build the static site
+        run: npm run build

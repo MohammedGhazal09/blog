@@ -1,0 +1,117 @@
+# yaml-language-server: $schema=https://unpkg.com/@sveltia/cms@0.201.1/schema/sveltia-cms.json
+
+backend:
+  name: github
+  repo: MohammedGhazal09/ahmed-el-mangawy-blog
+  branch: main
+  base_url: https://cms-auth.example.invalid
+  auth_methods: [oauth]
+  auth_scope: repo
+  squash_merges: true
+
+publish_mode: editorial_workflow
+app_title: إدارة مدونة أحمد المنجاوي
+
+output:
+  omit_empty_optional_fields: true
+  encode_file_path: true
+
+slug:
+  encoding: unicode
+  clean_accents: false
+  sanitize_replacement: "-"
+  trim: true
+
+media_folder: /public/media/articles
+public_folder: /media/articles
+media_libraries:
+  all:
+    max_file_size: 2097152
+    slugify_filename: true
+
+collections:
+  - name: articles
+    label: المقالات
+    label_singular: مقالة
+    folder: /src/content/articles
+    identifier_field: slug
+    extension: md
+    format: yaml-frontmatter
+    summary: "{{title}}"
+    fields:
+      - label: عنوان المقالة
+        name: title
+        widget: string
+        hint: اكتب عنوانًا عربيًا واضحًا يظهر للقارئ وفي نتائج البحث.
+      - label: وصف نتائج البحث
+        name: description
+        widget: text
+        hint: لخّص موضوع المقالة بجملة عربية دقيقة مناسبة لمحركات البحث.
+      - label: الخلاصة
+        name: summary
+        widget: text
+        hint: اكتب الخلاصة التي ستظهر للقارئ قبل متن المقالة.
+      - label: القسم
+        name: section
+        widget: select
+        options:
+          - label: الردود والشبهات
+            value: refutations
+          - label: القضايا العامة
+            value: generalIssues
+          - label: القسم العلمي
+            value: scholarship
+      - name: author
+        widget: hidden
+        default: ahmedElMangawy
+      - label: رابط المقالة العربي
+        name: slug
+        widget: string
+        hint: "حروف عربية وأرقام فقط، مع شرطة مفردة بين الكلمات؛ مثال: آداب-طلب-العلم"
+      - label: تاريخ النشر
+        name: publishedAt
+        widget: datetime
+        type: date
+        default: "{{now}}"
+      - label: تاريخ آخر تحديث
+        name: updatedAt
+        widget: datetime
+        type: date
+        required: false
+        hint: اتركه فارغًا ما لم تُجرِ تحديثًا جوهريًا على المقالة.
+      - label: إبقاء المقالة مخفية بعد الدمج
+        name: draft
+        widget: boolean
+        default: true
+        hint: اتركه مفعّلًا أثناء الإعداد، وألغِه فقط عندما تصبح المقالة جاهزة للظهور للعامة.
+      - label: معرّف فيديو يوتيوب
+        name: youtubeId
+        widget: string
+        minlength: 11
+        maxlength: 11
+        pattern:
+          - "^[A-Za-z0-9_-]{11}$"
+          - أدخل المعرّف المكوّن من 11 حرفًا فقط، وليس رابط الفيديو كاملًا.
+        hint: الجزء المكوّن من 11 حرفًا بعد v= في رابط يوتيوب.
+      - label: المراجع
+        label_singular: مرجع
+        name: references
+        widget: list
+        required: false
+        collapsed: true
+        summary: "{{fields.label}}"
+        fields:
+          - label: اسم المرجع
+            name: label
+            widget: string
+            hint: اكتب وصفًا عربيًا واضحًا، ولا تعرض الرابط الخام اسمًا للمرجع.
+          - label: رابط المرجع
+            name: url
+            widget: string
+            type: url
+            hint: يجب أن يكون رابط HTTPS كاملًا.
+      - label: متن المقالة
+        name: body
+        widget: richtext
+        sanitize_preview: true
+        hint: ابدأ بمقدمة، ثم عناوين رئيسة من المستوى الثاني، واختم بعنوان «الخاتمة».

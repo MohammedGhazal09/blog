@@ -30,6 +30,15 @@ export default defineConfig({
         baseURL: "http://127.0.0.1:4322",
       },
     },
+    {
+      name: "cms-admin",
+      testMatch: "cms-admin.spec.ts",
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: "http://127.0.0.1:4322",
+        locale: "en-US",
+      },
+    },
   ],
   webServer: [
     {

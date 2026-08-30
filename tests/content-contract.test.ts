@@ -32,6 +32,10 @@ const CONTROLLED_PLAUSIBLE_SCRIPT_SRC =
 function emittedHtml(): ReadonlyMap<string, string> {
   return new Map(
     globSync("dist/**/*.html")
+      .filter(
+        (path) =>
+          !path.replaceAll("\\", "/").startsWith("dist/admin/"),
+      )
       .sort()
       .map((path) => [path.replaceAll("\\", "/"), readFileSync(path, "utf8")]),
   );
@@ -138,6 +142,10 @@ function assertLaunchEvidence(markdown: string): void {
 
 test("Arabic owner runbook locks the exact deployment and measurement path", () => {
   const readme = readFileSync(new URL("../README.md", import.meta.url), "utf8");
+  const publicRunbook = readme.replace(
+    /\n## لوحة النشر Sveltia CMS[\s\S]*?(?=\n## التحقق الاختياري من الأصل النهائي)/u,
+    "",
+  );
 
   for (const exact of [
     "main",
@@ -163,10 +171,13 @@ test("Arabic owner runbook locks the exact deployment and measurement path", () 
   assert.match(readme, /نقرة[^\n]*رابط/u);
   assert.doesNotMatch(readme, /مشاهدة فيديو|تشغيل فيديو|وقت المشاهدة/u);
   assert.doesNotMatch(
-    readme,
+    publicRunbook,
     /script\.outbound-links\.js|wrangler|GitHub Actions/iu,
   );
-  assert.doesNotMatch(readme, /(?:أنشئ|اقرأ|افتح)[^\n]{0,40}\.env/iu);
+  assert.doesNotMatch(
+    publicRunbook,
+    /(?:أنشئ|اقرأ|افتح)[^\n]{0,40}\.env/iu,
+  );
 });
 
 test("launch evidence separates local readiness from real external authority", () => {
@@ -194,6 +205,7 @@ test("deployment footprint stays static, credential-free, and free of custom tra
   const deploymentPaths = trackedPaths.filter(
     (path) =>
       !environmentNamed.test(path) &&
+      !/^public\/admin\//u.test(path) &&
       (/^(?:src|scripts|public)\//u.test(path) ||
         /^(?:README\.md|package(?:-lock)?\.json|astro\.config\.mjs)$/u.test(
           path,
@@ -203,7 +215,13 @@ test("deployment footprint stays static, credential-free, and free of custom tra
     .map((path) => readFileSync(path, "utf8"))
     .join("\n");
   const builtSource = globSync("dist/**/*.{html,js,json,txt,xml,css}")
-    .filter((path) => !environmentNamed.test(path.replaceAll("\\", "/")))
+    .filter((path) => {
+      const normalized = path.replaceAll("\\", "/");
+      return (
+        !environmentNamed.test(normalized) &&
+        !/^dist\/admin\//u.test(normalized)
+      );
+    })
     .map((path) => readFileSync(path, "utf8"))
     .join("\n");
   const inspected = `${deploymentSource}\n${builtSource}`;

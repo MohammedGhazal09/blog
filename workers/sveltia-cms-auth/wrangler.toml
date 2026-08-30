@@ -1,0 +1,10 @@
+name = "mangawy-sveltia-cms-auth"
+main = "src/index.js"
+compatibility_date = "2026-08-30"
+workers_dev = true
+preview_urls = false
+
+# Fail-closed placeholders. Replace both values during the documented one-time setup.
+[vars]
+ALLOWED_DOMAINS = "cms.example.invalid"
+GITHUB_CLIENT_ID = "replace-before-deploy"

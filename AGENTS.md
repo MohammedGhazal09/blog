@@ -12,7 +12,7 @@
 
 - **Language:** All reader-facing content and navigation must be Arabic — there is no English version.
 - **Directionality:** The document and interface must use RTL semantics while preserving correct bidirectional rendering for URLs, numbers, and embedded media.
-- **Publishing:** Content lives in Markdown/MDX files — the initial release has no CMS, database, or editorial login.
+- **Publishing:** Canonical content remains in Markdown/MDX files. An isolated Sveltia admin may edit those files through GitHub OAuth and pull requests; there is no database, custom password store, or public application backend.
 - **Performance:** The site must remain minimal and lightweight despite YouTube embeds — unnecessary visual effects and client-side code are excluded.
 - **SEO:** Public content must be server-rendered or statically generated, crawlable without JavaScript, and equipped with correct metadata and discovery files.
 - **Media:** Each article must include both an embedded YouTube player and an explicit outbound YouTube action.
