@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 status: verifying
 stopped_at: Secure Sveltia repository controls complete; owner-controlled provider activation and production evidence remain
-last_updated: "2026-08-30T14:57:58Z"
+last_updated: "2026-08-30T15:20:25Z"
 last_activity: 2026-08-30
 progress:
   total_phases: 6
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-08-30)
 Phase: 06 (production-launch-verification) — VERIFYING
 Plan: 2 of 2
 Status: Local pipeline and secure CMS repository controls are current; the milestone remains verification-pending for owner-controlled Phase 5/6 and CMS activation evidence
-Last activity: 2026-08-30 - Completed quick task 260830-lmh: secure single-owner Sveltia CMS publishing
+Last activity: 2026-08-30 - Refreshed the Phase 1–6 milestone audit with the additive Sveltia publishing flow
 
 Progress: [██████████] 100%
 
@@ -145,6 +145,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Pipeline audit reconciliation]: Persisted the complete Phase 1–6 Spec, Discuss, UI, Plan, Execute, UI review/fix, code review/fix, and Verification matrix in the milestone audit. All repository stages are present; only the documented Phase 5/6 owner-authority gates remain open.
 - [External access retry]: Two fresh Wrangler device grants expired without owner approval. GitHub reports no deployments, checks, environments, hooks, Actions secrets, variables, or workflows for the private deploy repository, and the exact repository-name `pages.dev` hostname does not resolve. Do not substitute a temporary account or another provider.
 - [Quick 260830-lmh]: Keep the public site static while isolating an Arabic Sveltia editor behind Cloudflare Access, a hardened GitHub OAuth Worker, editorial pull requests, and a trusted-base content/media gate. Repository controls are verified; provider activation requires the owner.
+- [Milestone audit refresh]: Preserve the original 31/36 requirement, 9/13 verified-integration, and 1/5 verified-flow scores after Sveltia. The additive CMS path is repository-wired but remains fail-closed until owner-controlled Access, OAuth, protected-branch, and real draft-PR evidence exists.
 
 ### Pending Todos
 
@@ -171,6 +172,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-30T14:57:58Z
+Last session: 2026-08-30T15:20:25Z
 Stopped at: Secure Sveltia implementation and repository verification complete; final hostname, Access, OAuth, protected branch, and real draft publishing require the owner
 Resume file: None

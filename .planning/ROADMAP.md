@@ -2,7 +2,7 @@
 
 ## Overview
 
-The v1 roadmap establishes a safe file-based content and URL contract, proves one complete Arabic article-to-YouTube journey, expands that same model to the three launch sections, then makes discovery signals, measurement, and production behavior verifiably consistent. The sequence stays fully static and deliberately excludes the deferred CMS, database, authentication, search, community, and AI-generation scope.
+The v1 roadmap establishes a safe file-based content and URL contract, proves one complete Arabic article-to-YouTube journey, expands that same model to the three launch sections, then makes discovery signals, measurement, and production behavior verifiably consistent. The reader site stays fully static. Completed quick task `260830-lmh` adds an isolated, single-owner Sveltia editor that writes the same Markdown/MDX files through GitHub OAuth and pull requests; it adds no database or public application backend. Database-backed CMS variants, custom credentials, reader authentication, search, community, and runtime AI generation remain excluded.
 
 ## Phases
 

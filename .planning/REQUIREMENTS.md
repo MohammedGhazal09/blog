@@ -99,8 +99,8 @@ Explicit exclusions prevent scope creep during v1.
 | Feature | Reason |
 |---------|--------|
 | English or multilingual website | The product is intentionally Arabic-only; translation, locale routing, and hreflang are not justified. |
-| Browser CMS or administration dashboard | Markdown/MDX plus local preview and validation is the selected v1 workflow. |
-| Database, authentication, or reader accounts | No v1 capability requires request-time state or identity. |
+| Database-backed CMS, direct-to-`main` administration, or multi-user editorial dashboard | The implemented Sveltia editor is intentionally single-owner, Git-backed, pull-request-only, and isolated from the reader site. |
+| Custom credential storage, database-backed identity, or reader accounts | Editorial identity is provider-managed through Cloudflare Access and GitHub OAuth; the public site has no request-time identity. |
 | Comments, forums, reactions, or community profiles | They introduce moderation, privacy, and religious-advice risk without supporting the core journey. |
 | Unattended transcript automation or bulk paraphrasing | The three launch articles are intentionally drafted from verified video metadata and cited sources; no transcript or mass-generation pipeline is used. |
 | Full YouTube catalog migration before launch | Three substantive representative articles are sufficient to validate the model. |
@@ -171,4 +171,4 @@ Explicit exclusions prevent scope creep during v1.
 
 ---
 *Requirements defined: 2026-08-26*
-*Last updated: 2026-08-28 after Phase 5 verification restored external requirements to pending*
+*Last updated: 2026-08-30 after secure Sveltia integration and milestone-audit refresh*
