@@ -50,11 +50,6 @@ Requirements for the first production release. Each requirement will map to exac
 - [x] **CONT-02**: Every launch article records its matching video and supporting sources, discloses AI assistance when used, and makes no human-review claim unless that review actually occurred.
 - [x] **CONT-03**: Public bylines, expertise descriptions, dates, references, and review claims reflect real people, sources, and events rather than SEO-only placeholders.
 
-### Measurement
-
-- [ ] **MEAS-01**: The owner can view privacy-conscious aggregate page traffic without session replay, fingerprinting, or per-reader profiles.
-- [ ] **MEAS-02**: The owner can measure one clearly defined outbound YouTube activation per user action, reported as a link click rather than a video view.
-
 ### Accessibility and Production Quality
 
 - [x] **QUAL-01**: A reader receives semantic landmarks and headings, descriptive links, meaningful image alternatives, and an accessible Arabic label for the video player and YouTube action.
@@ -96,79 +91,78 @@ Deferred capabilities. They are excluded from the initial roadmap until their st
 
 Explicit exclusions prevent scope creep during v1.
 
-| Feature | Reason |
-|---------|--------|
-| English or multilingual website | The product is intentionally Arabic-only; translation, locale routing, and hreflang are not justified. |
-| Database-backed CMS, direct-to-`main` administration, or multi-user editorial dashboard | The implemented Sveltia editor is intentionally single-owner, Git-backed, pull-request-only, and isolated from the reader site. |
-| Custom credential storage, database-backed identity, or reader accounts | Editorial identity is provider-managed through Cloudflare Access and GitHub OAuth; the public site has no request-time identity. |
-| Comments, forums, reactions, or community profiles | They introduce moderation, privacy, and religious-advice risk without supporting the core journey. |
-| Unattended transcript automation or bulk paraphrasing | The three launch articles are intentionally drafted from verified video metadata and cited sources; no transcript or mass-generation pipeline is used. |
-| Full YouTube catalog migration before launch | Three substantive representative articles are sufficient to validate the model. |
-| Search, filters, tags, or deep taxonomy at launch | Three section indexes are simpler and sufficient for the launch corpus. |
-| Separate watch pages or VideoObject markup for rich-result manipulation | Articles are useful text pages with supporting media, not dedicated video watch pages. |
-| Autoplay, sticky players, eager iframes, or video popovers | They harm reading focus, privacy, accessibility, and performance. |
-| Doorway pages or programmatic keyword variants | The site requires one original, people-first page per genuine search intent. |
-| Session replay, fingerprinting, or per-reader analytics profiles | Aggregate discovery and outbound-click measurement fully serves the validation goal. |
-| Enrollment, progress tracking, quizzes, certificates, or lesson gating | القسم العلمي remains public scholarship, not an LMS. |
-| Automated recommendations or personalization | Curated links are sufficient when real related content exists. |
+| Feature                                                                                 | Reason                                                                                                                                                 |
+| --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| English or multilingual website                                                         | The product is intentionally Arabic-only; translation, locale routing, and hreflang are not justified.                                                 |
+| Database-backed CMS, direct-to-`main` administration, or multi-user editorial dashboard | The implemented Sveltia editor is intentionally single-owner, Git-backed, pull-request-only, and isolated from the reader site.                        |
+| Custom credential storage, database-backed identity, or reader accounts                 | Editorial identity is provider-managed through Cloudflare Access and GitHub OAuth; the public site has no request-time identity.                       |
+| Comments, forums, reactions, or community profiles                                      | They introduce moderation, privacy, and religious-advice risk without supporting the core journey.                                                     |
+| Unattended transcript automation or bulk paraphrasing                                   | The three launch articles are intentionally drafted from verified video metadata and cited sources; no transcript or mass-generation pipeline is used. |
+| Full YouTube catalog migration before launch                                            | Three substantive representative articles are sufficient to validate the model.                                                                        |
+| Search, filters, tags, or deep taxonomy at launch                                       | Three section indexes are simpler and sufficient for the launch corpus.                                                                                |
+| Separate watch pages or VideoObject markup for rich-result manipulation                 | Articles are useful text pages with supporting media, not dedicated video watch pages.                                                                 |
+| Autoplay, sticky players, eager iframes, or video popovers                              | They harm reading focus, privacy, accessibility, and performance.                                                                                      |
+| Doorway pages or programmatic keyword variants                                          | The site requires one original, people-first page per genuine search intent.                                                                           |
+| Analytics, tag managers, and outbound-click tracking                                    | The owner explicitly chose an analytics-free v1 launch; Search Console is sufficient for crawl and index monitoring.                                   |
+| Enrollment, progress tracking, quizzes, certificates, or lesson gating                  | القسم العلمي remains public scholarship, not an LMS.                                                                                                   |
+| Automated recommendations or personalization                                            | Curated links are sufficient when real related content exists.                                                                                         |
 
 ## Traceability
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| SITE-01 | Phase 2 | Complete |
-| SITE-02 | Phase 2 | Complete |
-| SITE-03 | Phase 3 | Complete |
-| SITE-04 | Phase 3 | Complete |
-| SITE-05 | Phase 3 | Complete |
-| SITE-06 | Phase 4 | Complete |
-| ART-01 | Phase 2 | Complete |
-| ART-02 | Phase 2 | Complete |
-| ART-03 | Phase 2 | Complete |
-| ART-04 | Phase 2 | Complete |
-| ART-05 | Phase 2 | Complete |
-| ART-06 | Phase 2 | Complete |
-| ART-07 | Phase 2 | Complete |
-| SEO-01 | Phase 1 | Complete |
-| SEO-02 | Phase 4 | Complete |
-| SEO-03 | Phase 4 | Complete |
-| SEO-04 | Phase 4 | Complete |
-| SEO-05 | Phase 4 | Complete |
-| SEO-06 | Phase 5 | Pending |
-| PUB-01 | Phase 1 | Complete |
-| PUB-02 | Phase 1 | Complete |
-| PUB-03 | Phase 1 | Complete |
-| PUB-04 | Phase 1 | Complete |
-| PUB-05 | Phase 1 | Complete |
-| PUB-06 | Phase 1 | Complete |
-| CONT-01 | Phase 3 | Complete |
-| CONT-02 | Phase 3 | Complete |
-| CONT-03 | Phase 3 | Complete |
-| MEAS-01 | Phase 5 | Pending |
-| MEAS-02 | Phase 5 | Pending |
-| QUAL-01 | Phase 2 | Complete |
-| QUAL-02 | Phase 2 | Complete |
-| QUAL-03 | Phase 2 | Complete |
-| QUAL-04 | Phase 2 | Complete |
-| QUAL-05 | Phase 6 | Pending |
-| QUAL-06 | Phase 6 | Pending |
-| DISC-01 | v2 | Deferred |
-| DISC-02 | v2 | Deferred |
-| READ-01 | v2 | Deferred |
-| READ-02 | v2 | Deferred |
-| VID-01 | v2 | Deferred |
-| LEARN-01 | v2 | Deferred |
-| SEO-07 | v2 | Deferred |
-| CONT-04 | v2 | Deferred |
-| WATCH-01 | v2 | Deferred |
+| Requirement | Phase   | Status   |
+| ----------- | ------- | -------- |
+| SITE-01     | Phase 2 | Complete |
+| SITE-02     | Phase 2 | Complete |
+| SITE-03     | Phase 3 | Complete |
+| SITE-04     | Phase 3 | Complete |
+| SITE-05     | Phase 3 | Complete |
+| SITE-06     | Phase 4 | Complete |
+| ART-01      | Phase 2 | Complete |
+| ART-02      | Phase 2 | Complete |
+| ART-03      | Phase 2 | Complete |
+| ART-04      | Phase 2 | Complete |
+| ART-05      | Phase 2 | Complete |
+| ART-06      | Phase 2 | Complete |
+| ART-07      | Phase 2 | Complete |
+| SEO-01      | Phase 1 | Complete |
+| SEO-02      | Phase 4 | Complete |
+| SEO-03      | Phase 4 | Complete |
+| SEO-04      | Phase 4 | Complete |
+| SEO-05      | Phase 4 | Complete |
+| SEO-06      | Phase 5 | Pending  |
+| PUB-01      | Phase 1 | Complete |
+| PUB-02      | Phase 1 | Complete |
+| PUB-03      | Phase 1 | Complete |
+| PUB-04      | Phase 1 | Complete |
+| PUB-05      | Phase 1 | Complete |
+| PUB-06      | Phase 1 | Complete |
+| CONT-01     | Phase 3 | Complete |
+| CONT-02     | Phase 3 | Complete |
+| CONT-03     | Phase 3 | Complete |
+| QUAL-01     | Phase 2 | Complete |
+| QUAL-02     | Phase 2 | Complete |
+| QUAL-03     | Phase 2 | Complete |
+| QUAL-04     | Phase 2 | Complete |
+| QUAL-05     | Phase 6 | Pending  |
+| QUAL-06     | Phase 6 | Pending  |
+| DISC-01     | v2      | Deferred |
+| DISC-02     | v2      | Deferred |
+| READ-01     | v2      | Deferred |
+| READ-02     | v2      | Deferred |
+| VID-01      | v2      | Deferred |
+| LEARN-01    | v2      | Deferred |
+| SEO-07      | v2      | Deferred |
+| CONT-04     | v2      | Deferred |
+| WATCH-01    | v2      | Deferred |
 
 **Coverage:**
 
-- v1 requirements: 36 total
-- Mapped to phases: 36
+- v1 requirements: 34 total
+- Mapped to phases: 34
 - Unmapped: 0 ✓
 - v2 requirements: 9 total, all explicitly deferred
 
 ---
-*Requirements defined: 2026-08-26*
-*Last updated: 2026-08-30 after secure Sveltia integration and milestone-audit refresh*
+
+_Requirements defined: 2026-08-26_
+_Last updated: 2026-08-30 after the owner removed analytics from v1_

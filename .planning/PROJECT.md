@@ -26,7 +26,6 @@ Arabic search users can find a useful, relevant article on Google and continue d
 
 ### Active
 
-- [ ] Include privacy-conscious analytics suitable for measuring organic discovery and outbound YouTube engagement.
 - [ ] Activate and prove the owner-controlled Cloudflare Access policy, GitHub OAuth app, protected `main` ruleset, and one real draft-only Sveltia pull-request publishing flow.
 
 ### Out of Scope
@@ -37,6 +36,7 @@ Arabic search users can find a useful, relevant article on Google and continue d
 - Unattended transcript import or bulk article generation — v1 uses three deliberately drafted, source-backed articles and no catalog-scale automation.
 - Migrating the owner's complete YouTube catalog before launch — v1 requires representative real content, not a full archive.
 - Natural-science educational content — القسم العلمي refers to Islamic scholarly and educational material.
+- Analytics and outbound-click tracking — the owner explicitly chose an analytics-free launch; Search Console remains the only external search-monitoring service in v1.
 
 ## Context
 
@@ -62,29 +62,31 @@ Arabic search users can find a useful, relevant article on Google and continue d
 
 ## Key Decisions
 
-| Decision | Rationale | Outcome |
-|----------|-----------|---------|
-| Name the site مدونة أحمد المنجاوي | User-provided public identity | — Pending |
-| Store canonical content in Git-tracked Markdown/MDX | Preserves static builds, reviewable history, and the existing content contract whether files are edited locally or through Sveltia | ✓ Good |
-| Isolate Sveltia behind Cloudflare Access and GitHub OAuth with editorial pull requests | Gives the non-technical owner a browser editor without adding a database, public runtime backend, custom passwords, or direct-to-main publishing | ✓ Repository controls verified; provider activation pending |
-| Include an embedded player and a direct YouTube button on every article | Supports onsite viewing while preserving a clear path to the channel | ✓ Good |
-| Define القسم العلمي as Islamic scholarship and structured religious lessons | Removes ambiguity with natural-science content | — Pending |
-| Write for the general Arabic-speaking public | Aligns content with broad search intent and minimal assumed knowledge | — Pending |
-| Launch production-ready with one real article per primary section | Validates the structure and publishing flow without blocking on full catalog migration | — Pending |
-| Use explicit, title-independent Arabic section and article slugs | Keeps public identities stable and makes collisions and unsafe Unicode fail at the shared boundary | ✓ Good |
-| Reuse final article routes for development draft preview while production exposes only public records | Avoids a second preview route or visibility option that could leak drafts | ✓ Good |
-| Restrict MDX before compilation through one approved component allowlist and render map | Preserves useful authoring without opening arbitrary executable or iframe surface | ✓ Good |
-| Keep the permanent same-tab YouTube action outside the replaceable player region | Preserves the complete article-to-video journey when JavaScript, cookies, iframe construction, or the embed host fails | ✓ Good |
-| Validate structured references once at the shared content boundary | Keeps public provenance descriptive, Arabic-facing, absolute-HTTPS, credential-free, and fail-closed without route-side repair | ✓ Good |
-| Create the YouTube iframe only after explicit reader intent from a validated ID | Avoids eager third-party requests and autoplay while keeping the host hardcoded to the privacy-enhanced origin | ✓ Good |
-| Keep visible focus on the local player boundary while focus is inside the cross-origin iframe | Preserves a clear keyboard focus indicator without a custom focus trap or extra ARIA layer | ✓ Good |
-| Allow AI-assisted launch drafts from verified video metadata and cited sources at the owner's explicit request | Unblocks representative content without inventing transcripts, reviewer identities, or approval evidence; each public article discloses the assistance | ✓ Good |
+| Decision                                                                                                       | Rationale                                                                                                                                              | Outcome                                                     |
+| -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| Name the site مدونة أحمد المنجاوي                                                                              | User-provided public identity                                                                                                                          | — Pending                                                   |
+| Store canonical content in Git-tracked Markdown/MDX                                                            | Preserves static builds, reviewable history, and the existing content contract whether files are edited locally or through Sveltia                     | ✓ Good                                                      |
+| Isolate Sveltia behind Cloudflare Access and GitHub OAuth with editorial pull requests                         | Gives the non-technical owner a browser editor without adding a database, public runtime backend, custom passwords, or direct-to-main publishing       | ✓ Repository controls verified; provider activation pending |
+| Include an embedded player and a direct YouTube button on every article                                        | Supports onsite viewing while preserving a clear path to the channel                                                                                   | ✓ Good                                                      |
+| Define القسم العلمي as Islamic scholarship and structured religious lessons                                    | Removes ambiguity with natural-science content                                                                                                         | — Pending                                                   |
+| Write for the general Arabic-speaking public                                                                   | Aligns content with broad search intent and minimal assumed knowledge                                                                                  | — Pending                                                   |
+| Launch production-ready with one real article per primary section                                              | Validates the structure and publishing flow without blocking on full catalog migration                                                                 | — Pending                                                   |
+| Use explicit, title-independent Arabic section and article slugs                                               | Keeps public identities stable and makes collisions and unsafe Unicode fail at the shared boundary                                                     | ✓ Good                                                      |
+| Reuse final article routes for development draft preview while production exposes only public records          | Avoids a second preview route or visibility option that could leak drafts                                                                              | ✓ Good                                                      |
+| Restrict MDX before compilation through one approved component allowlist and render map                        | Preserves useful authoring without opening arbitrary executable or iframe surface                                                                      | ✓ Good                                                      |
+| Keep the permanent same-tab YouTube action outside the replaceable player region                               | Preserves the complete article-to-video journey when JavaScript, cookies, iframe construction, or the embed host fails                                 | ✓ Good                                                      |
+| Validate structured references once at the shared content boundary                                             | Keeps public provenance descriptive, Arabic-facing, absolute-HTTPS, credential-free, and fail-closed without route-side repair                         | ✓ Good                                                      |
+| Create the YouTube iframe only after explicit reader intent from a validated ID                                | Avoids eager third-party requests and autoplay while keeping the host hardcoded to the privacy-enhanced origin                                         | ✓ Good                                                      |
+| Keep visible focus on the local player boundary while focus is inside the cross-origin iframe                  | Preserves a clear keyboard focus indicator without a custom focus trap or extra ARIA layer                                                             | ✓ Good                                                      |
+| Allow AI-assisted launch drafts from verified video metadata and cited sources at the owner's explicit request | Unblocks representative content without inventing transcripts, reviewer identities, or approval evidence; each public article discloses the assistance | ✓ Good                                                      |
+| Launch without analytics                                                                                       | The owner explicitly skipped analytics; the production build and verifier must work with no tracking loader or measurement account                     | ✓ Good                                                      |
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
 **After each phase transition** (via `$gsd-transition`):
+
 1. Requirements invalidated? → Move to Out of Scope with reason
 2. Requirements validated? → Move to Validated with phase reference
 3. New requirements emerged? → Add to Active
@@ -92,10 +94,12 @@ This document evolves at phase transitions and milestone boundaries.
 5. "What This Is" still accurate? → Update if drifted
 
 **After each milestone** (via `$gsd-complete-milestone`):
+
 1. Full review of all sections
 2. Core Value check — still the right priority?
 3. Audit Out of Scope — reasons still valid?
 4. Update Context with current state
 
 ---
-*Last updated: 2026-08-30 during secure Sveltia CMS integration*
+
+_Last updated: 2026-08-30 after the owner chose an analytics-free launch_

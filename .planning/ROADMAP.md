@@ -81,17 +81,15 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 **Plans:** 3/3 plans complete
 **UI hint:** yes
 
-### Phase 5: Deployment and Measurement
+### Phase 5: Deployment
 
-**Goal:** As a site owner, I want to operate the canonical production site and measure the intended discovery-to-YouTube journey without identifying individual readers, so that I can confirm the real production and measurement path works as intended.
+**Goal:** As a site owner, I want to operate and verify the canonical production site, so that Google can crawl the real property and the owner can monitor its index status.
 **Mode:** mvp
 **Depends on:** Phase 4
-**Requirements:** SEO-06, MEAS-01, MEAS-02
+**Requirements:** SEO-06
 **Success Criteria** (what must be TRUE):
 
 1. The canonical production property is reachable and verified in Google Search Console with its canonical sitemap submitted for crawl and index monitoring.
-2. The owner can view aggregate page traffic without session replay, fingerprinting, or per-reader profiles.
-3. The owner can measure one outbound YouTube activation per link action, reported as a link click rather than a video view.
 
 **Plans:** 2/2 plans complete
 **UI hint:** yes

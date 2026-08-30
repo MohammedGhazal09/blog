@@ -130,22 +130,23 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 05-02]: Keep Cloudflare, DNS/TLS, Plausible, Search Console, indexing, and production-traffic evidence PENDING until direct owner-controlled proof is inspected.
 - [Phase 05-02]: Use the existing Arabic README as the only operating path instead of adding a parallel runbook hierarchy.
 - [Phase 05-02]: Restore the final ordinary build to http://127.0.0.1:4322 with zero analytics after every controlled launch verification.
-- [Phase 05 verification]: Keep the phase, SEO-06, MEAS-01, and MEAS-02 pending until direct owner-controlled Cloudflare, Search Console, and Plausible evidence closes all four human checks.
+- [Phase 05 verification, superseded 2026-08-30]: SEO-06, MEAS-01, and MEAS-02 originally remained pending; the owner later removed both measurement requirements from v1.
 - [Phase 06-02]: Use exactly five deterministic sitemap-derived performance roles with three fresh mobile-like CDP runs per role and maximum-session-window CLS.
 - [Phase 06-02]: Keep controlled timing seams unavailable in network mode and keep INP field-only.
 - [Phase 06-02]: Keep final-origin, native-zoom, field, provider, QUAL-05, and QUAL-06 evidence pending until direct owner-controlled proof exists.
 - [Phase 06 security]: Close all 11 registered threats only after applying report-wide URL redaction at the final serialization boundary and proving sensitive values are absent from both returned and persisted reports.
 - [Phase 06 verification]: Keep Phase 6 `human_needed`; all repository-controlled gates pass, but the two production truths and QUAL-05/QUAL-06 require direct final-origin and owner/provider evidence.
-- [v1.0 milestone audit]: Do not archive, tag, or declare v1.0 launched while SEO-06, MEAS-01, MEAS-02, QUAL-05, and QUAL-06 remain unsatisfied.
+- [v1.0 milestone audit, superseded 2026-08-30]: The original five-requirement launch gate included MEAS-01 and MEAS-02; the owner later removed analytics from v1.
 - [Validation reconciliation]: Phase 1 is Nyquist compliant; Phases 5 and 6 have complete repository task maps and remain partial only for explicit external evidence.
 - [Planning reconciliation]: Phase 6 has 2/2 plans executed and remains verification pending; its roadmap goal now uses the approved release-operator story.
 - [Phase 02 UI reconciliation]: The UI contract is approved by the final 24/24 review and completed 9/9 UAT.
-- [Final v1.0 integration audit]: Reconfirmed 13/13 repository connections wired, 9/13 fully verified, 1/5 flows fully verified, no broken repository wiring, and no orphaned requirement.
+- [Final v1.0 integration audit, superseded 2026-08-30]: Reconfirmed the original analytics-inclusive 13/13 repository connections and 1/5 flow score before the owner removed analytics from v1.
 - [External access preflight]: Created private repository `MohammedGhazal09/ahmed-el-mangawy-blog`, pushed the exact clean state to default branch `main`, and attached it as `origin`. Wrangler and provider dashboards remain unauthenticated, and the controlled test hostname is NXDOMAIN. Keep all five external requirements pending until the owner supplies a different approved origin and direct service authority.
 - [Pipeline audit reconciliation]: Persisted the complete Phase 1–6 Spec, Discuss, UI, Plan, Execute, UI review/fix, code review/fix, and Verification matrix in the milestone audit. All repository stages are present; only the documented Phase 5/6 owner-authority gates remain open.
 - [External access retry]: Two fresh Wrangler device grants expired without owner approval. GitHub reports no deployments, checks, environments, hooks, Actions secrets, variables, or workflows for the private deploy repository, and the exact repository-name `pages.dev` hostname does not resolve. Do not substitute a temporary account or another provider.
 - [Quick 260830-lmh]: Keep the public site static while isolating an Arabic Sveltia editor behind Cloudflare Access, a hardened GitHub OAuth Worker, editorial pull requests, and a trusted-base content/media gate. Repository controls are verified; provider activation requires the owner.
-- [Milestone audit refresh]: Preserve the original 31/36 requirement, 9/13 verified-integration, and 1/5 verified-flow scores after Sveltia. The additive CMS path is repository-wired but remains fail-closed until owner-controlled Access, OAuth, protected-branch, and real draft-PR evidence exists.
+- [Milestone audit refresh, superseded 2026-08-30]: Preserved the original analytics-inclusive 31/36 requirement, 9/13 integration, and 1/5 flow scores before the owner removed analytics from v1.
+- [Quick 260830-qhv]: Launch without analytics. MEAS-01 and MEAS-02 are removed from v1; production requires no Plausible value or tracking loader, while Search Console remains in scope.
 
 ### Pending Todos
 
@@ -153,16 +154,17 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Phase 05] Final canonical domain and hostname require owner-controlled deployment and DNS evidence before the live property can be certified.
-- [Phase 05] Analytics account configuration and Search Console ownership are external authority boundaries; local code and verification must be completed first without fabricating service evidence.
-- [Phase 06] Ten owner-controlled production UAT checks remain blocked: exact origin, production crawl, LCP/CLS/media, native zoom, field INP, Cloudflare/DNS/TLS, Search Console, Plausible, QUAL-05, and QUAL-06.
-- [External authority] The private GitHub deploy source and CMS repository controls are ready, but this session cannot activate or inspect the intended production property, final admin hostname, Cloudflare Access policy, GitHub OAuth app, protected branch rules, Plausible property, or Search Console property without the owner's provider authority.
+- [Phase 05] The final hostname is selected as `ahmed-el-mangawy.de5.net`; DNSHE registration/delegation and live DNS/TLS evidence are still required before certification.
+- [Phase 05] Search Console ownership is an external authority boundary; local code and verification must be completed first without fabricating service evidence.
+- [Phase 06] Nine owner-controlled production UAT checks remain blocked: exact origin, production crawl, LCP/CLS/media, native zoom, field INP, Cloudflare/DNS/TLS, Search Console, QUAL-05, and QUAL-06.
+- [External authority] Wrangler is authenticated, but DNSHE registration, Pages Git integration, Cloudflare Access, the GitHub OAuth app, protected branch rules, and Search Console still require their provider-side setup and direct evidence.
 
 ### Quick Tasks Completed
 
-| # | Description | Date | Commit | Status | Directory |
-|---|-------------|------|--------|--------|-----------|
+| #          | Description                                    | Date       | Commit  | Status   | Directory                                                                                                           |
+| ---------- | ---------------------------------------------- | ---------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------- |
 | 260830-lmh | Add secure single-owner Sveltia CMS publishing | 2026-08-30 | 1f665c0 | Verified | [260830-lmh-add-secure-single-owner-sveltia-cms-publ](./quick/260830-lmh-add-secure-single-owner-sveltia-cms-publ/) |
+| 260830-qhv | Launch production without analytics            | 2026-08-30 | a2cfbeb | Verified | [260830-qhv-launch-production-without-analytics-and-](./quick/260830-qhv-launch-production-without-analytics-and-/) |
 
 ## Deferred Items
 
@@ -172,6 +174,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-30T15:20:25Z
-Stopped at: Secure Sveltia implementation and repository verification complete; final hostname, Access, OAuth, protected branch, and real draft publishing require the owner
+Last session: 2026-08-30T16:34:58Z
+Stopped at: Analytics-free repository launch gates pass and Wrangler is authenticated; DNSHE registration, Pages Git integration, and provider activation remain
 Resume file: None
