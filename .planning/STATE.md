@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Secure Sveltia repository controls complete; owner-controlled provider activation and production evidence remain
-last_updated: "2026-08-30T15:20:25Z"
+stopped_at: Protected GitHub CMS proof and cleanup complete; Cloudflare Pages and DNS activation require the owner dashboard
+last_updated: "2026-08-30T17:59:03Z"
 last_activity: 2026-08-30
 progress:
   total_phases: 6
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-08-30)
 
 Phase: 06 (production-launch-verification) — VERIFYING
 Plan: 2 of 2
-Status: Local pipeline and secure CMS repository controls are current; the milestone remains verification-pending for owner-controlled Phase 5/6 and CMS activation evidence
-Last activity: 2026-08-30 - Refreshed the Phase 1–6 milestone audit with the additive Sveltia publishing flow
+Status: Protected GitHub publishing is proven end to end; Cloudflare Pages, DNS, OAuth, Access, Search Console, and final-origin evidence remain
+Last activity: 2026-08-30 - Passed and merged the CMS proof and cleanup pull requests under the corrected required check
 
 Progress: [██████████] 100%
 
@@ -147,6 +147,9 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Quick 260830-lmh]: Keep the public site static while isolating an Arabic Sveltia editor behind Cloudflare Access, a hardened GitHub OAuth Worker, editorial pull requests, and a trusted-base content/media gate. Repository controls are verified; provider activation requires the owner.
 - [Milestone audit refresh, superseded 2026-08-30]: Preserved the original analytics-inclusive 31/36 requirement, 9/13 integration, and 1/5 flow scores before the owner removed analytics from v1.
 - [Quick 260830-qhv]: Launch without analytics. MEAS-01 and MEAS-02 are removed from v1; production requires no Plausible value or tracking loader, while Search Console remains in scope.
+- [Final deployment identity]: The owner registered `ahmed-almangawy.de5.net` and made the renamed `MohammedGhazal09/blog` repository public; use these exact identities for all remaining provider activation.
+- [Protected CI portability]: Run the native Node test command on every platform and install Playwright's pinned Chromium runtime explicitly in GitHub Actions. PR #2 and run `33325574062` proved all 275 tests, Astro diagnostics, and the static build on Linux.
+- [Protected CMS proof]: Ruleset `21868702` now requires the actual `cms-content-gate` check context. Proof PR #1 and cleanup PR #3 both passed the trusted-base CMS restriction and full repository gate; protected `main` contains no deployment-proof content.
 
 ### Pending Todos
 
@@ -154,10 +157,10 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Phase 05] The final hostname is selected as `ahmed-el-mangawy.de5.net`; DNSHE registration/delegation and live DNS/TLS evidence are still required before certification.
+- [Phase 05] The owner reports `ahmed-almangawy.de5.net` registered at DNSHE; Cloudflare delegation and live DNS/TLS evidence are still required before certification.
 - [Phase 05] Search Console ownership is an external authority boundary; local code and verification must be completed first without fabricating service evidence.
 - [Phase 06] Nine owner-controlled production UAT checks remain blocked: exact origin, production crawl, LCP/CLS/media, native zoom, field INP, Cloudflare/DNS/TLS, Search Console, QUAL-05, and QUAL-06.
-- [External authority] Wrangler is authenticated, but DNSHE registration, Pages Git integration, Cloudflare Access, the GitHub OAuth app, protected branch rules, and Search Console still require their provider-side setup and direct evidence.
+- [External authority] Wrangler is authenticated, the fail-closed OAuth Worker is deployed, and protected GitHub publishing is proven. Pages Git integration, DNS delegation, Cloudflare Access, the GitHub OAuth app/secret, and Search Console still require provider-side setup and direct evidence.
 
 ### Quick Tasks Completed
 
@@ -174,6 +177,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-30T16:34:58Z
-Stopped at: Analytics-free repository launch gates pass and Wrangler is authenticated; DNSHE registration, Pages Git integration, and provider activation remain
+Last session: 2026-08-30T17:59:03Z
+Stopped at: Protected GitHub CMS publishing proof and cleanup pass; owner must add `ahmed-almangawy.de5.net` to Cloudflare Free and expose its two nameservers
 Resume file: None
