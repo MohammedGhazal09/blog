@@ -2766,6 +2766,26 @@ test("external YouTube destinations are recorded but never crawled", async () =>
   }
 });
 
+test("a matching YouTube source citation may accompany the direct CTA", async () => {
+  const fixture = createFixture();
+  fixture.auditKinds = [];
+  replaceResponse(fixture, ARTICLE_PATHS[0], (response) => ({
+    ...response,
+    body: response.body.replace(
+      '<section class="media-continuation">',
+      `<a href="https://www.youtube.com/watch?v=${VIDEO_IDS[0]}">مصدر الفيديو</a><section class="media-continuation">`,
+    ),
+  }));
+  let report: VerificationReport | undefined;
+  try {
+    report = await runControlled(fixture);
+    assert.equal(report.findings.length, 0);
+    assert.equal(report.automatedGates.crawl, "PASS");
+  } finally {
+    await cleanupReport(report);
+  }
+});
+
 test("controlled authority cannot be caller-promoted or redirected", async () => {
   const fixture = createFixture();
   fixture.auditKinds = [];
