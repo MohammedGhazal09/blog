@@ -135,7 +135,7 @@ npm run verify
 
 لوحة النشر العربية موجودة في `/admin/` وتحوّل الحقول إلى ملفات ماركداون داخل المستودع نفسه، وتثبّت لغة Sveltia على العربية بصرف النظر عن لغة المتصفح. لا توجد قاعدة بيانات، ولا خادم تطبيق للموقع العام، ولا كلمة مرور خاصة بالمدونة. يبقى الموقع العام بناءً ثابتًا، وكل حفظ من اللوحة ينشئ طلب سحب للمراجعة قبل وصوله إلى `main`.
 
-يربط المستودع لوحة الإدارة العامة `https://ahmed-almangawy.de5.net/admin/` بالمستودع العام `MohammedGhazal09/blog` وبـWorker المملوك على `https://mangawy-sveltia-cms-auth.ahmed-el-mangawy-blog.workers.dev`. يطلب OAuth صلاحية `public_repo` فقط. يبقى تسجيل الدخول **مغلقًا افتراضيًا** حتى يستبدل المسؤول قيمة `Client ID` الاختبارية ويخزّن `Client secret` في Cloudflare؛ لا يُحفظ السر في Git أو ملف أو رسالة.
+يربط المستودع لوحة الإدارة العامة `https://ahmed-almangawy.de5.net/admin/` بالمستودع العام `MohammedGhazal09/blog` وبـWorker المملوك على `https://mangawy-sveltia-cms-auth.ahmed-el-mangawy-blog.workers.dev`. يطلب OAuth صلاحية `public_repo` فقط. قيمة `Client ID` العامة مضبوطة في المستودع، ويبقى تسجيل الدخول **مغلقًا افتراضيًا** حتى يخزّن المسؤول `Client secret` في Cloudflare؛ لا يُحفظ السر في Git أو ملف أو رسالة.
 
 ### إعداد الأمان مرة واحدة
 
@@ -145,7 +145,7 @@ npm run verify
 2. في GitHub افتح **Settings → Developer settings → OAuth Apps → New OAuth App**. استخدم `https://ahmed-almangawy.de5.net/admin/` صفحةً رئيسة، واجعل **Authorization callback URL** مساويًا حرفيًا لـ`https://mangawy-sveltia-cms-auth.ahmed-el-mangawy-blog.workers.dev/callback`. انسخ `Client ID` العام، وأنشئ `Client secret` دون وضع السر في ملف أو رسالة أو سجل أو لقطة شاشة.
 3. افتح `workers/sveltia-cms-auth/wrangler.toml`:
 
-   - استبدل `replace-before-deploy` بقيمة `Client ID` العامة.
+   - تأكد أن قيمة `GITHUB_CLIENT_ID` العامة تطابق تطبيق OAuth المملوك.
    - لا تضف `Client secret` إلى الملف.
 
 4. سجّل الدخول إلى حساب Cloudflare المملوك وانشر Worker بالأداة المثبتة إصدارًا لا نطاقًا:
@@ -162,7 +162,7 @@ npm run verify
 
    - السياسة الافتراضية منع.
    - قاعدة السماح لهوية المالك أو بريده الموثق حرفيًا فقط، دون نطاق بريد كامل أو مجموعة عامة.
-   - مدة الجلسة الموصى بها أربع ساعات.
+   - مدة الجلسة المضبوطة ست ساعات.
    - لا تضع أصل Worker أو مسار `/callback` خلف تطبيق Access؛ فحص المجال داخل Worker يمنع إرسال الرمز إلى أي نافذة غير لوحة الإدارة المسموحة.
 
 6. في GitHub أنشئ Ruleset للفرع `main`: اطلب طلب سحب، واطلب نجاح الفحص الثابت `CMS content gate / cms-content-gate`، وامنع الحذف والدفع القسري والدفع المباشر. احتفظ بتجاوز إداري صريح للمالك للاسترداد الطارئ فقط؛ لا تستخدمه لنشر مقالة فاشلة الفحص.
