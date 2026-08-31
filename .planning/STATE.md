@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in_progress
-stopped_at: Sveltia YAML quoting fix is fully verified locally; commit, protected merge, deployment, and PR 10 re-save remain
-last_updated: "2026-08-31T15:22:08.089Z"
+status: complete
+stopped_at: RP8 complete; only nonblocking indexing and field-INP monitoring remain
+last_updated: "2026-08-31T20:41:58+03:00"
 last_activity: 2026-08-31
 progress:
   total_phases: 6
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-08-31)
 
 **Core value:** Arabic search users can find a useful, relevant article on Google and continue directly to the matching content on Ahmed El-Mangawy's YouTube channel.
-**Current focus:** Quick task 260830-rp8 — repair CMS date parsing and complete the real-owner publishing proof
+**Current focus:** v1.0 and Quick task 260830-rp8 are complete; monitor indexing and field INP when provider data becomes available
 
 ## Current Position
 
 Phase: 06 (production-launch-verification) — COMPLETE
-Quick task: 260830-rp8, task 3 of 3 — IN PROGRESS
-Status: Ahmed's real-owner draft exists in PR 10 and passed the trusted-base content restriction. Sveltia now has a verified producer-side YAML quoting fix; it must reach production before PR 10 is re-saved through Sveltia.
-Last activity: 2026-08-31 - Restored strict string/date validation and configured Sveltia to double-quote YAML strings; complete verification passed
+Quick task: 260830-rp8, task 3 of 3 — COMPLETE
+Status: The owner Sveltia draft-and-cleanup proof, protected merges, production exclusion, and final production QA all pass. The clean 5-entry corpus is deployed at `3f42d3b`.
+Last activity: 2026-08-31 - Closed RP8 after the owner publishing proof, cleanup, Lighthouse, performance, and responsive production QA passed
 
 Progress: [██████████] 100%
 
@@ -137,7 +137,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 06-02]: Keep controlled timing seams unavailable in network mode and keep INP field-only.
 - [Phase 06-02, superseded 2026-08-31]: Keep final-origin, native-zoom, field, provider, QUAL-05, and QUAL-06 evidence pending until direct owner-controlled proof exists.
 - [Phase 06 security]: Close all 11 registered threats only after applying report-wide URL redaction at the final serialization boundary and proving sensitive values are absent from both returned and persisted reports.
-- [Phase 06 verification, superseded 2026-08-31]: Keep Phase 6 `human_needed`; all repository-controlled gates pass, but the two production truths and QUAL-05/QUAL-06 require direct final-origin and owner/provider evidence.
+- [Phase 06 verification, superseded 2026-08-31]: Phase 6 originally awaited direct final-origin and owner/provider evidence for two production truths and QUAL-05/QUAL-06; final production verification later closed them.
 - [v1.0 milestone audit, superseded 2026-08-30]: The original five-requirement launch gate included MEAS-01 and MEAS-02; the owner later removed analytics from v1.
 - [Validation reconciliation, superseded 2026-08-31]: Phase 1 is Nyquist compliant; Phases 5 and 6 have complete repository task maps and remain partial only for explicit external evidence.
 - [Planning reconciliation, superseded 2026-08-31]: Phase 6 has 2/2 plans executed and remains verification pending; its roadmap goal now uses the approved release-operator story.
@@ -151,23 +151,26 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Quick 260830-qhv]: Launch without analytics. MEAS-01 and MEAS-02 are removed from v1; production requires no Plausible value or tracking loader, while Search Console remains in scope.
 - [Final deployment identity, superseded 2026-08-31]: The owner registered `ahmed-almangawy.de5.net` and made the renamed `MohammedGhazal09/blog` repository public; use these exact identities for all remaining provider activation.
 - [Protected CI portability]: Run the native Node test command on every platform and install Playwright's pinned Chromium runtime explicitly in GitHub Actions. PR #2 and run `33325574062` proved all 275 tests, Astro diagnostics, and the static build on Linux.
-- [Protected CMS mechanics proof]: Ruleset `21868702` now requires the actual `cms-content-gate` check context. Proof PR #1 and cleanup PR #3 used non-owner test content and passed the trusted-base CMS restriction and full repository gate; protected `main` contains no deployment-proof content. This does not prove Ahmed's actual owner workflow.
+- [Protected CMS mechanics proof, superseded 2026-08-31]: Ruleset `21868702`, PR #1, and PR #3 provided the preliminary trusted-base restriction proof; RP8 later completed the real owner publishing and cleanup workflow.
 - [Final public verification, supersedes earlier pending provider entries]: `https://ahmed-almangawy.de5.net`, Cloudflare Pages/DNS/TLS, Access, OAuth configuration, protected `main`, Search Console and sitemap submission, exact-origin crawl/performance/presentation, all three live media journeys, and native Chrome 200% zoom are verified. Indexing and field INP remain nonblocking future observations because submission is not indexing and the new property has no eligible field dataset.
 - [CMS date compatibility]: Keep the strict Astro string/date contract unchanged and configure Sveltia 0.201.1 with `output.yaml.quote: double` so date-widget strings remain strings through YAML parsing.
+- [Quick 260830-rp8]: Close the owner publishing proof only after the serializer fix, protected draft merge, production exclusion, owner-driven cleanup, clean redeployment, and final production QA all pass.
 
 ### Pending Todos
 
-- Commit and merge the verified Sveltia YAML quoting fix through the protected developer workflow.
-- After deployment, re-save PR 10 through Sveltia so its date becomes quoted; merge the hidden draft after its full gate passes, verify production exclusion, then remove the proof content through Sveltia.
+- None.
 
 ### Blockers/Concerns
 
-- [External workflow] The local date fix passes all gates, but PR 10 cannot complete until the fix is merged/deployed and its existing unquoted date is re-saved through Sveltia.
+- None.
 
 ### Nonblocking Monitoring
 
-- Google indexing remains `PENDING`; successful sitemap submission does not prove that Google has indexed the pages.
-- Field INP remains `PENDING` until Search Console or CrUX has eligible real-user data. Do not add analytics or telemetry to obtain it.
+- Five Search Console indexing requests were accepted before the daily quota exhausted. Retry these three article URLs after quota reset; accepted requests do not prove indexing:
+  - `/الردود-والشبهات/أصول-منهجية-في-الرد-على-الشبهات/`
+  - `/القضايا-العامة/الاستقلال-في-الخلافات-العامة/`
+  - `/القسم-العلمي/مدخل-إلى-علم-الإملاء/`
+- Field/CrUX INP is unavailable until the site has sufficient real-user data. Recheck later; do not add analytics or telemetry solely to obtain it.
 
 ### Quick Tasks Completed
 
@@ -175,6 +178,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 | ---------- | ---------------------------------------------- | ---------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------- |
 | 260830-lmh | Add secure single-owner Sveltia CMS publishing | 2026-08-30 | 1f665c0 | Verified | [260830-lmh-add-secure-single-owner-sveltia-cms-publ](./quick/260830-lmh-add-secure-single-owner-sveltia-cms-publ/) |
 | 260830-qhv | Launch production without analytics            | 2026-08-30 | a2cfbeb | Verified | [260830-qhv-launch-production-without-analytics-and-](./quick/260830-qhv-launch-production-without-analytics-and-/) |
+| 260830-rp8 | Activate final domain and public CMS           | 2026-08-31 | 3f42d3b | Verified | [260830-rp8-activate-final-domain-and-public-cms](./quick/260830-rp8-activate-final-domain-and-public-cms/) |
 
 ## Deferred Items
 
@@ -184,6 +188,6 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-08-31T15:22:08.089Z
-Stopped at: Sveltia YAML quoting root fix verified; ready for developer PR, deployment, and PR 10 re-save
-Resume file: .planning/debug/resolved/sveltia-date-schema.md
+Last session: 2026-08-31T20:41:58+03:00
+Stopped at: RP8 complete; only nonblocking indexing and field-INP monitoring remain
+Resume file: None
