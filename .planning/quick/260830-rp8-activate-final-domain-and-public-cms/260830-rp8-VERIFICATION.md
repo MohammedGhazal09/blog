@@ -1,21 +1,18 @@
 ---
 quick_id: 260830-rp8
 verified: 2026-08-31
-status: human_needed
-score: 2/3 tasks fully verified
+status: passed
+score: 3/3 tasks fully verified
 requirements_verified: []
 requirements_pending: []
-human_verification:
-  - test: Real-owner Sveltia draft-only publishing proof
-    expected: Ahmed's dedicated GitHub account authorizes Sveltia, opens a cms/* pull request containing only a hidden draft, passes cms-content-gate, remains absent from production, and removes the proof content afterward.
-    why_human: "Ahmed's dedicated GitHub username is not yet available. The developer account is not Ahmed’s dedicated owner identity and must not substitute."
+human_verification: []
 ---
 
 # RP8 Verification Report
 
 ## Verdict
 
-**Status: `human_needed`.** Tasks 1 and 2 pass. Task 3 passes every public/provider/quality gate except the final real-owner identity proof.
+**Status: `passed`.** All three tasks pass. The final owner Sveltia proof, protected merge, production draft exclusion, CMS cleanup, and production QA are complete.
 
 ## Task Results
 
@@ -23,7 +20,7 @@ human_verification:
 | --- | --- | --- |
 | 1. Lock repository and hostname identity | PASS | Production, CMS config, Worker allowlist, tests, and documentation use `MohammedGhazal09/blog` and `ahmed-almangawy.de5.net`. |
 | 2. Reduce OAuth permission | PASS | Sveltia and Worker enforce exact `public_repo`; protected security tests and CI pass. |
-| 3. Activate providers and verify production | HUMAN NEEDED | Pages, DNS/TLS, Access, OAuth configuration, protected `main`, Search Console, final-origin, media, native zoom, and Hercules QA pass. Ahmed's dedicated-account draft proof remains. |
+| 3. Activate providers and verify production | PASS | Pages, DNS/TLS, Access, OAuth configuration, protected `main`, Search Console, owner Sveltia publishing/cleanup, final-origin, media, native zoom, Lighthouse, and Hercules QA pass. |
 
 ## Verified Infrastructure
 
@@ -33,14 +30,25 @@ human_verification:
 - Direct Chrome passes pointer and Enter activation for all three articles with matching `youtube-nocookie.com` iframe identities and permanent direct links. The production verifier's three 45-second media subpass timeouts are documented tooling false negatives, not product failures.
 - Real Chrome 200% zoom preserves content, controls, visible focus, and vertical reflow without horizontal overflow.
 - Fresh unauthenticated `/admin/` is intercepted by Cloudflare Access; the authenticated Arabic/RTL OAuth-only login surface has a 44px target and visible focus.
-- Protected CMS mechanics and cleanup pull requests using non-owner test content pass the trusted-base `cms-content-gate`; proof content is absent from protected `main` and production. This does not prove Ahmed's actual owner workflow.
+- Preliminary protected CMS mechanics passed the trusted-base `cms-content-gate`; the completed owner proof below then verified the real production workflow.
+- PR #11 merged the producer-side Sveltia YAML serializer fix as `3a87f1e`, preserving strict Astro validation while quoting date strings.
+- The owner re-saved a hidden draft through production Sveltia. PR #10 passed the protected gate and merged as `e314aa2` with a quoted date and `draft: true`.
+- Production exclusion passed: the draft route returned 404, the homepage and matching section returned 200, and the sitemap held exactly 8 URLs without the proof.
+- PR #12 deleted the proof through Sveltia. One unrelated timing test flaked on its first CI run; an unchanged rerun passed all 277 native tests. Cleanup merged and deployed as `3f42d3b`.
+- Final cleanup passed: the proof file, remote CMS branch, and open pull requests are absent; the authenticated CMS shows 5 clean entries.
+- Final production QA found no product defect. Lighthouse mobile and desktop scored 100 for accessibility, SEO, best practices, and agentic browsing.
+- A mobile homepage lab trace under Fast 4G and 4x CPU recorded LCP 365 ms and CLS 0. Article activation recorded lab INP 9 ms and CLS 0.
 
 ## Nonblocking Observations
 
-- Google indexing is `PENDING`; sitemap submission is not proof of indexing.
-- Field INP is `PENDING` until Search Console or CrUX has eligible real-user data.
+- Five Search Console indexing requests were accepted before the daily quota exhausted. Retry the remaining three article URLs after quota reset; accepted requests are not proof of indexing.
+- Field/CrUX INP is unavailable until the site has sufficient real-user data; this is nonblocking.
 - Analytics is intentionally out of v1; no telemetry should be added for these observations.
 
-## Human Closure Test
+## Monitoring Follow-up
 
-The only closure path is: dedicated Ahmed account → Write collaborator only → Sveltia OAuth → hidden draft → `cms/*` PR → required gate → production exclusion → cleanup. No account credentials are requested or stored.
+- Retry indexing requests after quota reset for:
+  - `/الردود-والشبهات/أصول-منهجية-في-الرد-على-الشبهات/`
+  - `/القضايا-العامة/الاستقلال-في-الخلافات-العامة/`
+  - `/القسم-العلمي/مدخل-إلى-علم-الإملاء/`
+- Recheck field INP only after Search Console or CrUX has an eligible dataset.
