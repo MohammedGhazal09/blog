@@ -45,6 +45,21 @@ test("Arabic RTL CMS login loads from pinned local assets with OAuth only", asyn
   await expect(
     page.getByText("إدارة مدونة أحمد المنجاوي", { exact: true }),
   ).toBeVisible();
+  await page.keyboard.press("Tab");
+  await login.focus();
+  await expect(login).toBeFocused();
+  await page.waitForTimeout(250);
+  const loginFocus = await login.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      height: element.getBoundingClientRect().height,
+      outlineColor: style.outlineColor,
+      outlineWidth: Number.parseFloat(style.outlineWidth),
+    };
+  });
+  expect(loginFocus.height).toBeGreaterThanOrEqual(44);
+  expect(loginFocus.outlineWidth).toBeGreaterThanOrEqual(2);
+  expect(loginFocus.outlineColor).not.toBe("rgba(0, 0, 0, 0)");
   await expect(page.locator("button[aria-readonly]")).toHaveCount(0);
   expect(
     await page
