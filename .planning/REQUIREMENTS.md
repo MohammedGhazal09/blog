@@ -33,7 +33,7 @@ Requirements for the first production release. Each requirement will map to exac
 - [x] **SEO-03**: Every indexable page emits a self-consistent canonical URL and accurate social-sharing metadata derived from the configured production origin.
 - [x] **SEO-04**: Search crawlers can reach every published article through ordinary HTML links, while drafts and non-public content remain absent from public routes and discovery output.
 - [x] **SEO-05**: The deployed site exposes a sitemap containing only canonical published routes and robots directives that agree with the intended indexing policy.
-- [ ] **SEO-06**: The production property is verified in Google Search Console and its canonical sitemap is submitted for crawl and index monitoring.
+- [x] **SEO-06**: The production property is verified in Google Search Console and its canonical sitemap is submitted for crawl and index monitoring.
 
 ### File-Based Publishing
 
@@ -56,8 +56,8 @@ Requirements for the first production release. Each requirement will map to exac
 - [x] **QUAL-02**: A keyboard user can reach and operate every interactive public control with a visible focus indicator and no keyboard trap.
 - [x] **QUAL-03**: Text, controls, zoom, and responsive reflow meet applicable WCAG 2.2 AA contrast and layout requirements on representative pages.
 - [x] **QUAL-04**: A reader can access the complete article and direct YouTube link when JavaScript, third-party cookies, or the YouTube player is blocked.
-- [ ] **QUAL-05**: Representative production pages preserve good Core Web Vitals behavior and do not load or shift the real YouTube iframe before reader activation.
-- [ ] **QUAL-06**: A production crawl confirms successful public routes, matching canonicals, unique Arabic metadata, working internal links, correct sitemap/robots output, and no accidental English reader-facing text.
+- [x] **QUAL-05**: Representative production pages preserve good Core Web Vitals behavior and do not load or shift the real YouTube iframe before reader activation.
+- [x] **QUAL-06**: A production crawl confirms successful public routes, matching canonicals, unique Arabic metadata, working internal links, correct sitemap/robots output, and no accidental English reader-facing text.
 
 ## v2 Requirements
 
@@ -129,7 +129,7 @@ Explicit exclusions prevent scope creep during v1.
 | SEO-03      | Phase 4 | Complete |
 | SEO-04      | Phase 4 | Complete |
 | SEO-05      | Phase 4 | Complete |
-| SEO-06      | Phase 5 | Pending  |
+| SEO-06      | Phase 5 | Complete |
 | PUB-01      | Phase 1 | Complete |
 | PUB-02      | Phase 1 | Complete |
 | PUB-03      | Phase 1 | Complete |
@@ -143,8 +143,8 @@ Explicit exclusions prevent scope creep during v1.
 | QUAL-02     | Phase 2 | Complete |
 | QUAL-03     | Phase 2 | Complete |
 | QUAL-04     | Phase 2 | Complete |
-| QUAL-05     | Phase 6 | Pending  |
-| QUAL-06     | Phase 6 | Pending  |
+| QUAL-05     | Phase 6 | Complete |
+| QUAL-06     | Phase 6 | Complete |
 | DISC-01     | v2      | Deferred |
 | DISC-02     | v2      | Deferred |
 | READ-01     | v2      | Deferred |
@@ -160,9 +160,10 @@ Explicit exclusions prevent scope creep during v1.
 - v1 requirements: 34 total
 - Mapped to phases: 34
 - Unmapped: 0 ✓
+- Satisfied: 34/34 ✓
 - v2 requirements: 9 total, all explicitly deferred
 
 ---
 
 _Requirements defined: 2026-08-26_
-_Last updated: 2026-08-30 after the owner removed analytics from v1_
+_Last updated: 2026-08-31 after production, Search Console, and final-origin verification closed the remaining v1 requirements_

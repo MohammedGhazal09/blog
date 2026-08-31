@@ -2,16 +2,16 @@
 
 ## Overview
 
-The v1 roadmap establishes a safe file-based content and URL contract, proves one complete Arabic article-to-YouTube journey, expands that same model to the three launch sections, then makes discovery signals, measurement, and production behavior verifiably consistent. The reader site stays fully static. Completed quick task `260830-lmh` adds an isolated, single-owner Sveltia editor that writes the same Markdown/MDX files through GitHub OAuth and pull requests; it adds no database or public application backend. Database-backed CMS variants, custom credentials, reader authentication, search, community, and runtime AI generation remain excluded.
+The v1 roadmap establishes a safe file-based content and URL contract, proves one complete Arabic article-to-YouTube journey, expands that same model to the three launch sections, then verifies deployment, search monitoring, and production behavior. The reader site stays fully static and analytics-free. Completed quick task `260830-lmh` adds an isolated, single-owner Sveltia editor that writes the same Markdown/MDX files through GitHub OAuth and pull requests; it adds no database or public application backend. Database-backed CMS variants, custom credentials, reader authentication, search, community, and runtime AI generation remain excluded.
 
 ## Phases
 
 - [x] **Phase 1: Content and URL Contract** - The owner can maintain validated Markdown/MDX content with stable public identities. (completed 2026-08-26)
 - [x] **Phase 2: Complete Arabic Article Journey** - A reader can consume one accessible RTL article and continue to its matching YouTube content. (completed 2026-08-26)
 - [x] **Phase 3: Real Content and Section Discovery** - Visitors can discover truthful launch content across the homepage and all three primary sections. (completed 2026-08-27)
-- [x] **Phase 4: Search Discovery Integrity** - Every public route presents one consistent, crawlable identity to readers and search engines. (completed 2026-08-27)
-- [ ] **Phase 5: Deployment and Measurement** - Repository work is complete; owner-controlled production and measurement evidence remains pending.
-- [ ] **Phase 6: Production Launch Verification** - Production behavior is verified across crawlability, Arabic presentation, links, and performance.
+- [x] **Phase 4: Search Discovery Integrity** - Every public route presents one consistent, crawlable identity to readers and search engines. (completed 2026-08-28)
+- [x] **Phase 5: Deployment** - The canonical production site, Search Console property, and sitemap submission are verified. (completed 2026-08-31)
+- [x] **Phase 6: Production Launch Verification** - Exact-origin crawl, Arabic presentation, media journeys, LCP/CLS, and native zoom are verified. (completed 2026-08-31)
 
 ## Phase Details
 
@@ -105,7 +105,7 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 1. Representative production pages preserve good Core Web Vitals behavior and neither load nor shift the real YouTube iframe before reader activation.
 2. A production crawl confirms successful public routes, matching canonicals, unique Arabic metadata, working internal links, correct sitemap and robots output, and no accidental English reader-facing text.
 
-**Plans:** 2/2 plans executed
+**Plans:** 2/2 plans complete
 **UI hint:** yes
 
 ## Progress
@@ -118,5 +118,5 @@ The v1 roadmap establishes a safe file-based content and URL contract, proves on
 | 2. Complete Arabic Article Journey    | 4/4            | Complete             | 2026-08-26 |
 | 3. Real Content and Section Discovery | 4/4            | Complete             | 2026-08-27 |
 | 4. Search Discovery Integrity         | 3/3            | Complete             | 2026-08-28 |
-| 5. Deployment and Measurement         | 2/2            | Verification pending | -          |
-| 6. Production Launch Verification     | 2/2            | Verification pending | -          |
+| 5. Deployment                         | 2/2            | Complete             | 2026-08-31 |
+| 6. Production Launch Verification     | 2/2            | Complete             | 2026-08-31 |

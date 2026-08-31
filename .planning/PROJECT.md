@@ -23,10 +23,12 @@ Arabic search users can find a useful, relevant article on Google and continue d
 - ✓ Launch with one substantive, source-backed real article and matching YouTube video in every primary section — Phase 3
 - ✓ Publish unique Arabic metadata, crawlable discovery links, canonical URLs, sitemap output, and matching robots directives for every public route — Phase 4
 - ✓ Provide the repository-controlled Arabic Sveltia editor, GitHub OAuth Worker, editorial pull-request workflow, content/media gate, and fail-closed deployment configuration without adding a database or public runtime backend — Quick Task 260830-lmh
+- ✓ Operate the canonical site at `https://ahmed-almangawy.de5.net` through Cloudflare Pages with active DNS/TLS, a verified Search Console URL-prefix property, and its canonical sitemap submitted — Phase 5
+- ✓ Verify the exact production origin across crawlability, Arabic/RTL presentation, accessibility, responsive reflow, LCP/CLS, intent-gated YouTube behavior, and native browser 200% zoom — Phase 6
 
 ### Active
 
-- [ ] Activate and prove the owner-controlled Cloudflare Access policy, GitHub OAuth app, protected `main` ruleset, and one real draft-only Sveltia pull-request publishing flow.
+- [ ] Use Ahmed's dedicated passkey/2FA-protected GitHub account with only the repository's Write role to prove one hidden draft through Sveltia → `cms/*` pull request → `cms-content-gate` → production absence → proof-content cleanup.
 
 ### Out of Scope
 
@@ -64,13 +66,13 @@ Arabic search users can find a useful, relevant article on Google and continue d
 
 | Decision                                                                                                       | Rationale                                                                                                                                              | Outcome                                                     |
 | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| Name the site مدونة أحمد المنجاوي                                                                              | User-provided public identity                                                                                                                          | — Pending                                                   |
+| Name the site مدونة أحمد المنجاوي                                                                              | User-provided public identity                                                                                                                          | ✓ Good                                                      |
 | Store canonical content in Git-tracked Markdown/MDX                                                            | Preserves static builds, reviewable history, and the existing content contract whether files are edited locally or through Sveltia                     | ✓ Good                                                      |
-| Isolate Sveltia behind Cloudflare Access and GitHub OAuth with editorial pull requests                         | Gives the non-technical owner a browser editor without adding a database, public runtime backend, custom passwords, or direct-to-main publishing       | ✓ Repository controls verified; provider activation pending |
+| Isolate Sveltia behind Cloudflare Access and GitHub OAuth with editorial pull requests                         | Gives the non-technical owner a browser editor without adding a database, public runtime backend, custom passwords, or direct-to-main publishing       | ✓ Provider controls active; real-owner draft proof pending  |
 | Include an embedded player and a direct YouTube button on every article                                        | Supports onsite viewing while preserving a clear path to the channel                                                                                   | ✓ Good                                                      |
-| Define القسم العلمي as Islamic scholarship and structured religious lessons                                    | Removes ambiguity with natural-science content                                                                                                         | — Pending                                                   |
-| Write for the general Arabic-speaking public                                                                   | Aligns content with broad search intent and minimal assumed knowledge                                                                                  | — Pending                                                   |
-| Launch production-ready with one real article per primary section                                              | Validates the structure and publishing flow without blocking on full catalog migration                                                                 | — Pending                                                   |
+| Define القسم العلمي as Islamic scholarship and structured religious lessons                                    | Removes ambiguity with natural-science content                                                                                                         | ✓ Good                                                      |
+| Write for the general Arabic-speaking public                                                                   | Aligns content with broad search intent and minimal assumed knowledge                                                                                  | ✓ Good                                                      |
+| Launch production-ready with one real article per primary section                                              | Validates the structure and publishing flow without blocking on full catalog migration                                                                 | ✓ Good                                                      |
 | Use explicit, title-independent Arabic section and article slugs                                               | Keeps public identities stable and makes collisions and unsafe Unicode fail at the shared boundary                                                     | ✓ Good                                                      |
 | Reuse final article routes for development draft preview while production exposes only public records          | Avoids a second preview route or visibility option that could leak drafts                                                                              | ✓ Good                                                      |
 | Restrict MDX before compilation through one approved component allowlist and render map                        | Preserves useful authoring without opening arbitrary executable or iframe surface                                                                      | ✓ Good                                                      |
@@ -102,4 +104,4 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 
-_Last updated: 2026-08-30 after the owner chose an analytics-free launch_
+_Last updated: 2026-08-31 after final production verification; only the dedicated-owner Sveltia proof remains active_
