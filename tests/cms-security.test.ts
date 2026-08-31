@@ -33,6 +33,10 @@ test("admin shell, pinned bundle, OAuth-only config, and security headers stay i
     "workers/sveltia-cms-auth/wrangler.toml",
     "utf8",
   );
+  const cmsWorkflow = readFileSync(
+    ".github/workflows/cms-content-gate.yml",
+    "utf8",
+  );
 
   assert.match(index, /<html lang="ar" dir="rtl">/u);
   assert.match(index, /<link rel="icon" href="\/favicon\.svg" \/>/u);
@@ -70,8 +74,12 @@ test("admin shell, pinned bundle, OAuth-only config, and security headers stay i
     wrangler,
     /ALLOWED_DOMAINS = "ahmed-almangawy\.de5\.net"/u,
   );
-  assert.match(wrangler, /GITHUB_CLIENT_ID = "replace-before-deploy"/u);
+  assert.match(wrangler, /GITHUB_CLIENT_ID = "Ov23liz70YCCq6xeSz98"/u);
   assert.doesNotMatch(wrangler, /GITHUB_CLIENT_SECRET|client_secret/iu);
+  assert.match(
+    cmsWorkflow,
+    /if: startsWith\(github\.head_ref, 'cms\/'\) \|\| github\.event\.pull_request\.user\.login != github\.event\.repository\.owner\.login \|\| github\.actor != github\.event\.repository\.owner\.login/u,
+  );
   assert.match(headers, /default-src 'none'/u);
   assert.match(
     headers,

@@ -25,7 +25,7 @@ jobs:
           cache: npm
 
       - name: Restrict Sveltia CMS pull requests
-        if: startsWith(github.head_ref, 'cms/')
+        if: startsWith(github.head_ref, 'cms/') || github.event.pull_request.user.login != github.event.repository.owner.login || github.actor != github.event.repository.owner.login
         env:
           CMS_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           CMS_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
