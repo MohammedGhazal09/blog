@@ -93,6 +93,24 @@ test("admin shell, pinned bundle, OAuth-only config, and security headers stay i
   );
 });
 
+test("Sveltia quotes YAML date strings before Astro parses them", () => {
+  const config = readFileSync("public/admin/config.yml", "utf8");
+
+  assert.match(
+    config,
+    /^output:\r?\n(?: {2}[^\r\n]*\r?\n)*? {2}yaml:\r?\n {4}quote: double(?:\r?\n|$)/mu,
+  );
+  for (const name of ["publishedAt", "updatedAt"]) {
+    assert.match(
+      config,
+      new RegExp(
+        `^ {8}name: ${name}\\r?\\n {8}widget: datetime\\r?\\n {8}type: date$`,
+        "mu",
+      ),
+    );
+  }
+});
+
 test("admin locale bootstrap pins Arabic while preserving valid preferences", () => {
   const script = readFileSync("public/admin/locale.js", "utf8");
 
