@@ -2963,7 +2963,7 @@ test("source wiring keeps production verification isolated and dependency-free",
   );
 });
 
-test("evidence ledger keeps every external and requirement authority pending", () => {
+test("evidence ledger records explicit reviewer authority states", () => {
   const path =
     ".planning/phases/06-production-launch-verification/06-PRODUCTION-EVIDENCE.md";
   const source = readFileSync(path, "utf8");
@@ -2977,39 +2977,56 @@ test("evidence ledger keeps every external and requirement authority pending", (
         .slice(1, -1)
         .map((cell) => cell.trim()),
     );
-  assert.ok(rows.length >= 14);
+  const expectedStatuses = new Map([
+    ["صحة أداة التحقق المضبوطة", "PASS"],
+    ["اعتماد الأصل النهائي الدقيق", "PASS"],
+    ["زحف الأصل النهائي", "PASS"],
+    ["قياسات LCP وCLS الإنتاجية", "PASS"],
+    ["الوسائط قبل التفاعل وبعده", "PASS"],
+    ["العربية وRTL وإمكانية الوصول وإعادة التدفق", "PASS"],
+    ["التكبير الأصلي 200%", "PASS"],
+    ["INP وبيانات Core Web Vitals الحقلية", "PENDING"],
+    ["Cloudflare والنشر وDNS وTLS", "PASS"],
+    ["ملكية Search Console وإرسال خريطة الموقع", "PASS"],
+    ["مشاهدات Plausible المجمعة", "BLOCKED"],
+    ["نقرة رابط يوتيوب في Plausible", "BLOCKED"],
+    ["`QUAL-05`", "PASS"],
+    ["`QUAL-06`", "PASS"],
+  ]);
+  assert.equal(rows.length, expectedStatuses.size);
   assert.ok(rows.every((row) => row.length === 7));
   assert.ok(
     rows.every((row) =>
       ["PASS", "FAIL", "PENDING", "BLOCKED"].includes(row[2]),
     ),
   );
-  const controlled = rows.find((row) => row[1] === "صحة أداة التحقق المضبوطة");
-  assert.ok(controlled);
-  assert.equal(controlled[2], "PASS");
-  assert.match(controlled[3], /Node `v24\.19\.0` وnpm `11\.17\.0`/u);
-  assert.match(controlled[5], /\.artifacts\/phase-06\/controlled\//u);
-  for (const gate of [
-    "اعتماد الأصل النهائي الدقيق",
-    "زحف الأصل النهائي",
-    "قياسات LCP وCLS الإنتاجية",
-    "الوسائط قبل التفاعل وبعده",
-    "العربية وRTL وإمكانية الوصول وإعادة التدفق",
-    "التكبير الأصلي 200%",
-    "INP وبيانات Core Web Vitals الحقلية",
-    "Cloudflare والنشر وDNS وTLS",
-    "ملكية Search Console وإرسال خريطة الموقع",
-    "مشاهدات Plausible المجمعة",
-    "نقرة رابط يوتيوب في Plausible",
-    "`QUAL-05`",
-    "`QUAL-06`",
-  ]) {
+  for (const [gate, expectedStatus] of expectedStatuses) {
     const row = rows.find((candidate) => candidate[1] === gate);
     assert.ok(row, `missing ledger row: ${gate}`);
-    assert.equal(row[2], "PENDING", gate);
+    assert.equal(row[2], expectedStatus, gate);
     assert.notEqual(row[3], "", gate);
+    assert.notEqual(row[4], "", `${gate}: missing observation`);
+    assert.notEqual(row[5], "", `${gate}: missing evidence`);
     assert.notEqual(row[6], "", gate);
+    if (expectedStatus === "PASS") {
+      assert.match(
+        row[4],
+        /\b\d{4}-\d{2}-\d{2}\b/u,
+        `${gate}: PASS observation needs a date`,
+      );
+      assert.notEqual(row[5], "—", `${gate}: PASS evidence must be explicit`);
+    }
   }
+  const controlled = rows.find((row) => row[1] === "صحة أداة التحقق المضبوطة");
+  assert.ok(controlled);
+  assert.match(controlled[3], /Node `v24\.19\.0` وnpm `11\.17\.0`/u);
+  assert.match(controlled[5], /\.artifacts\/phase-06\/controlled\//u);
+  const media = rows.find((row) => row[1] === "الوسائط قبل التفاعل وبعده");
+  assert.ok(media);
+  assert.match(
+    media[5],
+    /انتهت مهلة[\s\S]*45 ثانية[\s\S]*Chrome المرئي مباشرة/u,
+  );
   assert.match(source, /لا تعدّل الأداة هذا الملف/u);
   assert.match(
     source,

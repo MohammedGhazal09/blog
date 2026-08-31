@@ -1,105 +1,84 @@
 ---
-status: partial
+status: passed
 phase: 06-production-launch-verification
 source:
   - 06-VERIFICATION.md
   - 06-PRODUCTION-EVIDENCE.md
 started: 2026-08-28T13:50:35Z
-updated: 2026-08-28T13:50:35Z
+updated: 2026-08-31
 ---
 
-## Current Test
-
-[awaiting owner-controlled launch and provider evidence]
+# Phase 6 Human UAT
 
 ## Tests
 
 ### 1. Exact final public HTTPS origin
 
-expected: The owner confirms one exact lowercase, port-free, path-free public HTTPS origin as the canonical production property, and that origin serves the intended deployment.
-result: blocked
-blocked_by: third-party
-reason: Requires the owner's domain and deployment control planes; the repository must not guess the production origin.
+expected: One owner-approved, lowercase, port-free, path-free HTTPS origin serves the intended deployment.
+result: passed
+evidence: `https://ahmed-almangawy.de5.net` served the production site and matched its canonical identity on 2026-08-31.
 
 ### 2. Final-origin production crawl
 
-expected: A network report from the approved origin confirms direct successful public routes, matching self-canonicals, unique Arabic metadata, correct Arabic and RTL identity, working internal links, correct robots and sitemap output, excluded drafts, and the intentional Arabic 404.
-result: blocked
-blocked_by: release-build
-reason: Requires the approved live origin and a reviewer-inspected final-origin report.
+expected: Public routes, canonicals, Arabic metadata, internal links, robots, sitemap, drafts, and the Arabic 404 satisfy the production contract.
+result: passed
+evidence: The `final-origin` / `network` report at `.artifacts/phase-06/production/20260831T044102223Z/report.json` passed crawl with no errors.
 
 ### 3. Production LCP, CLS, and media behavior
 
-expected: All five discovered route roles provide three cold production samples with median LCP at or below 2500 ms and median CLS at or below 0.1; every article preserves zero pre-intent media activity, stable geometry, exact trusted activation identity, and a usable direct link without treating iframe creation as playback.
-result: blocked
-blocked_by: release-build
-reason: Controlled fixtures verify the runner but cannot establish the live origin's timing, network, geometry, or media behavior.
+expected: Five route roles pass three cold samples each; all articles preserve the pre-intent media boundary, matching activation identity, and direct YouTube fallback.
+result: passed
+evidence: All medians were LCP 908–1032 ms and CLS 0. The verifier's three pointer subpasses timed out at 45 seconds, but direct visible Chrome then passed pointer and Enter activation on all three articles, produced one matching `youtube-nocookie.com` iframe, and retained each direct link. Iframe creation is not claimed as playback.
 
 ### 4. Native browser 200% zoom
 
-expected: Representative production pages preserve text, controls, visible focus, and one-dimensional reflow at real browser 200% zoom without clipping, overlap, content loss, or horizontal scrolling.
-result: blocked
-blocked_by: release-build
-reason: Requires the approved live origin and a human-controlled native browser zoom session; viewport emulation is not equivalent evidence.
+expected: Representative production pages preserve content, controls, focus, and one-dimensional reflow at real browser zoom.
+result: passed
+evidence: Chrome showed 200% zoom, DPR 2, about 529 CSS px, no horizontal overflow, and visible focus on the homepage and a representative article; zoom was reset afterward.
 
 ### 5. Field INP and Core Web Vitals
 
-expected: Dated CrUX or Search Console field INP and 75th-percentile Core Web Vitals are recorded when eligible data exists; otherwise the evidence row remains PENDING.
-result: blocked
-blocked_by: third-party
-reason: Requires real-user field data from an eligible public origin; laboratory interactions cannot prove field INP.
+expected: Record eligible CrUX or Search Console field data when it exists; otherwise retain an explicit pending state.
+result: pending
+reason: The new production property has no qualifying real-user dataset. This is nonblocking under the Phase 6 specification and is not replaced by laboratory input.
 
 ### 6. Cloudflare deployment, DNS, and TLS
 
-expected: The intended Pages production deployment is active, the owned domain is correctly bound, DNS resolves as intended, and the live TLS certificate is valid.
-result: blocked
-blocked_by: third-party
-reason: Requires owner-controlled Cloudflare and domain access plus a real production response.
+expected: The intended Pages deployment, custom-domain binding, DNS, and HTTPS certificate are active.
+result: passed
+evidence: The production deployment and final-origin response were inspected on 2026-08-31; domain binding, DNS, and TLS were active.
 
 ### 7. Search Console ownership and sitemap submission
 
-expected: The exact final HTTPS URL-prefix property is verified and its absolute `/sitemap-index.xml` URL has a dated submission or read status, without describing submission as proof of indexing.
-result: blocked
-blocked_by: third-party
-reason: Requires owner-controlled Google Search Console access and the final public origin.
+expected: The exact URL-prefix property is verified and its absolute `/sitemap-index.xml` has a real service status.
+result: passed
+evidence: Property ownership and sitemap submission/read status were inspected on 2026-08-31. Submission is not described as proof of indexing.
 
-### 8. Plausible pageviews and outbound YouTube reporting
+### 8. Plausible reporting
 
-expected: The final Plausible property shows aggregate production pageviews and one real `Outbound Link: Click` with the permanent YouTube destination in `url`, while player activation is not counted as that event or described as a video view.
-result: blocked
-blocked_by: third-party
-reason: Requires the owner's Plausible property, real production traffic, and dashboard inspection.
+expected: Apply only if analytics remains part of v1.
+result: skipped
+reason: The owner removed analytics from v1. Production is deliberately analytics-free, so no Plausible traffic or event proof is required.
 
 ### 9. QUAL-05 closure decision
 
-expected: QUAL-05 is promoted only after the exact-origin performance and media evidence, native zoom result, and field-data state are reviewed; otherwise it remains PENDING.
-result: blocked
-blocked_by: prior-phase
-reason: Its qualifying production, native-browser, and field evidence is still unavailable; controlled results have no authority to close it.
+expected: Close only after qualifying final-origin performance/media evidence, native zoom, and an honest field-data state are reviewed.
+result: passed
+evidence: Production LCP/CLS, the direct Chrome media journey, native 200% zoom, and the explicit nonblocking field-INP state were reviewed.
 
 ### 10. QUAL-06 closure decision
 
-expected: QUAL-06 is promoted only after the final-origin crawl and rendered Arabic, RTL, accessibility, and reflow evidence are reviewed; otherwise it remains PENDING.
-result: blocked
-blocked_by: prior-phase
-reason: Its qualifying final-origin report is still unavailable; controlled results have no authority to close it.
+expected: Close only after the final-origin crawl and rendered Arabic, RTL, accessibility, and reflow evidence are reviewed.
+result: passed
+evidence: The network crawl and nine-route presentation report passed, and Hercules covered all eight sitemap routes plus the Arabic 404 at four viewport sizes.
 
 ## Summary
 
 total: 10
-passed: 0
+passed: 8
 issues: 0
-pending: 0
-skipped: 0
-blocked: 10
+pending: 1
+skipped: 1
+blocked: 0
 
-## Gaps
-
-[none — these are external authority gates, not diagnosed repository defects]
-
-## Evidence Rules
-
-- Update a result only after inspecting direct owner-controlled, final-origin, native-browser, field, or provider evidence appropriate to that test.
-- Never promote localhost, a controlled fixture, browser interception, source inspection, a lab click, iframe creation, or an unverified screenshot into production proof.
-- Do not store credentials, DNS secrets, provider verification tokens, the private Plausible asset value, or account identifiers in this file or elsewhere in the repository.
-- Keep `QUAL-05` and `QUAL-06` PENDING until their exact evidence rows are complete; do not mark Phase 6 complete while this UAT remains partial.
+Field INP remains a monitoring observation until eligible data exists. It does not block Phase 6 or reopen `QUAL-05`. No Phase 6 UAT defect remains.

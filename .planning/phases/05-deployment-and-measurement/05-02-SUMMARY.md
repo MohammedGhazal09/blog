@@ -33,7 +33,7 @@ patterns-established:
   - "Local PASS rows require a date and reproducible command or artifact evidence; external PASS rows additionally require a real-service evidence value."
   - "Controlled hostnames, fake pa-* fixtures, source inspection, localhost responses, and browser interception can prove wiring only, never production authority."
 
-requirements-completed: []
+requirements-completed: [SEO-06]
 
 # Metrics
 duration: 17min
@@ -41,6 +41,8 @@ completed: 2026-08-28
 ---
 
 # Phase 05 Plan 02: Launch Operations and Evidence Summary
+
+> Historical execution record from 2026-08-28. The post-verification addendum below records the later owner-controlled closure on 2026-08-31.
 
 **Arabic launch operations for Cloudflare Pages, Plausible, and Search Console with three dated local readiness proofs and eleven owner-controlled service facts kept explicitly pending**
 
@@ -157,11 +159,18 @@ External service configuration remains owner-controlled. Follow `README.md` and 
 - RED: `6d9bad2` failed 2 of 132 tests because the Arabic runbook details and launch evidence ledger did not yet exist.
 - GREEN: `3712349` created the minimum operating path and evidence contract; all 133 tests then passed.
 
+## Post-Verification Addendum — 2026-08-31
+
+- The canonical Cloudflare Pages deployment at `https://ahmed-almangawy.de5.net`, its DNS/TLS state, and real HTTPS reachability were inspected and passed.
+- The exact Search Console URL-prefix property was verified and `/sitemap-index.xml` was submitted successfully. Indexing remains a separate nonblocking `PENDING` observation.
+- `SEO-06` is complete. `MEAS-01` and `MEAS-02` were removed from v1 rather than marked complete; production remains analytics-free.
+- Current verification authority is `05-LAUNCH-EVIDENCE.md`, `05-HUMAN-UAT.md`, and `05-VERIFICATION.md`; their dated service evidence supersedes the original eleven-pending execution state above.
+
 ## Self-Check: PASSED
 
 - All four expected task/summary files exist.
 - Task commits `6d9bad2`, `3712349`, and `ca6a9dd` exist in repository history.
-- The launch ledger contains no external `PASS` row; all eleven owner-controlled facts remain pending.
+- At original plan completion, the launch ledger contained no external `PASS` row; the dated addendum and current evidence ledger record the later closure.
 
 ---
 *Phase: 05-deployment-and-measurement*

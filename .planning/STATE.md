@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Protected GitHub CMS proof and cleanup complete; Cloudflare Pages and DNS activation require the owner dashboard
-last_updated: "2026-08-30T17:59:03Z"
-last_activity: 2026-08-30
+status: human_needed
+stopped_at: Public launch and all 34 v1 requirements are verified; evidence reconciliation is complete; Ahmed's dedicated GitHub username is required for the real-owner CMS draft proof
+last_updated: "2026-08-31T09:58:03.282Z"
+last_activity: 2026-08-31
 progress:
   total_phases: 6
   completed_phases: 6
@@ -18,19 +18,21 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-08-30)
+See: .planning/PROJECT.md (updated 2026-08-31)
 
 **Core value:** Arabic search users can find a useful, relevant article on Google and continue directly to the matching content on Ahmed El-Mangawy's YouTube channel.
-**Current focus:** Phase 06 — production-launch-verification
+**Current focus:** Quick task 260830-rp8 — real-owner Sveltia publishing proof
 
 ## Current Position
 
-Phase: 06 (production-launch-verification) — VERIFYING
-Plan: 2 of 2
-Status: Protected GitHub publishing is proven end to end; Cloudflare Pages, DNS, OAuth, Access, Search Console, and final-origin evidence remain
-Last activity: 2026-08-30 - Passed and merged the CMS proof and cleanup pull requests under the corrected required check
+Phase: 06 (production-launch-verification) — COMPLETE
+Quick task: 260830-rp8, task 3 of 3 — HUMAN NEEDED
+Status: All 34 mapped v1 requirements and the public launch are verified. Milestone certification waits only for the real-owner Sveltia draft proof.
+Last activity: 2026-08-31 - Closed Search Console, Cloudflare/DNS/TLS, final-origin, media, presentation, and native-zoom evidence
 
 Progress: [██████████] 100%
+
+The 100% figure records completion of all six planned phases and 18 plans. The additive owner-CMS identity proof is tracked separately and does not reopen a v1 product requirement.
 
 ## Performance Metrics
 
@@ -126,41 +128,45 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [Phase 04]: Classify deliberate 404 console noise only through an independent exact-URL HTTP response ledger. — Generic Chromium console echoes alone cannot prove that an error belongs to an intentional missing-route request.
 - [Phase 05-01]: Accept only exact clean Plausible pa-*.js assets — Fail before the launch build on normalization, authority, credential, port, query, fragment, encoding, or path differences.
 - [Phase 05-01]: Keep launch-readiness mode as the sole analytics gate — Ordinary builds, body output, native YouTube navigation, canonical authority, and YouTubePlayer.astro remain unchanged.
-- [Phase 05-01]: Treat controlled interception as local wiring evidence only — Real Plausible receipt and dashboard reporting remain external Plan 05-02 facts.
-- [Phase 05-02]: Keep Cloudflare, DNS/TLS, Plausible, Search Console, indexing, and production-traffic evidence PENDING until direct owner-controlled proof is inspected.
+- [Phase 05-01, superseded 2026-08-31]: Treat controlled interception as local wiring evidence only — Real Plausible receipt and dashboard reporting remain external Plan 05-02 facts.
+- [Phase 05-02, superseded 2026-08-31]: Keep Cloudflare, DNS/TLS, Plausible, Search Console, indexing, and production-traffic evidence PENDING until direct owner-controlled proof is inspected.
 - [Phase 05-02]: Use the existing Arabic README as the only operating path instead of adding a parallel runbook hierarchy.
 - [Phase 05-02]: Restore the final ordinary build to http://127.0.0.1:4322 with zero analytics after every controlled launch verification.
 - [Phase 05 verification, superseded 2026-08-30]: SEO-06, MEAS-01, and MEAS-02 originally remained pending; the owner later removed both measurement requirements from v1.
 - [Phase 06-02]: Use exactly five deterministic sitemap-derived performance roles with three fresh mobile-like CDP runs per role and maximum-session-window CLS.
 - [Phase 06-02]: Keep controlled timing seams unavailable in network mode and keep INP field-only.
-- [Phase 06-02]: Keep final-origin, native-zoom, field, provider, QUAL-05, and QUAL-06 evidence pending until direct owner-controlled proof exists.
+- [Phase 06-02, superseded 2026-08-31]: Keep final-origin, native-zoom, field, provider, QUAL-05, and QUAL-06 evidence pending until direct owner-controlled proof exists.
 - [Phase 06 security]: Close all 11 registered threats only after applying report-wide URL redaction at the final serialization boundary and proving sensitive values are absent from both returned and persisted reports.
-- [Phase 06 verification]: Keep Phase 6 `human_needed`; all repository-controlled gates pass, but the two production truths and QUAL-05/QUAL-06 require direct final-origin and owner/provider evidence.
+- [Phase 06 verification, superseded 2026-08-31]: Keep Phase 6 `human_needed`; all repository-controlled gates pass, but the two production truths and QUAL-05/QUAL-06 require direct final-origin and owner/provider evidence.
 - [v1.0 milestone audit, superseded 2026-08-30]: The original five-requirement launch gate included MEAS-01 and MEAS-02; the owner later removed analytics from v1.
-- [Validation reconciliation]: Phase 1 is Nyquist compliant; Phases 5 and 6 have complete repository task maps and remain partial only for explicit external evidence.
-- [Planning reconciliation]: Phase 6 has 2/2 plans executed and remains verification pending; its roadmap goal now uses the approved release-operator story.
+- [Validation reconciliation, superseded 2026-08-31]: Phase 1 is Nyquist compliant; Phases 5 and 6 have complete repository task maps and remain partial only for explicit external evidence.
+- [Planning reconciliation, superseded 2026-08-31]: Phase 6 has 2/2 plans executed and remains verification pending; its roadmap goal now uses the approved release-operator story.
 - [Phase 02 UI reconciliation]: The UI contract is approved by the final 24/24 review and completed 9/9 UAT.
 - [Final v1.0 integration audit, superseded 2026-08-30]: Reconfirmed the original analytics-inclusive 13/13 repository connections and 1/5 flow score before the owner removed analytics from v1.
-- [External access preflight]: Created private repository `MohammedGhazal09/ahmed-el-mangawy-blog`, pushed the exact clean state to default branch `main`, and attached it as `origin`. Wrangler and provider dashboards remain unauthenticated, and the controlled test hostname is NXDOMAIN. Keep all five external requirements pending until the owner supplies a different approved origin and direct service authority.
-- [Pipeline audit reconciliation]: Persisted the complete Phase 1–6 Spec, Discuss, UI, Plan, Execute, UI review/fix, code review/fix, and Verification matrix in the milestone audit. All repository stages are present; only the documented Phase 5/6 owner-authority gates remain open.
-- [External access retry]: Two fresh Wrangler device grants expired without owner approval. GitHub reports no deployments, checks, environments, hooks, Actions secrets, variables, or workflows for the private deploy repository, and the exact repository-name `pages.dev` hostname does not resolve. Do not substitute a temporary account or another provider.
-- [Quick 260830-lmh]: Keep the public site static while isolating an Arabic Sveltia editor behind Cloudflare Access, a hardened GitHub OAuth Worker, editorial pull requests, and a trusted-base content/media gate. Repository controls are verified; provider activation requires the owner.
+- [External access preflight, superseded 2026-08-31]: Created private repository `MohammedGhazal09/ahmed-el-mangawy-blog`, pushed the exact clean state to default branch `main`, and attached it as `origin`. Wrangler and provider dashboards remain unauthenticated, and the controlled test hostname is NXDOMAIN. Keep all five external requirements pending until the owner supplies a different approved origin and direct service authority.
+- [Pipeline audit reconciliation, superseded 2026-08-31]: Persisted the complete Phase 1–6 Spec, Discuss, UI, Plan, Execute, UI review/fix, code review/fix, and Verification matrix in the milestone audit. All repository stages are present; only the documented Phase 5/6 owner-authority gates remain open.
+- [External access retry, superseded 2026-08-31]: Two fresh Wrangler device grants expired without owner approval. GitHub reports no deployments, checks, environments, hooks, Actions secrets, variables, or workflows for the private deploy repository, and the exact repository-name `pages.dev` hostname does not resolve. Do not substitute a temporary account or another provider.
+- [Quick 260830-lmh, superseded 2026-08-31]: Keep the public site static while isolating an Arabic Sveltia editor behind Cloudflare Access, a hardened GitHub OAuth Worker, editorial pull requests, and a trusted-base content/media gate. Repository controls are verified; provider activation requires the owner.
 - [Milestone audit refresh, superseded 2026-08-30]: Preserved the original analytics-inclusive 31/36 requirement, 9/13 integration, and 1/5 flow scores before the owner removed analytics from v1.
 - [Quick 260830-qhv]: Launch without analytics. MEAS-01 and MEAS-02 are removed from v1; production requires no Plausible value or tracking loader, while Search Console remains in scope.
-- [Final deployment identity]: The owner registered `ahmed-almangawy.de5.net` and made the renamed `MohammedGhazal09/blog` repository public; use these exact identities for all remaining provider activation.
+- [Final deployment identity, superseded 2026-08-31]: The owner registered `ahmed-almangawy.de5.net` and made the renamed `MohammedGhazal09/blog` repository public; use these exact identities for all remaining provider activation.
 - [Protected CI portability]: Run the native Node test command on every platform and install Playwright's pinned Chromium runtime explicitly in GitHub Actions. PR #2 and run `33325574062` proved all 275 tests, Astro diagnostics, and the static build on Linux.
-- [Protected CMS proof]: Ruleset `21868702` now requires the actual `cms-content-gate` check context. Proof PR #1 and cleanup PR #3 both passed the trusted-base CMS restriction and full repository gate; protected `main` contains no deployment-proof content.
+- [Protected CMS mechanics proof]: Ruleset `21868702` now requires the actual `cms-content-gate` check context. Proof PR #1 and cleanup PR #3 used non-owner test content and passed the trusted-base CMS restriction and full repository gate; protected `main` contains no deployment-proof content. This does not prove Ahmed's actual owner workflow.
+- [Final public verification, supersedes earlier pending provider entries]: `https://ahmed-almangawy.de5.net`, Cloudflare Pages/DNS/TLS, Access, OAuth configuration, protected `main`, Search Console and sitemap submission, exact-origin crawl/performance/presentation, all three live media journeys, and native Chrome 200% zoom are verified. Indexing and field INP remain nonblocking future observations because submission is not indexing and the new property has no eligible field dataset.
 
 ### Pending Todos
 
-None yet.
+- Obtain Ahmed's dedicated passkey/2FA-protected GitHub username.
+- Add only that account as a Write collaborator, authorize Sveltia, create one hidden draft, confirm its `cms/*` pull request and `cms-content-gate`, verify production exclusion, then remove the proof content.
 
 ### Blockers/Concerns
 
-- [Phase 05] The owner reports `ahmed-almangawy.de5.net` registered at DNSHE; Cloudflare delegation and live DNS/TLS evidence are still required before certification.
-- [Phase 05] Search Console ownership is an external authority boundary; local code and verification must be completed first without fabricating service evidence.
-- [Phase 06] Nine owner-controlled production UAT checks remain blocked: exact origin, production crawl, LCP/CLS/media, native zoom, field INP, Cloudflare/DNS/TLS, Search Console, QUAL-05, and QUAL-06.
-- [External authority] Wrangler is authenticated, the fail-closed OAuth Worker is deployed, and protected GitHub publishing is proven. Pages Git integration, DNS delegation, Cloudflare Access, the GitHub OAuth app/secret, and Search Console still require provider-side setup and direct evidence.
+- [Human action] Ahmed's dedicated GitHub username is unknown, so the final real-owner Sveltia draft-only pull-request proof cannot run. The developer account is not Ahmed’s dedicated owner identity and must not substitute.
+
+### Nonblocking Monitoring
+
+- Google indexing remains `PENDING`; successful sitemap submission does not prove that Google has indexed the pages.
+- Field INP remains `PENDING` until Search Console or CrUX has eligible real-user data. Do not add analytics or telemetry to obtain it.
 
 ### Quick Tasks Completed
 
@@ -177,6 +183,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-08-30T17:59:03Z
-Stopped at: Protected GitHub CMS publishing proof and cleanup pass; owner must add `ahmed-almangawy.de5.net` to Cloudflare Free and expose its two nameservers
+Last session: 2026-08-31T09:58:03.282Z
+Stopped at: Evidence reconciliation complete; waiting only for Ahmed's dedicated GitHub username and the real-owner draft proof
 Resume file: None

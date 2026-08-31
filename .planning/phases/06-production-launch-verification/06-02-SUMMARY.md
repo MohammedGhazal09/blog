@@ -41,13 +41,15 @@ patterns-established:
   - "Every article is independently audited before intent, after pointer intent, after Enter intent, during blocked-player fallback, and across reserved geometry."
 
 requirements-addressed: [QUAL-05, QUAL-06]
-requirements-completed: []
+requirements-completed: [QUAL-05, QUAL-06]
 
 duration: 41min
 completed: 2026-08-28
 ---
 
 # Phase 6 Plan 02: Production Performance, Media, Presentation, and Evidence Summary
+
+> Historical execution record from 2026-08-28. The post-verification addendum below records the later final-origin closure on 2026-08-31.
 
 **The exact-origin verifier now produces authority-labelled performance, media, Arabic/RTL, accessibility, and reflow evidence while every owner-controlled production claim remains explicitly pending.**
 
@@ -138,12 +140,20 @@ No repository setup is required. Final certification requires the owner-approved
 - The milestone can proceed to external launch evidence collection without further application changes.
 - Do not close `QUAL-05` or `QUAL-06` until the final-origin, native-zoom, and relevant owner/provider evidence rows are directly reviewed.
 
+## Post-Verification Addendum — 2026-08-31
+
+- The final-origin report at `.artifacts/phase-06/production/20260831T044102223Z/report.json` passed crawl, performance, and presentation against the exact production origin.
+- Five roles × three cold runs produced median LCP values of 908–1032 ms and CLS 0. Direct visible Chrome separately passed pointer and Enter media activation for all three articles after the verifier's fixed 45-second media subpasses timed out.
+- Native Chrome 200% zoom preserved content, controls, focus, and one-dimensional reflow without horizontal overflow.
+- `QUAL-05` and `QUAL-06` are complete. Field INP remains a nonblocking `PENDING` observation until eligible CrUX or Search Console data exists; analytics remains out of v1.
+- Current authority is `06-PRODUCTION-EVIDENCE.md`, `06-HUMAN-UAT.md`, and `06-VERIFICATION.md`; their reviewer-authored closure supersedes the original pending execution state above.
+
 ## Self-Check: PASSED
 
 - All four tracked plan files and this summary exist.
 - Task commits `c06e352`, `8d8f2b0`, and `5fcf64e` exist.
 - Fresh full verification and visual QA evidence support every repository-controlled completion claim.
-- External facts and both requirement IDs remain explicitly pending.
+- At original plan completion, external facts and both requirement IDs were pending; the dated addendum and current evidence ledger record the later closure.
 
 ---
 
